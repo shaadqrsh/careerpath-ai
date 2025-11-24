@@ -8,7 +8,7 @@ import { FALLBACK_COUNTRIES } from '../constants';
 import { upsertUserProfile, getCurrentUser } from '../services/supabaseService';
 
 export const Onboarding: React.FC = () => {
-  const { setView, setUser, user } = useAppStore();
+  const { setView, setUser } = useAppStore();
   const [saving, setSaving] = useState(false);
   
   // API Data State
@@ -25,7 +25,20 @@ export const Onboarding: React.FC = () => {
     preferredWorkCountry: '' // Will default to residence country
   });
 
-  // Fetch Countries from Public API
+  // 1. Session Safety Check on Mount
+  useEffect(() => {
+    const checkSession = async () => {
+        const currentUser = await getCurrentUser();
+        if (!currentUser) {
+            // If no valid session, kick back to Auth immediately
+            // This prevents the "Limbo" state where the form is visible but useless
+            setView(AppView.AUTH);
+        }
+    };
+    checkSession();
+  }, [setView]);
+
+  // 2. Fetch Countries from Public API
   useEffect(() => {
     const fetchCountries = async () => {
         try {
@@ -55,11 +68,14 @@ export const Onboarding: React.FC = () => {
     setSaving(true);
 
     try {
-        // Fetch the REAL authenticated user ID directly from Backend Service
+        // 3. Fetch the REAL authenticated user ID directly from Backend Service
+        // We do this again here to be absolutely sure we have the ID before sending to DB.
         const authUser = await getCurrentUser();
         
         if (!authUser) {
-            throw new Error("No authenticated session found. Please log in again.");
+            alert("Session expired. Please log in again.");
+            setView(AppView.AUTH);
+            return;
         }
 
         const finalProfile: UserProfile = {

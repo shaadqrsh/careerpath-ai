@@ -55,11 +55,14 @@ export const Auth: React.FC = () => {
     } catch (err: any) {
         console.error(err);
         let msg = err.message || "Authentication failed";
+        
+        // Handle specific backend error messages for better UX
         if (msg.includes("Email not confirmed")) {
             msg = "Please verify your email address to log in.";
         } else if (msg.includes("User already registered") || msg.includes("already exists")) {
             msg = "Account already exists. Please log in.";
         }
+        
         setError(msg);
         setLoading(false);
     }

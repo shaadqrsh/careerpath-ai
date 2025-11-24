@@ -1,3 +1,4 @@
+
 import os
 import json
 import uuid
@@ -11,14 +12,14 @@ from pydantic.alias_generators import to_camel
 import google.generativeai as genai
 from supabase import create_client, Client
 
-# --- CONFIGURATION ---
+# --- CONFIGURATION ----
 # Load from Environment Variables (Set these in Hugging Face Spaces Secrets)
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
 # Hardcoded AI Models
-TEXT_MODEL_NAME = "gemini-2.5-pro"
+TEXT_MODEL_NAME = "gemini-2.5-flash"
 IMAGE_MODEL_NAME = "gemini-2.0-flash"
 
 # Logging
@@ -299,7 +300,7 @@ async def generate_images(req: GenerateImagesRequest, user = Depends(verify_toke
         for prompt_text in req.prompts:
             # Enhanced Cinematic Prompt with 4:3 Ratio instruction and "Glorified" keywords
             full_prompt = (
-                f"Show this career in the most glorified, epic, and inspiring way possible. "
+                f"Generate an imahe showing this career in the most glorified, epic, and inspiring way possible. "
                 f"Cinematic shot of {subject_desc} working as a {req.career_title}. "
                 f"Scene: {prompt_text}. "
                 f"Style: Photorealistic, 4k, dramatic lighting, award-winning photography, glorious, visionary, highly detailed, aspect ratio 4:3."
