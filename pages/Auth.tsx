@@ -57,6 +57,8 @@ export const Auth: React.FC = () => {
         let msg = err.message || "Authentication failed";
         if (msg.includes("Email not confirmed")) {
             msg = "Please verify your email address to log in.";
+        } else if (msg.includes("User already registered") || msg.includes("already exists")) {
+            msg = "Account already exists. Please log in.";
         }
         setError(msg);
         setLoading(false);
@@ -85,6 +87,7 @@ export const Auth: React.FC = () => {
           </p>
         </div>
 
+        {/* Success Toast for Signup */}
         {successMessage && (
             <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 rounded-xl text-sm flex items-start gap-3 animate-[fadeIn_0.3s_ease-out]">
                 <CheckCircle size={18} className="mt-0.5 shrink-0" />

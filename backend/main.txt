@@ -19,7 +19,7 @@ SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
 # Hardcoded AI Models
-TEXT_MODEL_NAME = "gemini-1.5-pro"
+TEXT_MODEL_NAME = "gemini-2.5-pro"
 IMAGE_MODEL_NAME = "gemini-2.0-flash"
 
 # Logging
@@ -49,6 +49,11 @@ if not GEMINI_API_KEY:
     logger.warning("Gemini API Key missing. AI generation will fail.")
 else:
     genai.configure(api_key=GEMINI_API_KEY)
+
+# --- ROOT HEALTH CHECK ---
+@app.get("/")
+async def health_check():
+    return {"status": "ok", "service": "CareerPath AI Backend"}
 
 # --- PYDANTIC MODELS (CamelCase <-> SnakeCase) ---
 
@@ -139,9 +144,18 @@ async def signup(creds: UserLogin):
             "email": creds.email,
             "password": creds.password,
         })
+        
+        # Check if user already exists but Supabase returned 200 (User Enumeration Protection)
+        # If identities is empty, it means no new identity was created for this user.
+        if res.user and (res.user.identities is not None) and len(res.user.identities) == 0:
+            raise Exception("User already registered")
+
         return res
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        msg = str(e)
+        if "User already registered" in msg:
+             raise HTTPException(status_code=400, detail="User already registered")
+        raise HTTPException(status_code=400, detail=msg)
 
 @app.post("/api/auth/login")
 async def login(creds: UserLogin):
@@ -185,7 +199,9 @@ async def upsert_profile(profile: UserProfile, user = Depends(verify_token)):
     
     try:
         # Convert Pydantic model to Dict (snake_case)
-        data = profile.model_dump(by_alias=True)
+        # CRITICAL FIX: by_alias=False ensures we get 'education_level' (Python name) 
+        # instead of 'educationLevel' (JSON alias), matching the DB schema.
+        data = profile.model_dump(by_alias=False)
         res = supabase.table("profiles").upsert(data).execute()
         return {"status": "success"}
     except Exception as e:
@@ -335,7 +351,8 @@ async def get_saved_careers(user = Depends(verify_token)):
 async def save_career(career: CareerRecommendation, user = Depends(verify_token)):
     try:
         # Map frontend model to DB columns (snake_case)
-        data = career.model_dump(by_alias=True)
+        # FIX: by_alias=False to use snake_case
+        data = career.model_dump(by_alias=False)
         
         # Explicitly set identifiers
         data['user_id'] = user.id
