@@ -1,13 +1,43 @@
-import { createClient, User } from '@supabase/supabase-js';
+import { createClient, User, SupabaseClient } from '@supabase/supabase-js';
 import { CareerRecommendation, UserProfile } from '../types';
 
-// NOTE: In a real environment, these would be process.env vars
-const SUPABASE_URL = process.env.SUPABASE_URL || '';
-const SUPABASE_KEY = process.env.SUPABASE_KEY || '';
+// --- CONFIGURATION HANDLING ---
 
-export const supabase = (SUPABASE_URL && SUPABASE_KEY) 
-  ? createClient(SUPABASE_URL, SUPABASE_KEY) 
+// ADD WHEN DEPLOY: In production, these should be strictly environment variables.
+// const SUPABASE_URL = process.env.SUPABASE_URL;
+// const SUPABASE_KEY = process.env.SUPABASE_KEY;
+
+// FOR DEVELOPMENT/PREVIEW: Check LocalStorage first, then fall back to env vars (if any)
+const getSupabaseConfig = () => {
+  const localUrl = localStorage.getItem('career_path_sb_url');
+  const localKey = localStorage.getItem('career_path_sb_key');
+  
+  // ADD WHEN DEPLOY: Remove the localStorage fallback for better security in production
+  return {
+    url: localUrl || process.env.SUPABASE_URL || '',
+    key: localKey || process.env.SUPABASE_KEY || ''
+  };
+};
+
+const config = getSupabaseConfig();
+
+export const supabase: SupabaseClient | null = (config.url && config.key) 
+  ? createClient(config.url, config.key) 
   : null;
+
+// Helper to save keys from the UI (Dev Mode only)
+export const saveSupabaseConfig = (url: string, key: string) => {
+    localStorage.setItem('career_path_sb_url', url);
+    localStorage.setItem('career_path_sb_key', key);
+    window.location.reload(); // Reload to re-initialize the client
+};
+
+export const clearSupabaseConfig = () => {
+    localStorage.removeItem('career_path_sb_url');
+    localStorage.removeItem('career_path_sb_key');
+    window.location.reload();
+};
+
 
 // --- Auth Helpers ---
 

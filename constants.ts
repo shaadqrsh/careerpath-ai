@@ -1,5 +1,12 @@
 import { QuizQuestion } from './types';
 
+// --- CONFIGURATION ---
+export const AI_CONFIG = {
+  // Change these models here to update the entire app
+  TEXT_MODEL: 'gemini-2.5-flash',
+  IMAGE_MODEL: 'gemini-2.5-flash-image'
+};
+
 export const QUESTIONS: QuizQuestion[] = [
   // --- GENERAL / UNDECIDED (Helps identify the domain) ---
   {

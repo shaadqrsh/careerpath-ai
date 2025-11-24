@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useAppStore } from '../store';
 import { Button } from '../components/Button';
-import { Mail, Lock, Sun, Moon, AlertCircle } from 'lucide-react';
-import { signInWithEmail, signUpWithEmail, signInWithGoogle } from '../services/supabaseService';
+import { Mail, Lock, Sun, Moon, AlertCircle, Database, Key, Sparkles } from 'lucide-react';
+import { signInWithEmail, signUpWithEmail, signInWithGoogle, supabase, saveSupabaseConfig, clearSupabaseConfig } from '../services/supabaseService';
+import { saveGeminiKey } from '../services/geminiService';
 
 export const Auth: React.FC = () => {
   const { theme, toggleTheme } = useAppStore();
@@ -11,6 +12,11 @@ export const Auth: React.FC = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Configuration State
+  const [configUrl, setConfigUrl] = useState('');
+  const [configKey, setConfigKey] = useState('');
+  const [googleKey, setGoogleKey] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,10 +48,97 @@ export const Auth: React.FC = () => {
       }
   };
 
+  const handleSaveConfig = (e: React.FormEvent) => {
+      e.preventDefault();
+      if(configUrl && configKey && googleKey) {
+          saveSupabaseConfig(configUrl, configKey);
+          saveGeminiKey(googleKey);
+      } else {
+          alert("Please fill in all keys.");
+      }
+  };
+
+  // --- CONFIGURATION MODE ---
+  // If Supabase is not initialized (no env vars, no local storage), show this form
+  if (!supabase) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 px-4 transition-colors">
+            <div className="w-full max-w-md bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 max-h-[90vh] overflow-y-auto">
+                <div className="flex justify-center mb-6 text-blue-600 dark:text-blue-400">
+                    <Database size={48} />
+                </div>
+                <h2 className="text-2xl font-bold text-center text-slate-900 dark:text-white mb-4">Setup App Connection</h2>
+                <p className="text-slate-600 dark:text-slate-400 text-center mb-8">
+                    To use this app, you need to connect it to your Supabase project and provide a Gemini API Key.
+                </p>
+
+                <form onSubmit={handleSaveConfig} className="space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Supabase Project URL</label>
+                        <div className="relative">
+                            <Database className="absolute left-3 top-3.5 text-slate-400 w-5 h-5" />
+                            <input 
+                                type="text" 
+                                required
+                                value={configUrl}
+                                onChange={e => setConfigUrl(e.target.value)}
+                                placeholder="https://xyz.supabase.co"
+                                className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                            />
+                        </div>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Supabase Anon Key</label>
+                        <div className="relative">
+                            <Key className="absolute left-3 top-3.5 text-slate-400 w-5 h-5" />
+                            <input 
+                                type="password" 
+                                required
+                                value={configKey}
+                                onChange={e => setConfigKey(e.target.value)}
+                                placeholder="Supabase Anon Key..."
+                                className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="border-t border-slate-200 dark:border-slate-700 pt-4 mt-4">
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Google Gemini API Key</label>
+                        <div className="relative">
+                            <Sparkles className="absolute left-3 top-3.5 text-slate-400 w-5 h-5" />
+                            <input 
+                                type="password" 
+                                required
+                                value={googleKey}
+                                onChange={e => setGoogleKey(e.target.value)}
+                                placeholder="AI..."
+                                className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                            />
+                        </div>
+                    </div>
+
+                    <Button type="submit" fullWidth>Connect & Reload</Button>
+                </form>
+                <p className="text-xs text-center text-slate-500 mt-6">
+                    These keys are saved to your browser's Local Storage for development purposes.
+                </p>
+            </div>
+        </div>
+      );
+  }
+
+  // --- STANDARD AUTH ---
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 px-4 transition-colors duration-300 relative">
       {/* Theme Toggle */}
-      <div className="absolute top-6 right-6 z-50">
+      <div className="absolute top-6 right-6 z-50 flex gap-2">
+        <button
+          onClick={clearSupabaseConfig}
+          className="p-3 text-red-500 hover:text-red-600 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-full transition-colors"
+          title="Reset Database Config"
+        >
+            <Database size={24} />
+        </button>
         <button
           onClick={toggleTheme}
           className="p-3 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors rounded-full hover:bg-slate-200 dark:hover:bg-slate-800"

@@ -1,20 +1,158 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# CareerPath AI - Supabase & Gemini Setup Guide
 
-# Run and deploy your AI Studio app
+## 1. Supabase Project Setup
 
-This contains everything you need to run your app locally.
+1. Go to [Supabase](https://supabase.com/) and create a new project.
+2. Go to `Project Settings` -> `API`.
+3. Copy the `URL` and `anon public` key. You will need these for the app login screen.
 
-View your app in AI Studio: https://ai.studio/apps/drive/1mTjINlUE5nTtFj-CEzD53u0jIBHN9RKU
+## 2. Gemini API Setup
 
-## Run Locally
+1. Go to [Google AI Studio](https://aistudio.google.com/app/apikey).
+2. Create a new API Key.
+3. You will enter this key in the app setup screen alongside your Supabase keys.
 
-**Prerequisites:**  Node.js
+## 3. SQL Database Setup
 
+Go to the **SQL Editor** in your Supabase dashboard and run the following script to create the necessary tables and policies.
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+```sql
+-- 1. Create Profiles Table
+create table public.profiles (
+  user_id uuid references auth.users not null primary key,
+  full_name text,
+  gender text,
+  age integer,
+  education_level text,
+  specialization text,
+  residence_country text,
+  preferred_work_country text,
+  updated_at timestamp with time zone default timezone('utc'::text, now())
+);
+
+-- 2. Create Saved Careers Table
+create table public.saved_careers (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references auth.users not null,
+  career_id text not null,
+  title text not null,
+  data jsonb not null,
+  created_at timestamp with time zone default timezone('utc'::text, now()),
+  unique(user_id, career_id)
+);
+
+-- 3. Enable Row Level Security (RLS)
+alter table public.profiles enable row level security;
+alter table public.saved_careers enable row level security;
+
+-- 4. Create Policies (Users can only see/edit their own data)
+
+-- PROFILES
+create policy "Public profiles are viewable by everyone." on public.profiles
+  for select using (true);
+
+create policy "Users can insert their own profile." on public.profiles
+  for insert with check (auth.uid() = user_id);
+
+create policy "Users can update own profile." on public.profiles
+  for update using (auth.uid() = user_id);
+
+-- SAVED CAREERS
+create policy "Users can view own saved careers." on public.saved_careers
+  for select using (auth.uid() = user_id);
+
+create policy "Users can insert own saved careers." on public.saved_careers
+  for insert with check (auth.uid() = user_id);
+
+create policy "Users can delete own saved careers." on public.saved_careers
+  for delete using (auth.uid() = user_id);
+```
+
+## 4. Storage Setup
+
+1. Go to **Storage** in Supabase sidebar.
+2. Create a new bucket named `career_slideshows`.
+3. Set it to **Public**.
+4. Run the following Storage Policies in the SQL Editor (or configure in UI):
+
+```sql
+-- Allow authenticated users to upload images to their own folder
+create policy "Allow authenticated uploads"
+on storage.objects for insert
+to authenticated
+with check (
+  bucket_id = 'career_slideshows' and
+  (storage.foldername(name))[1] = auth.uid()::text
+);
+
+-- Allow authenticated users to update/delete their own images
+create policy "Allow authenticated delete"
+on storage.objects for delete
+to authenticated
+using (
+  bucket_id = 'career_slideshows' and
+  (storage.foldername(name))[1] = auth.uid()::text
+);
+
+-- Allow public read access (so you can see images in the app)
+create policy "Public Access"
+on storage.objects for select
+using ( bucket_id = 'career_slideshows' );
+```
+
+## 5. Google Auth Setup (Optional)
+
+1. Go to **Authentication** -> **Providers**.
+2. Enable **Google**.
+3. Follow the Supabase guide to create credentials in Google Cloud Console.
+4. Add the `Client ID` and `Secret` to Supabase.
+
+---
+
+## 6. Deployment Instructions (ADD WHEN DEPLOY)
+
+When you are ready to deploy this app (e.g., to Vercel or Netlify):
+
+1. **Environment Variables**:
+   In your hosting provider's dashboard, add the following Environment Variables. This removes the need to manually type keys in the app.
+   
+   - `SUPABASE_URL`: Your Project URL
+   - `SUPABASE_KEY`: Your Anon Key
+   - `API_KEY`: Your Google Gemini API Key
+
+2. **Code Cleanup**:
+   
+   **A. Services/SupabaseService.ts**
+   Change this:
+   ```typescript
+   const getSupabaseConfig = () => {
+      const localUrl = localStorage.getItem('career_path_sb_url');
+      // ...
+      return {
+        url: localUrl || process.env.SUPABASE_URL || '',
+        // ...
+      };
+   };
+   ```
+   To this (Strict Environment Variables):
+   ```typescript
+   const config = {
+      url: process.env.SUPABASE_URL || '',
+      key: process.env.SUPABASE_KEY || ''
+   };
+   ```
+
+   **B. Services/GeminiService.ts**
+   Change this:
+   ```typescript
+   const getGeminiKey = () => {
+       const localKey = localStorage.getItem('career_path_gemini_key');
+       return localKey || process.env.API_KEY || '';
+   };
+   ```
+   To this:
+   ```typescript
+   const apiKey = process.env.API_KEY;
+   ```
+
+   This ensures your production app relies solely on secure environment variables.

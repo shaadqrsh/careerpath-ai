@@ -1,9 +1,23 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { UserProfile, QuizAnswer, CareerRecommendation, Slide, CareerRoadmapStep } from "../types";
-import { MOCK_CAREERS } from "../constants";
+import { MOCK_CAREERS, AI_CONFIG } from "../constants";
 
-// Initialize Gemini Client
-const apiKey = process.env.API_KEY || ''; 
+// --- API KEY MANAGEMENT ---
+
+// ADD WHEN DEPLOY: Replace this function to strictly use process.env.API_KEY
+const getGeminiKey = () => {
+    // Check Local Storage (Dev mode)
+    const localKey = localStorage.getItem('career_path_gemini_key');
+    // Fallback to Environment Variable
+    return localKey || process.env.API_KEY || '';
+};
+
+// ADD WHEN DEPLOY: Remove this helper function
+export const saveGeminiKey = (key: string) => {
+    localStorage.setItem('career_path_gemini_key', key);
+};
+
+const apiKey = getGeminiKey();
 const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
 
 // Helper to calculate estimated roadmap duration in years
@@ -107,7 +121,7 @@ export const generateCareerRecommendations = async (
 
   try {
     const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: AI_CONFIG.TEXT_MODEL,
         contents: prompt,
         config: {
             responseMimeType: "application/json",
@@ -176,7 +190,7 @@ const generateImage = async (prompt: string): Promise<string> => {
 
         const generationPromise = (async () => {
             const response = await ai.models.generateContent({
-                model: 'gemini-2.5-flash-image',
+                model: AI_CONFIG.IMAGE_MODEL,
                 contents: {
                     parts: [
                         { text: prompt }

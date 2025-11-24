@@ -2,7 +2,7 @@ import React from 'react';
 import { useAppStore } from '../store';
 import { AppView } from '../types';
 import { Button } from '../components/Button';
-import { Sparkles, ArrowRight, Sun, Moon } from 'lucide-react';
+import { ArrowRight, Sun, Moon } from 'lucide-react';
 
 export const Landing: React.FC = () => {
   const { setView, theme, toggleTheme } = useAppStore();
@@ -28,8 +28,11 @@ export const Landing: React.FC = () => {
       <div className="z-10 text-center max-w-4xl px-6">
         <div className="mb-6 flex justify-center">
           <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-blue-600 dark:text-blue-400 text-sm font-medium shadow-sm">
-            <Sparkles size={16} />
-            <span>Powered by Gemini Pro 1.5</span>
+            {/* Google Gemini Icon */}
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" className="text-blue-500">
+                <path d="M12 24C12 24 10 14 0 12C10 10 12 0 12 0C12 0 14 10 24 12C14 14 12 24 12 24Z" />
+            </svg>
+            <span>Powered by Gemini</span>
           </span>
         </div>
 
@@ -57,4 +60,27 @@ export const Landing: React.FC = () => {
             variant="secondary" 
             size="lg"
             onClick={() => alert("Demo Mode: Click Get Started to bypass login.")}
-            className="bg-white hover:bg-slate-50 text-slate-7
+            className="bg-white hover:bg-slate-50 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-700 shadow-sm"
+          >
+            View Demo
+          </Button>
+        </div>
+
+        <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-6 text-left max-w-3xl mx-auto">
+           <div className="p-4 rounded-xl bg-white/50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 backdrop-blur-sm">
+              <h3 className="font-bold text-slate-900 dark:text-white mb-1">Global Analysis</h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400">Real-time market trends across 15+ countries.</p>
+           </div>
+           <div className="p-4 rounded-xl bg-white/50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 backdrop-blur-sm">
+              <h3 className="font-bold text-slate-900 dark:text-white mb-1">Visual Pathways</h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400">See your future with AI-generated day-in-the-life scenes.</p>
+           </div>
+           <div className="p-4 rounded-xl bg-white/50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 backdrop-blur-sm">
+              <h3 className="font-bold text-slate-900 dark:text-white mb-1">Smart Roadmaps</h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400">Step-by-step education plans from where you are now.</p>
+           </div>
+        </div>
+      </div>
+    </div>
+  );
+};
