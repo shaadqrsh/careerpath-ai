@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useAppStore } from '../store';
 import { AppView } from '../types';
 import { Button } from '../components/Button';
-import { Mail, Lock, Sun, Moon, AlertCircle } from 'lucide-react';
+import { Mail, Lock, Sun, Moon, AlertCircle, CheckCircle } from 'lucide-react';
 import { signInWithEmail, signUpWithEmail, getCurrentUser, getUserProfile } from '../services/supabaseService';
 
 export const Auth: React.FC = () => {
@@ -13,6 +13,7 @@ export const Auth: React.FC = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const handlePostLogin = async () => {
     try {
@@ -39,6 +40,7 @@ export const Auth: React.FC = () => {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setSuccessMessage(null);
 
     try {
         if (isLogin) {
@@ -46,13 +48,17 @@ export const Auth: React.FC = () => {
             await handlePostLogin();
         } else {
             await signUpWithEmail(email, password);
-            alert("Account created! Please check your email to verify your account before logging in.");
+            setSuccessMessage("Account created! Please check your email to verify your account before logging in.");
             setIsLogin(true); // Switch to login after signup
             setLoading(false); 
         }
     } catch (err: any) {
         console.error(err);
-        setError(err.message || "Authentication failed");
+        let msg = err.message || "Authentication failed";
+        if (msg.includes("Email not confirmed")) {
+            msg = "Please verify your email address to log in.";
+        }
+        setError(msg);
         setLoading(false);
     }
   };
@@ -79,9 +85,16 @@ export const Auth: React.FC = () => {
           </p>
         </div>
 
+        {successMessage && (
+            <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 rounded-xl text-sm flex items-start gap-3 animate-[fadeIn_0.3s_ease-out]">
+                <CheckCircle size={18} className="mt-0.5 shrink-0" />
+                <span>{successMessage}</span>
+            </div>
+        )}
+
         {error && (
-            <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 rounded-lg text-sm flex items-center gap-2">
-                <AlertCircle size={16} />
+            <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 rounded-lg text-sm flex items-center gap-2 animate-[fadeIn_0.3s_ease-out]">
+                <AlertCircle size={16} className="shrink-0" />
                 {error}
             </div>
         )}
@@ -124,7 +137,7 @@ export const Auth: React.FC = () => {
           <div className="text-center mt-4">
              <button 
                 type="button"
-                onClick={() => setIsLogin(!isLogin)}
+                onClick={() => { setIsLogin(!isLogin); setError(null); setSuccessMessage(null); }}
                 className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
              >
                 {isLogin ? "Don't have an account? Sign Up" : "Already have an account? Sign In"}

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useAppStore } from '../store';
 import { AppView } from '../types';
@@ -189,8 +190,8 @@ export const CareerDetail: React.FC = () => {
                             <p className="text-slate-600 dark:text-slate-400 mb-6 text-lg">{step.description}</p>
                             
                             {/* Split View for Locations */}
-                            <div className={`grid grid-cols-1 ${!isSameLocation && step.targetPath ? 'md:grid-cols-2' : ''} gap-4 border-t border-slate-200 dark:border-slate-700 pt-4`}>
-                                {step.localPath && (
+                            <div className={`grid grid-cols-1 ${!isSameLocation && step.targetPath && step.targetPath !== 'NA' ? 'md:grid-cols-2' : ''} gap-4 border-t border-slate-200 dark:border-slate-700 pt-4`}>
+                                {step.localPath && step.localPath !== 'NA' && (
                                     <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-lg border border-slate-200 dark:border-slate-700/50">
                                         <div className="flex items-center gap-2 mb-2">
                                             <MapPin size={14} className="text-blue-500" />
@@ -202,7 +203,7 @@ export const CareerDetail: React.FC = () => {
                                     </div>
                                 )}
                                 
-                                {!isSameLocation && step.targetPath && (
+                                {!isSameLocation && step.targetPath && step.targetPath !== 'NA' && (
                                     <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-lg border border-slate-200 dark:border-slate-700/50">
                                         <div className="flex items-center gap-2 mb-2">
                                             <MapPin size={14} className="text-green-500" />
@@ -221,13 +222,12 @@ export const CareerDetail: React.FC = () => {
         </section>
       </main>
 
-      {/* Toast Notification */}
+      {/* Toast Notification - Centered at Top */}
       {showToast && (
-        <div className="fixed bottom-8 right-8 bg-slate-800 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 animate-[slideIn_0.3s_ease-out] z-50">
-            <CheckCircle className="text-green-400" />
+        <div className="fixed top-24 left-1/2 -translate-x-1/2 bg-slate-800 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 animate-[fadeIn_0.3s_ease-out] z-50">
+            <CheckCircle className="text-green-400 shrink-0" />
             <div>
-                <p className="font-bold">Career Saved!</p>
-                <p className="text-xs text-slate-400">Images are being generated in background.</p>
+                <p className="font-bold">Career Saved Successfully!</p>
             </div>
         </div>
       )}

@@ -1,0 +1,423 @@
+
+import os
+import json
+import uuid
+import logging
+from typing import List, Optional, Dict, Any
+
+from fastapi import FastAPI, HTTPException, Depends, Header, Request
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, Field, ConfigDict
+from pydantic.alias_generators import to_camel
+import google.generativeai as genai
+from supabase import create_client, Client
+
+# --- CONFIGURATION ---
+# Load from Environment Variables (Set these in Hugging Face Spaces Secrets)
+SUPABASE_URL = os.environ.get("SUPABASE_URL")
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+
+# Hardcoded AI Models
+TEXT_MODEL_NAME = "gemini-1.5-pro"
+IMAGE_MODEL_NAME = "gemini-2.0-flash"
+
+# Logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Initialize FastAPI
+app = FastAPI()
+
+# CORS (Allow all for simplicity, restrict in production if needed)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Initialize Clients
+if not SUPABASE_URL or not SUPABASE_KEY:
+    logger.warning("Supabase credentials missing. Auth/DB will fail.")
+    supabase: Client = None
+else:
+    supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+if not GEMINI_API_KEY:
+    logger.warning("Gemini API Key missing. AI generation will fail.")
+else:
+    genai.configure(api_key=GEMINI_API_KEY)
+
+# --- PYDANTIC MODELS (CamelCase <-> SnakeCase) ---
+
+class BaseSchema(BaseModel):
+    model_config = ConfigDict(
+        alias_generator=to_camel,
+        populate_by_name=True,
+        from_attributes=True
+    )
+
+# Auth Schemas
+class UserLogin(BaseSchema):
+    email: str
+    password: str
+
+# Profile Schemas
+class UserProfile(BaseSchema):
+    id: str
+    full_name: str
+    gender: str
+    age: int
+    education_level: str
+    specialization: str
+    residence_country: str
+    preferred_work_country: str
+
+# Career Schemas
+class CareerRoadmapStep(BaseSchema):
+    title: str
+    description: str
+    local_path: Optional[str] = None
+    target_path: Optional[str] = None
+    duration: str
+
+class CareerRecommendation(BaseSchema):
+    id: str
+    title: str
+    match_score: int
+    summary: str
+    salary_range: str
+    growth: str
+    tags: List[str]
+    is_pivot: Optional[bool] = False
+    pivot_analysis: Optional[str] = None
+    roadmap: List[CareerRoadmapStep]
+    day_in_life_prompts: Optional[List[str]] = []
+    slide_images: Optional[List[str]] = []
+
+# Generation Request Schemas
+class GenerateCareerRequest(BaseSchema):
+    user_profile: UserProfile
+    quiz_answers: List[Dict[str, Any]]
+
+class GenerateImagesRequest(BaseSchema):
+    career_title: str
+    prompts: List[str]
+    user_context: Optional[UserProfile] = None
+    future_age: Optional[int] = 25
+
+class SaveCareerImageRequest(BaseSchema):
+    user_id: str
+    career_uid: str
+    images: List[str]
+
+# --- DEPENDENCIES ---
+
+async def verify_token(authorization: str = Header(None)):
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Missing or invalid token")
+    
+    token = authorization.split(" ")[1]
+    
+    try:
+        user = supabase.auth.get_user(token)
+        if not user:
+            raise HTTPException(status_code=401, detail="Invalid token")
+        return user.user
+    except Exception as e:
+        logger.error(f"Auth error: {e}")
+        raise HTTPException(status_code=401, detail="Authentication failed")
+
+# --- AUTH ROUTES ---
+
+@app.post("/api/auth/signup")
+async def signup(creds: UserLogin):
+    try:
+        res = supabase.auth.sign_up({
+            "email": creds.email,
+            "password": creds.password,
+        })
+        return res
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.post("/api/auth/login")
+async def login(creds: UserLogin):
+    try:
+        res = supabase.auth.sign_in_with_password({
+            "email": creds.email,
+            "password": creds.password,
+        })
+        return {
+            "access_token": res.session.access_token,
+            "user": res.user
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.get("/api/auth/me")
+async def get_current_user(user = Depends(verify_token)):
+    return {"id": user.id, "email": user.email}
+
+# --- PROFILE ROUTES ---
+
+@app.get("/api/profile")
+async def get_profile(user = Depends(verify_token)):
+    try:
+        res = supabase.table("profiles").select("*").eq("id", user.id).single().execute()
+        # Fallback for empty profile
+        if not res.data:
+             raise HTTPException(status_code=404, detail="Profile not found")
+        return res.data
+    except Exception as e:
+        # Check if it's just 'row not found'
+        if "JSON object requested, multiple (or no) rows returned" in str(e):
+             raise HTTPException(status_code=404, detail="Profile not found")
+        logger.error(f"Get Profile Error: {e}")
+        raise HTTPException(status_code=500, detail="Database error")
+
+@app.post("/api/profile")
+async def upsert_profile(profile: UserProfile, user = Depends(verify_token)):
+    if profile.id != user.id:
+        raise HTTPException(status_code=403, detail="Cannot update other users")
+    
+    try:
+        # Convert Pydantic model to Dict (snake_case)
+        data = profile.model_dump(by_alias=True)
+        res = supabase.table("profiles").upsert(data).execute()
+        return {"status": "success"}
+    except Exception as e:
+        logger.error(f"Upsert Profile Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# --- AI GENERATION ROUTES ---
+
+@app.post("/api/generate-career")
+async def generate_career(req: GenerateCareerRequest, user = Depends(verify_token)):
+    try:
+        user_p = req.user_profile
+        answers = req.quiz_answers
+        
+        # Construct Prompt
+        prompt = f"""
+        Act as an expert Career Counselor using Global Market Data.
+        Analyze this user profile:
+        - Name: {user_p.full_name}
+        - Gender: {user_p.gender}
+        - Age: {user_p.age}
+        - Education: {user_p.education_level} (Specialization: {user_p.specialization})
+        - Residence: {user_p.residence_country}
+        - Target Location: {user_p.preferred_work_country}
+
+        Quiz Context (Personality/Aptitude):
+        {json.dumps(answers, indent=2)}
+
+        Task:
+        1. Identify 5 personalized career paths.
+        2. STRICT ELIGIBILITY CHECK: If the user's specialization is 'Arts' do not suggest 'Quantum Physics'. If they want to Pivot, ensure the path is realistic via bootcamps/certifications.
+        3. PIVOT ANALYSIS: Explicitly state if this is a "Natural Progression" or "Major Pivot" from their current specialization.
+        4. ROADMAP: Create a roadmap starting AFTER their current education level.
+           - Split roadmap steps into 'localPath' (steps in {user_p.residence_country}) and 'targetPath' (steps in {user_p.preferred_work_country}) IF locations differ.
+           - If locations are the same, localPath and targetPath should be null or identical, just use 'description'.
+           - Use 'NA' for localPath or targetPath if specific data is unavailable.
+        5. OUTPUT FORMAT: STRICT JSON only.
+        
+        JSON Structure:
+        {{
+          "recommendations": [
+            {{
+              "id": "uuid-placeholder",
+              "title": "Job Title",
+              "matchScore": 85,
+              "summary": "...",
+              "salaryRange": "$X - $Y",
+              "growth": "High/Medium",
+              "tags": ["Tag1", "Tag2"],
+              "isPivot": boolean,
+              "pivotAnalysis": "Explanation...",
+              "roadmap": [
+                {{ "title": "Step 1", "description": "...", "localPath": "...", "targetPath": "...", "duration": "..." }}
+              ],
+              "dayInLifePrompts": ["Scene 1", "Scene 2", "Scene 3"]
+            }}
+          ]
+        }}
+        """
+
+        model = genai.GenerativeModel(TEXT_MODEL_NAME)
+        # Using JSON mode if supported, or just requesting JSON text
+        response = await model.generate_content_async(
+            prompt,
+            generation_config={"response_mime_type": "application/json"}
+        )
+        
+        # Parse JSON
+        result_json = json.loads(response.text)
+        
+        # Post-process: Add UUIDs if missing
+        for rec in result_json.get("recommendations", []):
+            if not rec.get("id"):
+                rec["id"] = str(uuid.uuid4())
+                
+        return result_json
+
+    except Exception as e:
+        logger.error(f"Career Gen Error: {e}")
+        raise HTTPException(status_code=500, detail="AI generation failed")
+
+@app.post("/api/generate-images")
+async def generate_images(req: GenerateImagesRequest, user = Depends(verify_token)):
+    try:
+        generated_images = []
+        
+        # Personalization
+        subject_desc = "a professional"
+        if req.user_context:
+            u = req.user_context
+            age = req.future_age or (u.age + 5)
+            subject_desc = f"a {age} year old {u.gender} {u.residence_country} national"
+
+        model = genai.GenerativeModel(IMAGE_MODEL_NAME)
+
+        for prompt_text in req.prompts:
+            # Enhanced Cinematic Prompt with 4:3 Ratio instruction and "Glorified" keywords
+            full_prompt = (
+                f"Show this career in the most glorified, epic, and inspiring way possible. "
+                f"Cinematic shot of {subject_desc} working as a {req.career_title}. "
+                f"Scene: {prompt_text}. "
+                f"Style: Photorealistic, 4k, dramatic lighting, award-winning photography, glorious, visionary, highly detailed, aspect ratio 4:3."
+            )
+            
+            try:
+                # Generate Image
+                response = await model.generate_content_async(full_prompt)
+                
+                # Extract Base64 from inline data
+                # Note: Gemini 2.0 Flash returns inline data in parts
+                if response.candidates and response.candidates[0].content.parts:
+                    for part in response.candidates[0].content.parts:
+                        if part.inline_data:
+                            b64_data = part.inline_data.data
+                            mime_type = part.inline_data.mime_type
+                            generated_images.append(f"data:{mime_type};base64,{b64_data}")
+                            break
+                    else:
+                        # Fallback if no image part found
+                        generated_images.append(f"https://picsum.photos/seed/{uuid.uuid4()}/800/600")
+                else:
+                    generated_images.append(f"https://picsum.photos/seed/{uuid.uuid4()}/800/600")
+
+            except Exception as inner_e:
+                logger.error(f"Individual Image Gen Error: {inner_e}")
+                generated_images.append(f"https://picsum.photos/seed/{uuid.uuid4()}/800/600")
+
+        return {"images": generated_images}
+
+    except Exception as e:
+        logger.error(f"Image API Error: {e}")
+        # Return fallbacks on crash
+        return {"images": [f"https://picsum.photos/seed/{i}/800/600" for i in range(len(req.prompts))]}
+
+# --- SAVED CAREER ROUTES ---
+
+@app.get("/api/saved-careers")
+async def get_saved_careers(user = Depends(verify_token)):
+    try:
+        res = supabase.table("saved_careers").select("*").eq("user_id", user.id).execute()
+        return res.data
+    except Exception as e:
+        logger.error(f"Get Saved Careers Error: {e}")
+        return []
+
+@app.post("/api/saved-careers")
+async def save_career(career: CareerRecommendation, user = Depends(verify_token)):
+    try:
+        # Map frontend model to DB columns (snake_case)
+        data = career.model_dump(by_alias=True)
+        
+        # Explicitly set identifiers
+        data['user_id'] = user.id
+        data['career_uid'] = career.id # Critical for uniqueness
+        
+        if 'id' in data:
+            del data['id'] # Let DB handle the Primary Key UUID
+
+        res = supabase.table("saved_careers").upsert(
+            data, 
+            on_conflict="user_id,career_uid"
+        ).execute()
+        
+        return {"status": "success"}
+    except Exception as e:
+        logger.error(f"Save Career Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/api/saved-careers/{career_uid}")
+async def delete_career(career_uid: str, user = Depends(verify_token)):
+    try:
+        # 1. Delete Images from Storage (Optional/Best Effort)
+        try:
+             files = supabase.storage.from_("career_slideshows").list(f"{user.id}/{career_uid}")
+             if files:
+                 files_to_remove = [f"{user.id}/{career_uid}/{f['name']}" for f in files]
+                 supabase.storage.from_("career_slideshows").remove(files_to_remove)
+        except Exception as storage_e:
+            logger.warning(f"Storage cleanup failed (non-critical): {storage_e}")
+
+        # 2. Delete Record
+        res = supabase.table("saved_careers").delete().eq("user_id", user.id).eq("career_uid", career_uid).execute()
+        return {"status": "success"}
+    except Exception as e:
+        logger.error(f"Delete Career Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/career-images")
+async def upload_career_images(req: SaveCareerImageRequest, user = Depends(verify_token)):
+    if req.user_id != user.id:
+        raise HTTPException(status_code=403)
+        
+    uploaded_urls = []
+    
+    for i, img_str in enumerate(req.images):
+        # Skip if already a URL
+        if img_str.startswith("http"):
+            uploaded_urls.append(img_str)
+            continue
+            
+        try:
+            # Assume base64
+            # Strip header "data:image/png;base64,"
+            if "," in img_str:
+                header, encoded = img_str.split(",", 1)
+                ext = header.split(";")[0].split("/")[1]
+            else:
+                encoded = img_str
+                ext = "png"
+            
+            import base64
+            file_data = base64.b64decode(encoded)
+            
+            file_path = f"{user.id}/{req.career_uid}/slide_{i}.{ext}"
+            
+            # Supabase Storage Upload
+            supabase.storage.from_("career_slideshows").upload(
+                file_path,
+                file_data,
+                {"content-type": f"image/{ext}", "upsert": "true"}
+            )
+            
+            # Get Public URL
+            public_url = supabase.storage.from_("career_slideshows").get_public_url(file_path)
+            uploaded_urls.append(public_url)
+            
+        except Exception as e:
+            logger.error(f"Image Upload Failed: {e}")
+            uploaded_urls.append(img_str) # Keep original if fail
+            
+    return {"image_urls": uploaded_urls}
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=7860)

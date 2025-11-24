@@ -1,68 +1,41 @@
-# CareerPath AI - Setup Guide
 
-This project consists of a **React Frontend** and a **Python FastAPI Backend**. The backend handles all database interactions (Supabase) and AI Generation (Gemini).
+# CareerPath AI
 
-## Project Structure
+A personalized career guidance platform powered by **Gemini 1.5 Pro** (Reasoning) and **Gemini 2.0 Flash** (Visualization).
 
-*   `backend/` - Contains the Python API code (`main.py`, `Dockerfile`, `requirements.txt`).
-*   `database.sql` - SQL queries to set up your Supabase database.
-*   `src/` (root) - The React Frontend code.
+## Architecture
 
----
+*   **Frontend**: React, TypeScript, Tailwind, Zustand (State).
+*   **Backend**: Python FastAPI (Handles Auth Proxy, DB logic, and AI Generation).
+*   **Database**: Supabase (PostgreSQL).
+*   **AI**: Google Gemini.
 
-## 1. Supabase Setup (Database & Auth)
+## Setup Instructions
 
-1.  Go to [Supabase](https://supabase.com/) and create a new project.
-2.  Go to **SQL Editor** in the Supabase dashboard.
-3.  Copy the content from `database.sql` and run it to create your tables and policies.
-4.  Go to **Storage**, create a new bucket named `career_slideshows`, and set it to **Public**.
-5.  Go to **Settings -> API** and copy your:
-    *   Project URL
-    *   Service Role Key (Secret, starts with `ey...`)
+### 1. Database (Supabase)
+1.  Create a Supabase Project.
+2.  Go to **SQL Editor**.
+3.  Open `database.txt`, copy the content, and run it in the SQL Editor.
+4.  Go to **Storage**, create a public bucket named `career_slideshows`.
 
-## 2. Backend Setup (Hugging Face Spaces)
-
-You need to deploy the backend so the frontend can talk to it.
-
-1.  Go to [Hugging Face Spaces](https://huggingface.co/spaces).
-2.  Click **Create new Space**.
-    *   Name: `careerpath-backend`
-    *   SDK: **Docker**
-    *   Template: **Blank**
-3.  Upload the files from the `backend/` folder (`main.py`, `Dockerfile`, `requirements.txt`) to your Space.
-4.  Go to **Settings -> Variables and secrets** in your Space and add these Secrets:
-    *   `SUPABASE_URL`: Your Supabase Project URL.
-    *   `SUPABASE_KEY`: Your Supabase **Service Role** Key.
+### 2. Backend (Deploy to Hugging Face Spaces)
+1.  Create a new Space on Hugging Face (Select **Docker** as the SDK).
+2.  Upload the backend files. **IMPORTANT: Rename them as follows:**
+    *   `backend/main.txt` -> Rename to `main.py`
+    *   `backend/Dockerfile.txt` -> Rename to `Dockerfile`
+    *   `backend/requirements.txt` -> Keep as `requirements.txt`
+3.  Set Secrets in Space Settings:
+    *   `SUPABASE_URL`: Your Supabase URL.
+    *   `SUPABASE_KEY`: Your Supabase Service Role Key (or Anon Key if RLS is tight).
     *   `GEMINI_API_KEY`: Your Google Gemini API Key.
-5.  Once the Space is "Running", click **Embed this space** to copy the Direct URL (e.g., `https://huggingface.co/spaces/username/careerpath-backend`).
 
-## 3. Frontend Setup
-
-1.  Create a `.env` file in the root of this project.
-2.  Add the backend URL you just deployed:
-
-```env
-VITE_API_BASE_URL="https://your-huggingface-space-url.hf.space"
-```
-
-3.  Install dependencies and run the frontend:
-
-```bash
-npm install
-npm run dev
-```
-
-## 4. Local Development (Backend)
-
-If you want to run the backend locally instead of on Hugging Face:
-
-1.  Navigate to the `backend/` folder.
-2.  Install dependencies: `pip install -r requirements.txt`.
-3.  Set environment variables in your terminal:
-    ```bash
-    export SUPABASE_URL="your-url"
-    export SUPABASE_KEY="your-service-role-key"
-    export GEMINI_API_KEY="your-gemini-key"
+### 3. Frontend (Local)
+1.  Create a `.env` file in the root:
     ```
-4.  Run the server: `uvicorn main:app --reload`.
-5.  Update your frontend `.env` to `VITE_API_BASE_URL="http://localhost:8000"`.
+    VITE_API_BASE_URL="https://your-huggingface-space-url.hf.space"
+    ```
+2.  `npm install`
+3.  `npm run dev`
+
+### 4. Extra Stuff
+See `extrastuff.md` for Email Templates and Gitignore rules.
