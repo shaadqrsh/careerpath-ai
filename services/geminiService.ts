@@ -1,5 +1,5 @@
 
-import { UserProfile, QuizAnswer, CareerRecommendation, Slide, CareerRoadmapStep } from "../types";
+import { UserProfile, QuizAnswer, CareerRecommendation, Slide, CareerRoadmapStep, CareerDomain } from "../types";
 import { MOCK_CAREERS, API_BASE_URL } from "../constants";
 
 // Helper to calculate estimated roadmap duration in years
@@ -19,6 +19,30 @@ export const calculateRoadmapDurationYears = (roadmap: CareerRoadmapStep[]): num
 };
 
 // --- BACKEND API INTEGRATION ---
+
+export const generateDomainSuggestion = async (answers: QuizAnswer[]): Promise<CareerDomain> => {
+    try {
+        const token = localStorage.getItem('access_token');
+        if (!token) throw new Error("User not authenticated");
+
+        const response = await fetch(`${API_BASE_URL}/api/generate-domain`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ quiz_answers: answers })
+        });
+
+        if (!response.ok) return 'general';
+        
+        const data = await response.json();
+        return (data.suggested_domain as CareerDomain) || 'general';
+    } catch (e) {
+        console.error("Domain generation failed:", e);
+        return 'general';
+    }
+};
 
 export const generateCareerRecommendations = async (
   user: UserProfile, 

@@ -1,18 +1,21 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAppStore } from '../store';
 import { AppView, CareerDomain } from '../types';
 import { QUESTIONS } from '../constants';
 import { Button } from '../components/Button';
-import { CheckCircle2, ChevronRight } from 'lucide-react';
+import { CheckCircle2, ChevronRight, Loader2 } from 'lucide-react';
+import { generateDomainSuggestion } from '../services/geminiService';
 
 export const Quiz: React.FC = () => {
-  const { setView, addQuizAnswer, selectedDomain, setDomain } = useAppStore();
+  const { setView, addQuizAnswer, selectedDomain, setDomain, quizAnswers } = useAppStore();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   
   // State for the "Intermediate Result" of the General Quiz
   const [showGeneralResult, setShowGeneralResult] = useState(false);
   const [suggestedDomain, setSuggestedDomain] = useState<CareerDomain | null>(null);
+  const [isCalculating, setIsCalculating] = useState(false);
 
   // Filter questions based on the selected domain
   const domainQuestions = QUESTIONS.filter(q => q.domain === selectedDomain);
@@ -27,12 +30,12 @@ export const Quiz: React.FC = () => {
     }
   }, [domainQuestions, setView, showGeneralResult]);
 
-  const calculateSuggestion = () => {
-    // Simple mock logic: Randomly suggest a domain for the demo
-    // In real app: analyze answers from 'general' domain
-    const domains: CareerDomain[] = ['science', 'commerce', 'arts'];
-    const random = domains[Math.floor(Math.random() * domains.length)];
-    setSuggestedDomain(random);
+  const calculateSuggestion = async () => {
+    setIsCalculating(true);
+    // Use AI to analyze answers from 'general' domain
+    const domain = await generateDomainSuggestion(quizAnswers);
+    setSuggestedDomain(domain);
+    setIsCalculating(false);
     setShowGeneralResult(true);
   };
 
@@ -68,6 +71,15 @@ export const Quiz: React.FC = () => {
     }
   };
 
+  if (isCalculating) {
+      return (
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col items-center justify-center transition-colors duration-300">
+             <Loader2 className="w-10 h-10 animate-spin text-blue-500 mb-4" />
+             <p className="text-slate-600 dark:text-slate-300 text-lg">Analyzing your preferences...</p>
+        </div>
+      );
+  }
+
   if (showGeneralResult && suggestedDomain) {
       return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center px-4 transition-colors duration-300">
@@ -77,7 +89,7 @@ export const Quiz: React.FC = () => {
                 </div>
                 <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-4">Initial Analysis Complete</h2>
                 <p className="text-slate-600 dark:text-slate-300 mb-8 text-lg">
-                    Based on your general preferences, you seem to lean towards <span className="text-blue-600 dark:text-blue-400 font-bold capitalize">{suggestedDomain}</span>.
+                    Based on your general preferences, AI suggests you explore <span className="text-blue-600 dark:text-blue-400 font-bold capitalize">{suggestedDomain}</span>.
                 </p>
                 <div className="space-y-4">
                     <Button fullWidth size="lg" onClick={handleContinueToDomain}>

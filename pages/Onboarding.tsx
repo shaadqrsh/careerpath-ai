@@ -10,6 +10,7 @@ import { upsertUserProfile, getCurrentUser } from '../services/supabaseService';
 export const Onboarding: React.FC = () => {
   const { setView, setUser } = useAppStore();
   const [saving, setSaving] = useState(false);
+  const [isVerifyingSession, setIsVerifyingSession] = useState(true);
   
   // API Data State
   const [countries, setCountries] = useState<string[]>([]);
@@ -27,15 +28,24 @@ export const Onboarding: React.FC = () => {
 
   // 1. Session Safety Check on Mount
   useEffect(() => {
+    let isMounted = true;
     const checkSession = async () => {
-        const currentUser = await getCurrentUser();
-        if (!currentUser) {
-            // If no valid session, kick back to Auth immediately
-            // This prevents the "Limbo" state where the form is visible but useless
-            setView(AppView.AUTH);
+        try {
+            const currentUser = await getCurrentUser();
+            if (!currentUser) {
+                // If no valid session, kick back to Auth immediately
+                console.warn("No active session found in Onboarding. Redirecting.");
+                if (isMounted) setView(AppView.AUTH);
+            } else {
+                if (isMounted) setIsVerifyingSession(false);
+            }
+        } catch (e) {
+             console.error("Session check error", e);
+             if (isMounted) setView(AppView.AUTH);
         }
     };
     checkSession();
+    return () => { isMounted = false; };
   }, [setView]);
 
   // 2. Fetch Countries from Public API
@@ -113,13 +123,21 @@ export const Onboarding: React.FC = () => {
     }
   };
 
+  if (isVerifyingSession) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 transition-colors">
+            <div className="flex flex-col items-center gap-4">
+                <Loader2 className="w-10 h-10 animate-spin text-blue-500" />
+                <p className="text-slate-500 dark:text-slate-400">Verifying session...</p>
+            </div>
+        </div>
+      );
+  }
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 px-4 py-12 transition-colors">
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 px-4 py-6 transition-colors">
       <div className="w-full max-w-lg">
         <div className="mb-8">
-            <div className="h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-                <div className="h-full bg-blue-500 w-1/2"></div>
-            </div>
             <h2 className="text-3xl font-bold text-slate-900 dark:text-white mt-6">Tell us about yourself</h2>
             <p className="text-slate-600 dark:text-slate-400 mt-2">This helps our AI calibrate your recommendations based on location and demographics.</p>
         </div>

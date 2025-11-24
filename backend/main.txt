@@ -20,7 +20,8 @@ GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
 # Hardcoded AI Models
 TEXT_MODEL_NAME = "gemini-2.5-flash"
-IMAGE_MODEL_NAME = "gemini-2.0-flash"
+# User requested 2.5 flash for images
+IMAGE_MODEL_NAME = "gemini-2.5-flash" 
 
 # Logging
 logging.basicConfig(level=logging.INFO)
@@ -118,6 +119,9 @@ class SaveCareerImageRequest(BaseSchema):
     career_uid: str
     images: List[str]
 
+class GenerateDomainRequest(BaseSchema):
+    quiz_answers: List[Dict[str, Any]]
+
 # --- DEPENDENCIES ---
 
 async def verify_token(authorization: str = Header(None)):
@@ -146,7 +150,6 @@ async def signup(creds: UserLogin):
         })
         
         # Check if user already exists but Supabase returned 200 (User Enumeration Protection)
-        # If identities is empty, it means no new identity was created for this user.
         if res.user and (res.user.identities is not None) and len(res.user.identities) == 0:
             raise Exception("User already registered")
 
@@ -209,6 +212,36 @@ async def upsert_profile(profile: UserProfile, user = Depends(verify_token)):
         raise HTTPException(status_code=500, detail=str(e))
 
 # --- AI GENERATION ROUTES ---
+
+@app.post("/api/generate-domain")
+async def generate_domain(req: GenerateDomainRequest, user = Depends(verify_token)):
+    try:
+        answers = req.quiz_answers
+        
+        prompt = f"""
+        Analyze these quiz answers from a General Career Assessment.
+        Identify the most suitable broad domain for this user.
+        
+        Answers:
+        {json.dumps(answers, indent=2)}
+        
+        Options: 'science', 'commerce', 'arts'.
+        
+        Output strictly JSON:
+        {{ "suggested_domain": "science" }}
+        """
+        
+        model = genai.GenerativeModel(TEXT_MODEL_NAME)
+        response = await model.generate_content_async(
+            prompt, 
+            generation_config={"response_mime_type": "application/json"}
+        )
+        
+        return json.loads(response.text)
+    except Exception as e:
+        logger.error(f"Domain Gen Error: {e}")
+        # Fallback
+        return {"suggested_domain": "general"}
 
 @app.post("/api/generate-career")
 async def generate_career(req: GenerateCareerRequest, user = Depends(verify_token)):
@@ -300,7 +333,7 @@ async def generate_images(req: GenerateImagesRequest, user = Depends(verify_toke
         for prompt_text in req.prompts:
             # Enhanced Cinematic Prompt with 4:3 Ratio instruction and "Glorified" keywords
             full_prompt = (
-                f"Generate an imahe showing this career in the most glorified, epic, and inspiring way possible. "
+                f"Generate an image showing this career in the most glorified, epic, and inspiring way possible. "
                 f"Cinematic shot of {subject_desc} working as a {req.career_title}. "
                 f"Scene: {prompt_text}. "
                 f"Style: Photorealistic, 4k, dramatic lighting, award-winning photography, glorious, visionary, highly detailed, aspect ratio 4:3."
@@ -311,7 +344,7 @@ async def generate_images(req: GenerateImagesRequest, user = Depends(verify_toke
                 response = await model.generate_content_async(full_prompt)
                 
                 # Extract Base64 from inline data
-                # Note: Gemini 2.0 Flash returns inline data in parts
+                # Note: Gemini models return inline data in parts (Standard GenAI SDK structure)
                 if response.candidates and response.candidates[0].content.parts:
                     for part in response.candidates[0].content.parts:
                         if part.inline_data:

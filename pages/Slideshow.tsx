@@ -81,7 +81,7 @@ export const Slideshow: React.FC = () => {
             console.warn("Slideshow generation timed out - forcing fallback.");
             setLoading(false);
         }
-    }, 15000);
+    }, 45000); // Increased to 45 seconds
 
     loadSlides();
 
