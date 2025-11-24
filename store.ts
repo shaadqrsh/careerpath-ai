@@ -10,6 +10,9 @@ interface AppState {
   user: UserProfile | null;
   theme: 'dark' | 'light';
   
+  // Settings
+  debugImageGenerationEnabled: boolean; // Flag to enable/disable AI image gen for debugging
+
   // Quiz State
   selectedDomain: CareerDomain;
   quizAnswers: QuizAnswer[];
@@ -28,6 +31,7 @@ interface AppState {
   setUser: (user: UserProfile) => void;
   toggleTheme: () => void;
   setDomain: (domain: CareerDomain) => void;
+  setDebugImageGeneration: (enabled: boolean) => void;
   
   addQuizAnswer: (answer: QuizAnswer) => void;
   resetQuiz: () => void;
@@ -47,6 +51,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   user: null,
   theme: 'dark', // Default to dark
   
+  debugImageGenerationEnabled: localStorage.getItem('debug_image_gen') !== 'false', // Default true unless set to false
+
   selectedDomain: 'general',
   quizAnswers: [],
   
@@ -57,14 +63,23 @@ export const useAppStore = create<AppState>((set, get) => ({
   isLoading: false,
   isSavingCareer: false,
 
-  setView: (view) => set((state) => ({ 
-    previousView: state.currentView, 
-    currentView: view 
-  })),
+  setView: (view) => {
+    // SCROLL RESET ON VIEW CHANGE
+    window.scrollTo(0, 0);
+    set((state) => ({ 
+      previousView: state.currentView, 
+      currentView: view 
+    }));
+  },
   setCareerOrigin: (origin) => set({ careerOrigin: origin }),
   setUser: (user) => set({ user }),
   toggleTheme: () => set((state) => ({ theme: state.theme === 'dark' ? 'light' : 'dark' })),
   setDomain: (domain) => set({ selectedDomain: domain }),
+  
+  setDebugImageGeneration: (enabled) => {
+      localStorage.setItem('debug_image_gen', enabled.toString());
+      set({ debugImageGenerationEnabled: enabled });
+  },
   
   addQuizAnswer: (answer) => set((state) => {
     const filtered = state.quizAnswers.filter(a => a.questionId !== answer.questionId);
@@ -132,9 +147,14 @@ export const useAppStore = create<AppState>((set, get) => ({
             const durationYears = calculateRoadmapDurationYears(careerToSave.roadmap);
             const futureAge = state.user ? state.user.age + durationYears : 25;
 
-            // Generate personalized images (With timeout protection from service)
-            const base64Images = await generateCareerImages(careerToSave.title, prompts, state.user, futureAge);
-            imagesToProcess = base64Images.map(b64 => b64.startsWith('http') ? b64 : `data:image/png;base64,${b64}`);
+            // Generate personalized images OR use fallback if disabled
+            if (state.debugImageGenerationEnabled) {
+                const base64Images = await generateCareerImages(careerToSave.title, prompts, state.user, futureAge);
+                imagesToProcess = base64Images.map(b64 => b64.startsWith('http') ? b64 : `data:image/png;base64,${b64}`);
+            } else {
+                console.warn("Image generation disabled by debug flag. Using fallbacks.");
+                imagesToProcess = prompts.map((_, i) => `https://picsum.photos/seed/${career.id}${i}/1280/720`);
+            }
         }
             
         // 2. Upload/Process Images via Supabase Service

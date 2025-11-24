@@ -84,7 +84,16 @@ export const getUserProfile = async (userId: string): Promise<UserProfile | null
             .eq('user_id', userId)
             .single();
 
-        if (error || !data) return null;
+        if (error) {
+            // PGRST116 means row not found (JSON object requested, multiple (or no) rows returned)
+            // This is expected for new users.
+            if (error.code !== 'PGRST116') {
+                console.error("Database error fetching profile:", error);
+            }
+            return null;
+        }
+
+        if (!data) return null;
 
         // Map DB columns (snake_case) to App Type (camelCase)
         return {
@@ -98,7 +107,7 @@ export const getUserProfile = async (userId: string): Promise<UserProfile | null
             preferredWorkCountry: data.preferred_work_country
         };
     } catch (e) {
-        console.error("Error fetching profile:", e);
+        console.error("Unexpected error fetching profile:", e);
         return null;
     }
 };

@@ -47,7 +47,7 @@ export const Dashboard: React.FC = () => {
               </button>
               <button 
                 onClick={() => setView(AppView.PROFILE)}
-                className="p-2 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"
+                className="p-2 text-slate-500 dark:text-slate-400 hover:text-green-600 dark:hover:text-green-400 transition-colors rounded-full hover:bg-green-50 dark:hover:bg-green-900/20"
                 title="Edit Profile"
               >
                 <User size={20} />
@@ -90,9 +90,10 @@ export const Dashboard: React.FC = () => {
         {/* Undecided / General Option */}
         <div 
             onClick={() => handleStartQuiz('general')}
-            className="w-full bg-white dark:bg-slate-800/50 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-2xl p-8 flex flex-col md:flex-row items-center justify-between gap-6 hover:border-blue-500/50 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all cursor-pointer group shadow-sm"
+            className="group relative w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-8 flex flex-col md:flex-row items-center justify-between gap-6 hover:border-blue-500 dark:hover:border-slate-500 hover:shadow-xl dark:hover:bg-slate-750 transition-all duration-300 hover:scale-[1.02] cursor-pointer shadow-sm"
         >
-            <div className="flex items-center gap-6">
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-indigo-500 opacity-0 group-hover:opacity-5 rounded-2xl transition-opacity" />
+            <div className="flex items-center gap-6 relative z-10">
                 <div className="w-14 h-14 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-300 group-hover:text-white group-hover:bg-blue-600 transition-colors">
                     <HelpCircle size={28} />
                 </div>
@@ -101,9 +102,9 @@ export const Dashboard: React.FC = () => {
                     <p className="text-slate-600 dark:text-slate-400">Take our General Personality Quiz to find your direction.</p>
                 </div>
             </div>
-            <Button variant="secondary" className="bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white group-hover:bg-blue-600 group-hover:text-white whitespace-nowrap">
-                Start General Quiz
-            </Button>
+            <span className="text-blue-600 dark:text-blue-400 font-medium group-hover:translate-x-2 transition-transform inline-flex items-center relative z-10">
+                Start General Quiz <ArrowRight className="ml-1 w-4 h-4" />
+            </span>
         </div>
       </main>
     </div>

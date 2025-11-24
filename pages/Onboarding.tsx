@@ -4,7 +4,7 @@ import { AppView, UserProfile } from '../types';
 import { Button } from '../components/Button';
 import { Loader2 } from 'lucide-react';
 import { FALLBACK_COUNTRIES } from '../constants';
-import { upsertUserProfile } from '../services/supabaseService';
+import { upsertUserProfile, supabase } from '../services/supabaseService';
 
 export const Onboarding: React.FC = () => {
   const { setView, setUser, user } = useAppStore();
@@ -52,24 +52,31 @@ export const Onboarding: React.FC = () => {
     e.preventDefault();
     setSaving(true);
 
-    const finalProfile: UserProfile = {
-      // Ensure we keep the auth ID from the store if available
-      id: user?.id || 'temp_id', 
-      ...formData,
-      // Fallback if user didn't select anything for preferred
-      preferredWorkCountry: formData.preferredWorkCountry || formData.residenceCountry || 'USA',
-    } as UserProfile;
-
     try {
+        // CRITICAL: Fetch the REAL authenticated user ID directly from Supabase.
+        // We cannot rely solely on the store state here because of potential race conditions
+        // where user might be null or have a temp ID during the onboarding flow transition.
+        const { data: { user: authUser } } = await supabase!.auth.getUser();
+        
+        if (!authUser) {
+            throw new Error("No authenticated session found. Please log in again.");
+        }
+
+        const finalProfile: UserProfile = {
+            id: authUser.id, // STRICTLY use the Auth ID to satisfy RLS
+            ...formData,
+            preferredWorkCountry: formData.preferredWorkCountry || formData.residenceCountry || 'USA',
+        } as UserProfile;
+
         // Save to Supabase
         await upsertUserProfile(finalProfile);
         
         // Update Store
         setUser(finalProfile);
         setView(AppView.DASHBOARD);
-    } catch (err) {
-        console.error(err);
-        alert("Failed to save profile. Please try again.");
+    } catch (err: any) {
+        console.error("Profile Save Error:", err);
+        alert(`Failed to save profile: ${err.message || "Unknown error"}. Please check your connection.`);
     } finally {
         setSaving(false);
     }

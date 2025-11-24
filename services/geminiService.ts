@@ -226,9 +226,13 @@ export const generateCareerImages = async (
     careerTitle: string, 
     prompts: string[], 
     user?: UserProfile | null, 
-    futureAge?: number
+    futureAge?: number,
+    imageGenerationEnabled: boolean = true
 ): Promise<string[]> => {
-    if (!ai) {
+    
+    // Explicitly check the debug flag. If disabled, skip AI calls entirely.
+    if (!ai || !imageGenerationEnabled) {
+        console.warn("Image generation disabled or API unavailable. Using Mock images.");
         return prompts.map((_, i) => `https://picsum.photos/seed/${careerTitle.replace(/\s/g,'')}${i}/1280/720`);
     }
 
@@ -253,7 +257,7 @@ export const generateCareerImages = async (
     return results.filter(r => r !== "");
 }
 
-export const generateStorySlides = async (career: CareerRecommendation, user?: UserProfile | null): Promise<Slide[]> => {
+export const generateStorySlides = async (career: CareerRecommendation, user?: UserProfile | null, imageGenerationEnabled: boolean = true): Promise<Slide[]> => {
     const prompts = career.dayInLifePrompts || [
         "A focused professional working on a key project",
         "Collaborating with a diverse team in a modern office",
@@ -270,8 +274,9 @@ export const generateStorySlides = async (career: CareerRecommendation, user?: U
         const durationYears = calculateRoadmapDurationYears(career.roadmap);
         const futureAge = user ? user.age + durationYears : 25;
 
-        // Generate personalized images
-        imageUrls = await generateCareerImages(career.title, prompts, user, futureAge);
+        // Generate personalized images, passing the debug flag down
+        imageUrls = await generateCareerImages(career.title, prompts, user, futureAge, imageGenerationEnabled);
+        
         // If we get raw base64, prepend header if missing. If it's a http fallback, leave as is.
         imageUrls = imageUrls.map(url => url.startsWith('http') ? url : `data:image/png;base64,${url}`);
     }

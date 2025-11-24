@@ -4,6 +4,7 @@ import { AppView, UserProfile } from '../types';
 import { Button } from '../components/Button';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { FALLBACK_COUNTRIES } from '../constants';
+import { upsertUserProfile } from '../services/supabaseService';
 
 export const Profile: React.FC = () => {
   const { user, setView, setUser } = useAppStore();
@@ -11,6 +12,7 @@ export const Profile: React.FC = () => {
   // API Data State
   const [countries, setCountries] = useState<string[]>([]);
   const [loadingCountries, setLoadingCountries] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const [formData, setFormData] = useState<Partial<UserProfile>>(user || {
     fullName: '',
@@ -45,14 +47,31 @@ export const Profile: React.FC = () => {
     fetchCountries();
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setUser({ 
-      id: user?.id || 'user_123', 
-      ...formData,
-      preferredWorkCountry: formData.preferredWorkCountry || formData.residenceCountry || 'USA',
-    } as UserProfile);
-    setView(AppView.DASHBOARD);
+    setIsSaving(true);
+    
+    try {
+        const updatedProfile = { 
+            id: user?.id || 'user_123', 
+            ...formData,
+            preferredWorkCountry: formData.preferredWorkCountry || formData.residenceCountry || 'USA',
+        } as UserProfile;
+
+        // 1. Save to Supabase
+        await upsertUserProfile(updatedProfile);
+
+        // 2. Update Local State
+        setUser(updatedProfile);
+        
+        // 3. Navigate
+        setView(AppView.DASHBOARD);
+    } catch (error) {
+        console.error("Failed to update profile", error);
+        alert("Failed to save changes. Please try again.");
+    } finally {
+        setIsSaving(false);
+    }
   };
 
   const handleChange = (field: keyof UserProfile, value: any) => {
@@ -71,38 +90,38 @@ export const Profile: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-900 px-4 py-12">
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 px-4 py-12 transition-colors duration-300">
       <div className="w-full max-w-lg">
         <div className="mb-6">
             <button 
                 onClick={() => setView(AppView.DASHBOARD)} 
-                className="text-slate-400 hover:text-white flex items-center gap-2 transition-colors mb-6"
+                className="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white flex items-center gap-2 transition-colors mb-6"
             >
                 <ArrowLeft size={20} /> Back to Dashboard
             </button>
-            <h2 className="text-3xl font-bold text-white">Edit Profile</h2>
-            <p className="text-slate-400 mt-2">Update your demographics and location preferences.</p>
+            <h2 className="text-3xl font-bold text-slate-900 dark:text-white">Edit Profile</h2>
+            <p className="text-slate-600 dark:text-slate-400 mt-2">Update your demographics and location preferences.</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6 bg-slate-800 p-8 rounded-2xl border border-slate-700">
+        <form onSubmit={handleSubmit} className="space-y-6 bg-white dark:bg-slate-800 p-8 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xl transition-all">
              {/* Personal Info */}
              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-2">Full Name</label>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Full Name</label>
                     <input 
                         type="text"
                         required
                         value={formData.fullName}
                         onChange={(e) => handleChange('fullName', e.target.value)}
-                        className="w-full bg-slate-900 border border-slate-600 rounded-xl py-3 px-4 text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                        className="w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-600 rounded-xl py-3 px-4 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors"
                     />
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-2">Gender</label>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Gender</label>
                     <select 
                         value={formData.gender}
                         onChange={(e) => handleChange('gender', e.target.value)}
-                        className="w-full bg-slate-900 border border-slate-600 rounded-xl py-3 px-4 text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                        className="w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-600 rounded-xl py-3 px-4 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors"
                     >
                         <option>Male</option>
                         <option>Female</option>
@@ -113,7 +132,7 @@ export const Profile: React.FC = () => {
 
             <div className="grid grid-cols-2 gap-4">
                 <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-2">Age</label>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Age</label>
                     <input 
                         type="number"
                         required
@@ -121,15 +140,15 @@ export const Profile: React.FC = () => {
                         max={80}
                         value={formData.age}
                         onChange={(e) => handleChange('age', parseInt(e.target.value))}
-                        className="w-full bg-slate-900 border border-slate-600 rounded-xl py-3 px-4 text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                        className="w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-600 rounded-xl py-3 px-4 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors"
                     />
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-2">Level</label>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Level</label>
                     <select 
                         value={formData.educationLevel}
                         onChange={(e) => handleChange('educationLevel', e.target.value)}
-                        className="w-full bg-slate-900 border border-slate-600 rounded-xl py-3 px-4 text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                        className="w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-600 rounded-xl py-3 px-4 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors"
                     >
                         <option>High School</option>
                         <option>Undergraduate</option>
@@ -142,31 +161,31 @@ export const Profile: React.FC = () => {
 
             {/* Specialization */}
             <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">Major / Specialization</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Major / Specialization</label>
                 <input 
                     type="text"
                     required
                     value={formData.specialization}
                     onChange={(e) => handleChange('specialization', e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-600 rounded-xl py-3 px-4 text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                    className="w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-600 rounded-xl py-3 px-4 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors"
                     placeholder="e.g. Commerce, Computer Science, Biology"
                 />
             </div>
 
             {/* Current Residence */}
-            <div className="border-t border-slate-700 pt-4">
-                <h3 className="text-sm font-bold text-blue-400 uppercase tracking-wider mb-4">Current Residence</h3>
+            <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
+                <h3 className="text-sm font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-4">Current Residence</h3>
                 <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-2 flex items-center justify-between">
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 flex items-center justify-between">
                         Country
-                        {loadingCountries && <Loader2 className="w-3 h-3 animate-spin text-blue-400" />}
+                        {loadingCountries && <Loader2 className="w-3 h-3 animate-spin text-blue-500 dark:text-blue-400" />}
                     </label>
                     <select 
                             required
                             value={formData.residenceCountry}
                             onChange={(e) => handleChange('residenceCountry', e.target.value)}
                             disabled={loadingCountries}
-                            className="w-full bg-slate-900 border border-slate-600 rounded-xl py-3 px-4 text-white focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-50"
+                            className="w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-600 rounded-xl py-3 px-4 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-50 transition-colors"
                     >
                         <option value="">Select Country</option>
                         {countries.map(c => (
@@ -177,15 +196,15 @@ export const Profile: React.FC = () => {
             </div>
 
             {/* Preferences */}
-            <div className="border-t border-slate-700 pt-4">
-                <h3 className="text-sm font-bold text-green-400 uppercase tracking-wider mb-4">Future Work Preference</h3>
+            <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
+                <h3 className="text-sm font-bold text-green-600 dark:text-green-400 uppercase tracking-wider mb-4">Future Work Preference</h3>
                 
                 <div className="mb-4">
-                    <label className="block text-sm font-medium text-slate-300 mb-2">Target Country</label>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Target Country</label>
                     <select 
                         value={formData.preferredWorkCountry}
                         onChange={(e) => handleChange('preferredWorkCountry', e.target.value)}
-                        className="w-full bg-slate-900 border border-slate-600 rounded-xl py-3 px-4 text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                        className="w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-600 rounded-xl py-3 px-4 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors"
                     >
                          {formData.residenceCountry && <option value={formData.residenceCountry}>{formData.residenceCountry} (Current)</option>}
                         <option value="USA">USA</option>
@@ -201,7 +220,9 @@ export const Profile: React.FC = () => {
                 </div>
             </div>
 
-            <Button type="submit" fullWidth size="lg">Save Changes</Button>
+            <Button type="submit" fullWidth size="lg" disabled={isSaving}>
+                {isSaving ? "Saving Changes..." : "Save Changes"}
+            </Button>
         </form>
       </div>
     </div>

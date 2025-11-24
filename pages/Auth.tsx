@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { useAppStore } from '../store';
+import { AppView } from '../types';
 import { Button } from '../components/Button';
-import { Mail, Lock, Sun, Moon, AlertCircle, Database, Key, Sparkles } from 'lucide-react';
-import { signInWithEmail, signUpWithEmail, signInWithGoogle, supabase, saveSupabaseConfig, clearSupabaseConfig } from '../services/supabaseService';
+import { Mail, Lock, Sun, Moon, AlertCircle, Database, Key, Sparkles, LogOut, ImageOff } from 'lucide-react';
+import { signInWithEmail, signUpWithEmail, signInWithGoogle, supabase, saveSupabaseConfig, clearSupabaseConfig, getUserProfile, signOut } from '../services/supabaseService';
 import { saveGeminiKey } from '../services/geminiService';
 
 export const Auth: React.FC = () => {
-  const { theme, toggleTheme } = useAppStore();
+  const { theme, toggleTheme, setView, setUser, debugImageGenerationEnabled, setDebugImageGeneration } = useAppStore();
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -18,6 +19,28 @@ export const Auth: React.FC = () => {
   const [configKey, setConfigKey] = useState('');
   const [googleKey, setGoogleKey] = useState('');
 
+  const handlePostLogin = async () => {
+    // Explicitly check profile and navigate instead of waiting for App.tsx listener
+    // This prevents the "spinning button" race condition
+    try {
+        const { data: { session } } = await supabase!.auth.getSession();
+        if (session?.user) {
+            const profile = await getUserProfile(session.user.id);
+            if (profile) {
+                setUser(profile);
+                setView(AppView.DASHBOARD);
+            } else {
+                setUser({ id: session.user.id } as any);
+                setView(AppView.ONBOARDING);
+            }
+        }
+    } catch (e) {
+        console.error("Post login check failed", e);
+    } finally {
+        setLoading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -26,16 +49,16 @@ export const Auth: React.FC = () => {
     try {
         if (isLogin) {
             await signInWithEmail(email, password);
-            // Navigation handled by App.tsx listener
+            await handlePostLogin();
         } else {
             await signUpWithEmail(email, password);
             alert("Account created! Please check your email to verify your account before logging in.");
             setIsLogin(true); // Switch to login after signup
+            setLoading(false); // Stop loading if switching modes
         }
     } catch (err: any) {
         console.error(err);
         setError(err.message || "Authentication failed");
-    } finally {
         setLoading(false);
     }
   };
@@ -43,9 +66,15 @@ export const Auth: React.FC = () => {
   const handleGoogleLogin = async () => {
       try {
           await signInWithGoogle();
+          // Redirect is handled by OAuth, execution stops here typically
       } catch (err: any) {
           setError(err.message || "Google Sign-In failed");
       }
+  };
+
+  const handleForceLogout = async () => {
+      await signOut();
+      window.location.reload();
   };
 
   const handleSaveConfig = (e: React.FormEvent) => {
@@ -117,6 +146,23 @@ export const Auth: React.FC = () => {
                         </div>
                     </div>
 
+                     {/* Debug Image Generation Toggle */}
+                    <div className="border-t border-slate-200 dark:border-slate-700 pt-4 flex items-center justify-between">
+                         <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
+                            <ImageOff size={18} />
+                            <span className="text-sm font-medium">Enable AI Image Gen?</span>
+                         </div>
+                         <label className="relative inline-flex items-center cursor-pointer">
+                            <input 
+                                type="checkbox" 
+                                checked={debugImageGenerationEnabled}
+                                onChange={(e) => setDebugImageGeneration(e.target.checked)}
+                                className="sr-only peer" 
+                            />
+                            <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                        </label>
+                    </div>
+
                     <Button type="submit" fullWidth>Connect & Reload</Button>
                 </form>
                 <p className="text-xs text-center text-slate-500 mt-6">
@@ -158,9 +204,15 @@ export const Auth: React.FC = () => {
         </div>
 
         {error && (
-            <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 rounded-lg text-sm flex items-center gap-2">
-                <AlertCircle size={16} />
-                {error}
+            <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 rounded-lg text-sm flex flex-col gap-2">
+                <div className="flex items-center gap-2">
+                    <AlertCircle size={16} />
+                    {error}
+                </div>
+                {/* Emergency Logout if stuck */}
+                <button onClick={handleForceLogout} className="text-xs underline hover:text-red-700 text-left">
+                    Stuck? Clear Session
+                </button>
             </div>
         )}
 
@@ -209,7 +261,7 @@ export const Auth: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 gap-4">
-             <Button type="button" variant="secondary" className="bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-white" onClick={handleGoogleLogin}>
+             <Button type="button" variant="secondary" onClick={handleGoogleLogin} className="justify-center">
                 <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
                     <path fill="currentColor" d="M21.35,11.1H12.18V13.83H18.69C18.36,17.64 15.19,19.27 12.19,19.27C8.36,19.27 5,16.25 5,12.61C5,8.76 8.32,5.97 12.19,5.97C14.61,5.97 16.28,7.02 17.15,7.85L19.16,5.83C17.27,4.14 14.92,3.27 12.19,3.27C6.84,3.27 2.5,7.68 2.5,12.85C2.5,17.9 6.84,22.5 12.19,22.5C17.5,22.5 21.58,18.77 21.58,13.13C21.58,12.43 21.5,11.78 21.35,11.1Z" />
                 </svg>

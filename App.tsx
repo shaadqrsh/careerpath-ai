@@ -1,7 +1,8 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAppStore } from './store';
 import { AppView } from './types';
 import { supabase, getUserProfile } from './services/supabaseService';
+import { Loader2 } from 'lucide-react';
 
 // Page Imports
 import { Landing } from './pages/Landing';
@@ -18,6 +19,7 @@ import { SavedPaths } from './pages/SavedPaths';
 
 const App: React.FC = () => {
   const { currentView, theme, setView, setUser } = useAppStore();
+  const [isInitializing, setIsInitializing] = useState(true);
 
   // Handle Dark/Light Mode Class on HTML element
   useEffect(() => {
@@ -31,25 +33,37 @@ const App: React.FC = () => {
 
   // Auth Listener
   useEffect(() => {
-    if (!supabase) return;
+    if (!supabase) {
+        setIsInitializing(false);
+        return;
+    }
 
-    // Check active session on mount
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (session?.user) {
-        const profile = await getUserProfile(session.user.id);
-        if (profile) {
-            setUser(profile);
-            // Only redirect if on public pages, otherwise stay where user is (refresh handling)
-            if (currentView === AppView.LANDING || currentView === AppView.AUTH) {
-                setView(AppView.DASHBOARD);
+    const initAuth = async () => {
+        try {
+            // Check active session on mount
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session?.user) {
+                const profile = await getUserProfile(session.user.id);
+                if (profile) {
+                    setUser(profile);
+                    // Only redirect if on public pages
+                    if (currentView === AppView.LANDING || currentView === AppView.AUTH) {
+                        setView(AppView.DASHBOARD);
+                    }
+                } else {
+                    // New user with no profile data
+                    setUser({ id: session.user.id } as any);
+                    setView(AppView.ONBOARDING);
+                }
             }
-        } else {
-            // New user with no profile data
-            setUser({ id: session.user.id } as any);
-            setView(AppView.ONBOARDING);
+        } catch (e) {
+            console.error("Auth initialization failed", e);
+        } finally {
+            setIsInitializing(false);
         }
-      }
-    });
+    };
+    
+    initAuth();
 
     // Listen for changes (Sign In, Sign Out, Token Refresh)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
@@ -57,19 +71,26 @@ const App: React.FC = () => {
         setUser(null as any);
         setView(AppView.LANDING);
       } else if (event === 'SIGNED_IN' && session?.user) {
+        // We handle the immediate redirect in Auth.tsx to avoid racing, but we keep this
+        // to sync state if the token is refreshed or updated externally.
         const profile = await getUserProfile(session.user.id);
         if (profile) {
             setUser(profile);
-            setView(AppView.DASHBOARD);
+            // If we are unexpectedly on Landing/Auth but signed in, move to dashboard
+            if (currentView === AppView.LANDING || currentView === AppView.AUTH) {
+                 setView(AppView.DASHBOARD);
+            }
         } else {
             setUser({ id: session.user.id } as any);
-            setView(AppView.ONBOARDING);
+            if (currentView !== AppView.ONBOARDING) {
+                setView(AppView.ONBOARDING);
+            }
         }
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [setUser, setView]);
+  }, [setUser, setView]); // Remove currentView dependency to avoid loops
 
   const renderView = () => {
     switch (currentView) {
@@ -99,6 +120,14 @@ const App: React.FC = () => {
         return <Landing />;
     }
   };
+
+  if (isInitializing) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 transition-colors">
+            <Loader2 className="w-10 h-10 animate-spin text-blue-500" />
+        </div>
+      );
+  }
 
   return (
     // Global Theme Wrapper

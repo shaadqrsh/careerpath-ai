@@ -109,50 +109,31 @@ using ( bucket_id = 'career_slideshows' );
 
 ---
 
-## 6. Deployment Instructions (ADD WHEN DEPLOY)
+## 6. Deployment & Security
 
-When you are ready to deploy this app (e.g., to Vercel or Netlify):
+### Disabling Local Key Storage (Production)
 
-1. **Environment Variables**:
-   In your hosting provider's dashboard, add the following Environment Variables. This removes the need to manually type keys in the app.
-   
-   - `SUPABASE_URL`: Your Project URL
-   - `SUPABASE_KEY`: Your Anon Key
-   - `API_KEY`: Your Google Gemini API Key
+By default, the app looks for keys in `localStorage` to make development easy. **For production, you must disable this.**
 
-2. **Code Cleanup**:
-   
-   **A. Services/SupabaseService.ts**
-   Change this:
-   ```typescript
-   const getSupabaseConfig = () => {
-      const localUrl = localStorage.getItem('career_path_sb_url');
-      // ...
-      return {
-        url: localUrl || process.env.SUPABASE_URL || '',
-        // ...
-      };
-   };
-   ```
-   To this (Strict Environment Variables):
-   ```typescript
-   const config = {
-      url: process.env.SUPABASE_URL || '',
-      key: process.env.SUPABASE_KEY || ''
-   };
-   ```
+1. Open `services/supabaseService.ts`.
+2. Remove the lines that read from `localStorage`.
+3. Ensure `getSupabaseConfig` ONLY returns `process.env.SUPABASE_URL` and `process.env.SUPABASE_KEY`.
 
-   **B. Services/GeminiService.ts**
-   Change this:
-   ```typescript
-   const getGeminiKey = () => {
-       const localKey = localStorage.getItem('career_path_gemini_key');
-       return localKey || process.env.API_KEY || '';
-   };
-   ```
-   To this:
-   ```typescript
-   const apiKey = process.env.API_KEY;
-   ```
+**Example Secure Configuration:**
+```typescript
+const getSupabaseConfig = () => {
+  return {
+    url: process.env.SUPABASE_URL || '',
+    key: process.env.SUPABASE_KEY || ''
+  };
+};
+```
+Repeat this for `services/geminiService.ts` for the API Key.
 
-   This ensures your production app relies solely on secure environment variables.
+### Setting Environment Variables
+
+In your hosting provider (Vercel, Netlify, etc.), set the following:
+
+- `SUPABASE_URL`: Your Project URL
+- `SUPABASE_KEY`: Your Anon Public Key
+- `API_KEY`: Your Gemini API Key

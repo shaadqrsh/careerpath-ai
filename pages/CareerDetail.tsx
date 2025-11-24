@@ -42,7 +42,7 @@ export const CareerDetail: React.FC = () => {
             <div className="absolute top-6 left-4 right-4 flex justify-between items-center">
                 <button 
                     onClick={() => setView(backTarget)}
-                    className="text-white/70 hover:text-white flex items-center gap-2 transition-colors bg-black/20 p-2 rounded-lg backdrop-blur-sm"
+                    className="text-white/80 hover:text-white flex items-center gap-2 transition-colors font-medium"
                 >
                     <ChevronLeft size={20} /> {backLabel}
                 </button>

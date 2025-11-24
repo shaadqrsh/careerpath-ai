@@ -2,7 +2,7 @@ import React from 'react';
 import { useAppStore } from '../store';
 import { AppView, CareerRecommendation } from '../types';
 import { Button } from '../components/Button';
-import { ArrowLeft, Trash2, ArrowRight } from 'lucide-react';
+import { ArrowLeft, Trash2, ArrowRight, TrendingUp, DollarSign } from 'lucide-react';
 
 export const SavedPaths: React.FC = () => {
   const { savedCareers, setView, toggleSavedCareer, setSelectedCareer, setCareerOrigin } = useAppStore();
@@ -15,7 +15,7 @@ export const SavedPaths: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 py-8 px-4 sm:px-6 lg:px-8 transition-colors duration-300">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-5xl mx-auto">
         <div className="flex items-center mb-8">
             <button 
                 onClick={() => setView(AppView.DASHBOARD)} 
@@ -35,37 +35,55 @@ export const SavedPaths: React.FC = () => {
             </p>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-6">
             {savedCareers.map((career) => (
-                <div 
-                    key={career.id}
-                    className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 group shadow-sm transition-colors"
-                >
-                    <div>
-                        <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-1">{career.title}</h3>
-                        <div className="flex gap-2 text-sm text-slate-500 dark:text-slate-400">
-                             <span>{career.matchScore}% Match</span>
-                             <span>•</span>
-                             <span>{career.salaryRange}</span>
+                <div key={career.id} className="flex items-center gap-4 group-outer">
+                    {/* Main Career Card - Clickable Area */}
+                    <div 
+                        onClick={() => handleSelect(career)}
+                        className="flex-1 group relative bg-white dark:bg-slate-800 rounded-2xl p-6 md:p-8 border border-slate-200 dark:border-slate-700 transition-all duration-300 flex flex-col md:flex-row gap-6 md:items-center shadow-sm cursor-pointer hover:shadow-xl hover:border-blue-500 dark:hover:border-slate-500 hover:scale-[1.02] dark:hover:bg-slate-750 overflow-hidden"
+                    >
+                         <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-indigo-500 opacity-0 group-hover:opacity-5 transition-opacity duration-300" />
+                        
+                         <div className="flex-grow relative z-10">
+                            <div className="flex flex-wrap gap-2 mb-2">
+                                {career.tags.map(t => (
+                                    <span key={t} className="px-2 py-1 text-xs font-medium rounded bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 group-hover:bg-blue-100 dark:group-hover:bg-blue-900/30 group-hover:text-blue-700 dark:group-hover:text-blue-300 transition-colors">{t}</span>
+                                ))}
+                            </div>
+                            <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{career.title}</h3>
+                            
+                            <div className="flex items-center gap-6 text-sm font-medium text-slate-500 dark:text-slate-300 mt-3">
+                                <div className="flex items-center gap-2">
+                                    <TrendingUp size={18} className="text-blue-500 dark:text-blue-400" />
+                                    {career.matchScore}% Match
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <DollarSign size={18} className="text-green-500 dark:text-green-400" />
+                                    {career.salaryRange}
+                                </div>
+                            </div>
+                        </div>
+
+                         {/* Explore Path (Bottom Right) */}
+                        <div className="flex-shrink-0 self-end relative z-10 mt-4 md:mt-0">
+                            <span className="text-blue-600 dark:text-blue-400 font-medium group-hover:translate-x-2 transition-transform inline-flex items-center">
+                                View Details <ArrowRight className="ml-1 w-4 h-4" />
+                            </span>
                         </div>
                     </div>
 
-                    <div className="flex gap-3 w-full sm:w-auto">
-                         <Button 
-                            variant="secondary" 
-                            className="flex-1 sm:flex-none bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200"
-                            onClick={() => toggleSavedCareer(career)}
-                         >
-                            <Trash2 size={18} className="text-slate-400 hover:text-red-500 transition-colors" />
-                         </Button>
-                         <Button 
-                            variant="outline" 
-                            className="flex-1 sm:flex-none border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
-                            onClick={() => handleSelect(career)}
-                         >
-                            View Details <ArrowRight size={18} className="ml-2" />
-                         </Button>
-                    </div>
+                    {/* Delete Button - Outside Rectangle */}
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            toggleSavedCareer(career);
+                        }}
+                        title="Remove Saved Career"
+                        className="flex-shrink-0 w-12 h-12 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-400 hover:text-pink-500 hover:border-pink-500 dark:hover:border-pink-500 hover:shadow-lg hover:shadow-pink-500/20 flex items-center justify-center transition-all duration-300 hover:scale-110"
+                    >
+                        <Trash2 size={20} />
+                    </button>
                 </div>
             ))}
         </div>

@@ -5,7 +5,7 @@ import { generateStorySlides } from '../services/geminiService';
 import { X, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 
 export const Slideshow: React.FC = () => {
-  const { selectedCareer, setView, user, updateCareerImages } = useAppStore();
+  const { selectedCareer, setView, user, updateCareerImages, debugImageGenerationEnabled } = useAppStore();
   const [slides, setSlides] = useState<Slide[]>([]);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -16,9 +16,8 @@ export const Slideshow: React.FC = () => {
     const loadSlides = async () => {
       if (selectedCareer) {
         try {
-            // Pass the full career object AND user for personalized generation
-            // If selectedCareer already has images (cached or saved), generateStorySlides uses them.
-            const generated = await generateStorySlides(selectedCareer, user);
+            // Pass the full career object, user, AND the debug flag from store
+            const generated = await generateStorySlides(selectedCareer, user, debugImageGenerationEnabled);
             
             if (isMounted) {
                 setSlides(generated);
@@ -49,7 +48,7 @@ export const Slideshow: React.FC = () => {
         isMounted = false;
         clearTimeout(safetyTimeout);
     };
-  }, [selectedCareer, user, updateCareerImages]);
+  }, [selectedCareer, user, updateCareerImages, debugImageGenerationEnabled]);
 
   const handleNext = () => {
     if (currentSlide < slides.length - 1) setCurrentSlide(curr => curr + 1);
