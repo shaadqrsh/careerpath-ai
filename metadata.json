@@ -1,0 +1,5 @@
+{
+  "name": "CareerPath AI",
+  "description": "An AI-powered career guidance platform that analyzes your profile and quiz results to recommend personalized career paths with roadmaps and day-in-the-life visualizations.",
+  "requestFramePermissions": []
+}

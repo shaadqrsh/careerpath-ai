@@ -1,0 +1,209 @@
+import React, { useState, useEffect } from 'react';
+import { useAppStore } from '../store';
+import { AppView, UserProfile } from '../types';
+import { Button } from '../components/Button';
+import { ArrowLeft, Loader2 } from 'lucide-react';
+import { FALLBACK_COUNTRIES } from '../constants';
+
+export const Profile: React.FC = () => {
+  const { user, setView, setUser } = useAppStore();
+  
+  // API Data State
+  const [countries, setCountries] = useState<string[]>([]);
+  const [loadingCountries, setLoadingCountries] = useState(false);
+
+  const [formData, setFormData] = useState<Partial<UserProfile>>(user || {
+    fullName: '',
+    gender: 'Male',
+    age: 18,
+    educationLevel: 'High School',
+    specialization: '',
+    residenceCountry: '',
+    preferredWorkCountry: ''
+  });
+
+  // Fetch Countries on Mount
+  useEffect(() => {
+    const fetchCountries = async () => {
+      setLoadingCountries(true);
+      try {
+        const response = await fetch('https://countriesnow.space/api/v0.1/countries/iso');
+        const data = await response.json();
+        if (!data.error) {
+          const countryList = data.data.map((c: any) => c.name).sort();
+          setCountries(countryList);
+        } else {
+          throw new Error("API Error");
+        }
+      } catch (error) {
+        console.warn("Failed to fetch countries, using fallback.", error);
+        setCountries(FALLBACK_COUNTRIES);
+      } finally {
+        setLoadingCountries(false);
+      }
+    };
+    fetchCountries();
+  }, []);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setUser({ 
+      id: user?.id || 'user_123', 
+      ...formData,
+      preferredWorkCountry: formData.preferredWorkCountry || formData.residenceCountry || 'USA',
+    } as UserProfile);
+    setView(AppView.DASHBOARD);
+  };
+
+  const handleChange = (field: keyof UserProfile, value: any) => {
+    // If changing country, update target if it matched previous residence
+    if (field === 'residenceCountry') {
+      const isPreferredSameAsOldResidence = formData.preferredWorkCountry === formData.residenceCountry || formData.preferredWorkCountry === '';
+
+      setFormData(prev => ({ 
+          ...prev, 
+          [field]: value, 
+          preferredWorkCountry: isPreferredSameAsOldResidence ? value : prev.preferredWorkCountry
+      }));
+    } else {
+      setFormData(prev => ({ ...prev, [field]: value }));
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-slate-900 px-4 py-12">
+      <div className="w-full max-w-lg">
+        <div className="mb-6">
+            <button 
+                onClick={() => setView(AppView.DASHBOARD)} 
+                className="text-slate-400 hover:text-white flex items-center gap-2 transition-colors mb-6"
+            >
+                <ArrowLeft size={20} /> Back to Dashboard
+            </button>
+            <h2 className="text-3xl font-bold text-white">Edit Profile</h2>
+            <p className="text-slate-400 mt-2">Update your demographics and location preferences.</p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-6 bg-slate-800 p-8 rounded-2xl border border-slate-700">
+             {/* Personal Info */}
+             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">Full Name</label>
+                    <input 
+                        type="text"
+                        required
+                        value={formData.fullName}
+                        onChange={(e) => handleChange('fullName', e.target.value)}
+                        className="w-full bg-slate-900 border border-slate-600 rounded-xl py-3 px-4 text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                    />
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">Gender</label>
+                    <select 
+                        value={formData.gender}
+                        onChange={(e) => handleChange('gender', e.target.value)}
+                        className="w-full bg-slate-900 border border-slate-600 rounded-xl py-3 px-4 text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                    >
+                        <option>Male</option>
+                        <option>Female</option>
+                        <option>Non-binary</option>
+                    </select>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+                <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">Age</label>
+                    <input 
+                        type="number"
+                        required
+                        min={14}
+                        max={80}
+                        value={formData.age}
+                        onChange={(e) => handleChange('age', parseInt(e.target.value))}
+                        className="w-full bg-slate-900 border border-slate-600 rounded-xl py-3 px-4 text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                    />
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">Level</label>
+                    <select 
+                        value={formData.educationLevel}
+                        onChange={(e) => handleChange('educationLevel', e.target.value)}
+                        className="w-full bg-slate-900 border border-slate-600 rounded-xl py-3 px-4 text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                    >
+                        <option>High School</option>
+                        <option>Undergraduate</option>
+                        <option>Graduate</option>
+                        <option>PhD</option>
+                        <option>Bootcamp/Self-taught</option>
+                    </select>
+                </div>
+            </div>
+
+            {/* Specialization */}
+            <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">Major / Specialization</label>
+                <input 
+                    type="text"
+                    required
+                    value={formData.specialization}
+                    onChange={(e) => handleChange('specialization', e.target.value)}
+                    className="w-full bg-slate-900 border border-slate-600 rounded-xl py-3 px-4 text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                    placeholder="e.g. Commerce, Computer Science, Biology"
+                />
+            </div>
+
+            {/* Current Residence */}
+            <div className="border-t border-slate-700 pt-4">
+                <h3 className="text-sm font-bold text-blue-400 uppercase tracking-wider mb-4">Current Residence</h3>
+                <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2 flex items-center justify-between">
+                        Country
+                        {loadingCountries && <Loader2 className="w-3 h-3 animate-spin text-blue-400" />}
+                    </label>
+                    <select 
+                            required
+                            value={formData.residenceCountry}
+                            onChange={(e) => handleChange('residenceCountry', e.target.value)}
+                            disabled={loadingCountries}
+                            className="w-full bg-slate-900 border border-slate-600 rounded-xl py-3 px-4 text-white focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-50"
+                    >
+                        <option value="">Select Country</option>
+                        {countries.map(c => (
+                            <option key={c} value={c}>{c}</option>
+                        ))}
+                    </select>
+                </div>
+            </div>
+
+            {/* Preferences */}
+            <div className="border-t border-slate-700 pt-4">
+                <h3 className="text-sm font-bold text-green-400 uppercase tracking-wider mb-4">Future Work Preference</h3>
+                
+                <div className="mb-4">
+                    <label className="block text-sm font-medium text-slate-300 mb-2">Target Country</label>
+                    <select 
+                        value={formData.preferredWorkCountry}
+                        onChange={(e) => handleChange('preferredWorkCountry', e.target.value)}
+                        className="w-full bg-slate-900 border border-slate-600 rounded-xl py-3 px-4 text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                    >
+                         {formData.residenceCountry && <option value={formData.residenceCountry}>{formData.residenceCountry} (Current)</option>}
+                        <option value="USA">USA</option>
+                        <option value="United Kingdom">United Kingdom</option>
+                        <option value="Canada">Canada</option>
+                        <option value="Germany">Germany</option>
+                        <option value="Australia">Australia</option>
+                        <option value="Singapore">Singapore</option>
+                        <option value="India">India</option>
+                        <option value="Undecided">Undecided</option>
+                        <option value="Remote (Global)">Remote (Global)</option>
+                    </select>
+                </div>
+            </div>
+
+            <Button type="submit" fullWidth size="lg">Save Changes</Button>
+        </form>
+      </div>
+    </div>
+  );
+};
