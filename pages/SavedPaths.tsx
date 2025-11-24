@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useAppStore } from '../store';
 import { AppView, CareerRecommendation } from '../types';
@@ -37,11 +38,11 @@ export const SavedPaths: React.FC = () => {
 
         <div className="space-y-6">
             {savedCareers.map((career) => (
-                <div key={career.id} className="flex items-center gap-4 group-outer">
-                    {/* Main Career Card - Clickable Area */}
+                <div key={career.id} className="flex items-center gap-6 group-outer relative">
+                    {/* Main Career Card - Clickable Area (Matches Top Matches Style) */}
                     <div 
                         onClick={() => handleSelect(career)}
-                        className="flex-1 group relative bg-white dark:bg-slate-800 rounded-2xl p-6 md:p-8 border border-slate-200 dark:border-slate-700 transition-all duration-300 flex flex-col md:flex-row gap-6 md:items-center shadow-sm cursor-pointer hover:shadow-xl hover:border-blue-500 dark:hover:border-slate-500 hover:scale-[1.02] dark:hover:bg-slate-750 overflow-hidden"
+                        className="group flex-1 relative bg-white dark:bg-slate-800 rounded-2xl p-6 md:p-8 border border-slate-200 dark:border-slate-700 transition-all duration-300 flex flex-col md:flex-row gap-6 md:items-center shadow-sm cursor-pointer hover:shadow-xl hover:border-blue-500 dark:hover:border-slate-500 hover:scale-[1.02] dark:hover:bg-slate-750 overflow-hidden"
                     >
                          <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-indigo-500 opacity-0 group-hover:opacity-5 transition-opacity duration-300" />
                         
@@ -52,6 +53,7 @@ export const SavedPaths: React.FC = () => {
                                 ))}
                             </div>
                             <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{career.title}</h3>
+                            <p className="text-slate-600 dark:text-slate-400 text-sm md:text-base mb-4 max-w-2xl line-clamp-2">{career.summary}</p>
                             
                             <div className="flex items-center gap-6 text-sm font-medium text-slate-500 dark:text-slate-300 mt-3">
                                 <div className="flex items-center gap-2">
@@ -67,20 +69,20 @@ export const SavedPaths: React.FC = () => {
 
                          {/* Explore Path (Bottom Right) */}
                         <div className="flex-shrink-0 self-end relative z-10 mt-4 md:mt-0">
-                            <span className="text-blue-600 dark:text-blue-400 font-medium group-hover:translate-x-2 transition-transform inline-flex items-center">
+                            <span className="text-slate-500 dark:text-slate-400 font-medium group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300 group-hover:translate-x-2 inline-flex items-center">
                                 View Details <ArrowRight className="ml-1 w-4 h-4" />
                             </span>
                         </div>
                     </div>
 
-                    {/* Delete Button - Outside Rectangle */}
+                    {/* Delete Button - Outside Rectangle, Distinct Style */}
                     <button
                         onClick={(e) => {
-                            e.stopPropagation();
-                            toggleSavedCareer(career);
+                            e.stopPropagation(); // Prevents clicking the card
+                            toggleSavedCareer(career); // Now triggers the global modal via store
                         }}
                         title="Remove Saved Career"
-                        className="flex-shrink-0 w-12 h-12 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-400 hover:text-pink-500 hover:border-pink-500 dark:hover:border-pink-500 hover:shadow-lg hover:shadow-pink-500/20 flex items-center justify-center transition-all duration-300 hover:scale-110"
+                        className="flex-shrink-0 w-12 h-12 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-400 hover:text-pink-500 hover:border-pink-500 dark:hover:border-pink-500 hover:shadow-lg hover:shadow-pink-500/20 flex items-center justify-center transition-all duration-300 hover:scale-110 z-20"
                     >
                         <Trash2 size={20} />
                     </button>
@@ -91,7 +93,12 @@ export const SavedPaths: React.FC = () => {
         {savedCareers.length === 0 && (
              <div className="mt-8 p-8 border-2 border-dashed border-slate-300 dark:border-slate-800 rounded-xl text-center">
                 <p className="text-slate-500 dark:text-slate-400">Go explore some quizzes to find your dream job!</p>
-                <Button className="mt-4" onClick={() => setView(AppView.DASHBOARD)}>Explore Careers</Button>
+                <Button 
+                    className="mt-4 group" 
+                    onClick={() => setView(AppView.DASHBOARD)}
+                >
+                    Explore Careers <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </Button>
              </div>
         )}
       </div>

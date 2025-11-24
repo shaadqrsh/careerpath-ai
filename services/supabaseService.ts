@@ -158,13 +158,22 @@ const base64ToBlob = (base64: string, mimeType: string = 'image/png'): Blob => {
 
 export const uploadCareerImages = async (
   userId: string, 
-  careerId: string, 
+  careerUid: string, 
   images: string[]
 ): Promise<string[]> => {
   if (!supabase) {
     console.warn("Supabase not configured. Skipping upload.");
     return images.map(img => img.startsWith('http') ? img : (img.startsWith('data:') ? img : `data:image/png;base64,${img}`));
   }
+
+  // Ensure we have a valid UID to prevent path errors
+  if (!careerUid) {
+      console.warn("Invalid careerUid, skipping upload to avoid path errors.");
+      return images;
+  }
+  
+  // Clean UID just in case
+  const safeUid = careerUid.trim();
 
   const uploadedUrls: string[] = [];
 
@@ -179,7 +188,7 @@ export const uploadCareerImages = async (
 
     // It is a base64 or data URI, needs upload
     const blob = base64ToBlob(imageStr);
-    const fileName = `${userId}/${careerId}/slide_${i}_${Date.now()}.png`;
+    const fileName = `${userId}/${safeUid}/slide_${i}_${Date.now()}.png`;
 
     try {
       const { data, error } = await supabase.storage
@@ -207,10 +216,14 @@ export const uploadCareerImages = async (
 };
 
 // Deletes all images in the career specific folder
-export const deleteCareerImages = async (userId: string, careerId: string) => {
+export const deleteCareerImages = async (userId: string, careerUid: string) => {
     if (!supabase) return;
     
-    const folderPath = `${userId}/${careerId}`;
+    // Ensure UID is valid
+    if (!careerUid) return;
+    const safeUid = careerUid.trim();
+
+    const folderPath = `${userId}/${safeUid}`;
     try {
         // List all files in the folder
         const { data: listData, error: listError } = await supabase.storage
@@ -229,7 +242,33 @@ export const deleteCareerImages = async (userId: string, careerId: string) => {
             if (removeError) throw removeError;
         }
     } catch (err) {
-        console.error("Failed to delete images from storage", err);
+        // Do not throw error here, just log it. We want the DB delete to proceed even if image cleanup fails.
+        console.warn("Failed to delete images from storage, but proceeding to delete career record:", err);
+    }
+};
+
+export const getSavedCareers = async (userId: string): Promise<CareerRecommendation[]> => {
+    if (!supabase) return [];
+    
+    try {
+        const { data, error } = await supabase
+            .from('saved_careers')
+            .select('*')
+            .eq('user_id', userId)
+            .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        // Map back to our app's CareerRecommendation type
+        // IMPORTANT: We map 'career_uid' from DB back to 'id' for the app logic
+        return data.map((row: any) => ({
+            ...row.data,
+            id: row.career_uid // Restoring the string ID used by the app
+        }));
+
+    } catch (err) {
+        console.error("Failed to fetch saved careers", err);
+        return [];
     }
 };
 
@@ -241,15 +280,16 @@ export const saveCareerToDb = async (userId: string, career: CareerRecommendatio
       .from('saved_careers')
       .upsert({
         user_id: userId,
-        career_id: career.id,
+        career_uid: career.id, // Using career_uid as the unique string identifier
         title: career.title,
-        data: career, // Storing full JSON for simplicity in this demo
+        data: career, 
         created_at: new Date().toISOString()
-      }, { onConflict: 'user_id, career_id' });
+      }, { onConflict: 'user_id, career_uid' });
 
     if (error) throw error;
   } catch (err) {
     console.error("Failed to save career to DB", err);
+    throw err; 
   }
 };
 
@@ -257,15 +297,19 @@ export const deleteCareerFromDb = async (userId: string, careerId: string) => {
   if (!supabase) return;
   
   try {
-    // Delete associated images first to ensure no orphans
+    // Delete associated images first to ensure no orphans (Wrapped in try/catch inside helper)
     await deleteCareerImages(userId, careerId);
 
-    // Delete database record
-    await supabase
+    // Delete database record using career_uid
+    const { error } = await supabase
       .from('saved_careers')
       .delete()
-      .match({ user_id: userId, career_id: careerId });
+      .match({ user_id: userId, career_uid: careerId });
+
+    if (error) throw error;
+      
   } catch (err) {
     console.error("Failed to delete career from DB", err);
+    throw err;
   }
 };

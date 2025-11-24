@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAppStore } from '../store';
 import { AppView, UserProfile } from '../types';
@@ -12,7 +13,7 @@ export const Onboarding: React.FC = () => {
   
   // API Data State
   const [countries, setCountries] = useState<string[]>([]);
-  const [loadingCountries, setLoadingCountries] = useState(false);
+  const [isLoadingCountries, setIsLoadingCountries] = useState(true);
 
   const [formData, setFormData] = useState<Partial<UserProfile>>({
     fullName: '',
@@ -23,39 +24,38 @@ export const Onboarding: React.FC = () => {
     residenceCountry: '',
     preferredWorkCountry: '' // Will default to residence country
   });
-  
-  // Fetch Countries on Mount
+
+  // Fetch Countries from Public API
   useEffect(() => {
     const fetchCountries = async () => {
-      setLoadingCountries(true);
-      try {
-        const response = await fetch('https://countriesnow.space/api/v0.1/countries/iso');
-        const data = await response.json();
-        if (!data.error) {
-          // Map and sort country names
-          const countryList = data.data.map((c: any) => c.name).sort();
-          setCountries(countryList);
-        } else {
-           throw new Error("API Error");
+        try {
+            // Using restcountries.com which is CORS-friendly
+            const response = await fetch('https://restcountries.com/v3.1/all?fields=name');
+            if (!response.ok) throw new Error("Failed to fetch countries");
+            
+            const data = await response.json();
+            const countryNames = data
+                .map((c: any) => c.name.common)
+                .sort((a: string, b: string) => a.localeCompare(b));
+            
+            setCountries(countryNames);
+        } catch (error) {
+            console.warn("Country API failed, using fallback list:", error);
+            setCountries(FALLBACK_COUNTRIES);
+        } finally {
+            setIsLoadingCountries(false);
         }
-      } catch (error) {
-        console.warn("Failed to fetch countries, using fallback.", error);
-        setCountries(FALLBACK_COUNTRIES);
-      } finally {
-        setLoadingCountries(false);
-      }
     };
+
     fetchCountries();
   }, []);
-
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
 
     try {
         // CRITICAL: Fetch the REAL authenticated user ID directly from Supabase.
-        // We cannot rely solely on the store state here because of potential race conditions
-        // where user might be null or have a temp ID during the onboarding flow transition.
         const { data: { user: authUser } } = await supabase!.auth.getUser();
         
         if (!authUser) {
@@ -184,16 +184,16 @@ export const Onboarding: React.FC = () => {
                 <div>
                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 flex items-center justify-between">
                         Country
-                        {loadingCountries && <Loader2 className="w-3 h-3 animate-spin text-blue-500" />}
+                        {isLoadingCountries && <Loader2 size={14} className="animate-spin text-blue-500" />}
                     </label>
                     <select 
                             required
                             value={formData.residenceCountry}
                             onChange={(e) => handleChange('residenceCountry', e.target.value)}
-                            disabled={loadingCountries}
-                            className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl py-3 px-4 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-50 transition-colors"
+                            disabled={isLoadingCountries}
+                            className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl py-3 px-4 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors disabled:opacity-50"
                     >
-                        <option value="">Select Country</option>
+                        <option value="">{isLoadingCountries ? "Loading Countries..." : "Select Country"}</option>
                         {countries.map(c => (
                             <option key={c} value={c}>{c}</option>
                         ))}

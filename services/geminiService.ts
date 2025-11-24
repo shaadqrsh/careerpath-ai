@@ -1,3 +1,4 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
 import { UserProfile, QuizAnswer, CareerRecommendation, Slide, CareerRoadmapStep } from "../types";
 import { MOCK_CAREERS, AI_CONFIG } from "../constants";
@@ -178,47 +179,35 @@ export const generateCareerRecommendations = async (
   }
 };
 
-// Generates a single image with timeout to prevent hanging
-const generateImage = async (prompt: string): Promise<string> => {
-    if (!ai) return `https://picsum.photos/seed/${Math.random()}/1280/720`;
-    
+// Generates an image using Gemini
+const generateImage = async (prompt: string, fallbackId: string): Promise<string> => {
+    if (!ai) return `https://picsum.photos/seed/${fallbackId}/1280/720`;
+
     try {
-        // 12 second timeout to prevent infinite hanging
-        const timeoutPromise = new Promise<string>((_, reject) => {
-            setTimeout(() => reject(new Error("Image generation timeout")), 12000);
+        const response = await ai.models.generateContent({
+            model: AI_CONFIG.IMAGE_MODEL,
+            contents: {
+                parts: [{ text: prompt }]
+            },
+            config: {
+                // imageConfig is supported by gemini-3-pro-image-preview and gemini-2.5-flash-image
+                // But keeping it minimal for compatibility
+            }
         });
 
-        const generationPromise = (async () => {
-            const response = await ai.models.generateContent({
-                model: AI_CONFIG.IMAGE_MODEL,
-                contents: {
-                    parts: [
-                        { text: prompt }
-                    ]
-                },
-                config: {
-                    imageConfig: {
-                        aspectRatio: "16:9"
-                    }
+        // Iterate parts to find the image
+        if (response.candidates && response.candidates[0].content && response.candidates[0].content.parts) {
+            for (const part of response.candidates[0].content.parts) {
+                if (part.inlineData && part.inlineData.data) {
+                    return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
                 }
-            });
-
-            // Iterate parts to find inlineData (image)
-            for (const part of response.candidates?.[0]?.content?.parts || []) {
-                 if (part.inlineData && part.inlineData.data) {
-                     return part.inlineData.data; // Base64 string
-                 }
             }
-            throw new Error("No image data found in response");
-        })();
+        }
+        throw new Error("No image data found in response");
 
-        // Race the generation against the timeout
-        return await Promise.race([generationPromise, timeoutPromise]);
-
-    } catch (e) {
-        console.error("Image Gen Error or Timeout:", e);
-        // Fallback to random image so UI doesn't break
-        return `https://picsum.photos/seed/${Math.random()}/1280/720`;
+    } catch (error) {
+        console.warn("Gemini Image Gen Failed (Using Fallback):", error);
+        return `https://picsum.photos/seed/${fallbackId}/1280/720`;
     }
 }
 
@@ -230,38 +219,34 @@ export const generateCareerImages = async (
     imageGenerationEnabled: boolean = true
 ): Promise<string[]> => {
     
-    // Explicitly check the debug flag. If disabled, skip AI calls entirely.
-    if (!ai || !imageGenerationEnabled) {
-        console.warn("Image generation disabled or API unavailable. Using Mock images.");
+    // Explicitly check the debug flag.
+    if (!imageGenerationEnabled) {
+        console.warn("Image generation disabled. Using Mock images.");
         return prompts.map((_, i) => `https://picsum.photos/seed/${careerTitle.replace(/\s/g,'')}${i}/1280/720`);
     }
 
     const subjectDescription = user 
-        ? `a ${futureAge || user.age + 5} year old ${user.gender} from ${user.residenceCountry}` 
+        ? `a ${futureAge || user.age + 5} year old ${user.gender || 'professional'} from ${user.residenceCountry || 'city'}` 
         : `a professional`;
 
-    // Process strictly in parallel but with individual error handling via generateImage wrapper
-    const imagePromises = prompts.map(async (sceneDescription) => {
-        // Construct a highly personalized prompt
-        const imagePrompt = `
-            Generate an image.
-            Subject: Photorealistic portrait of ${subjectDescription} working as a ${careerTitle}.
-            Context: ${sceneDescription}.
-            Style: Cinematic 4k, professional photography, highly detailed, inspiring atmosphere. 
-            Ensure the subject matches the described gender and ethnicity of ${user?.residenceCountry || 'the region'}.
-        `;
-        return generateImage(imagePrompt);
+    // Process strictly in parallel
+    const imagePromises = prompts.map(async (sceneDescription, i) => {
+        // Construct a prompt optimized for Gemini
+        const imagePrompt = `Generate a photorealistic cinematic image of ${subjectDescription} working as a ${careerTitle}, ${sceneDescription}. High resolution, 8k, professional lighting.`;
+        // Fallback ID to ensure unique picsum image if it fails
+        const fallbackId = `${careerTitle.replace(/\s/g,'')}-${i}-${Date.now()}`;
+        return generateImage(imagePrompt, fallbackId);
     });
 
     const results = await Promise.all(imagePromises);
-    return results.filter(r => r !== "");
+    return results;
 }
 
 export const generateStorySlides = async (career: CareerRecommendation, user?: UserProfile | null, imageGenerationEnabled: boolean = true): Promise<Slide[]> => {
     const prompts = career.dayInLifePrompts || [
-        "A focused professional working on a key project",
-        "Collaborating with a diverse team in a modern office",
-        "Presenting results to stakeholders"
+        "Working focused on a key task in a professional environment",
+        "Collaborating with colleagues in a meeting",
+        "Achieving a successful outcome or milestone"
     ];
 
     let imageUrls: string[] = [];
@@ -274,16 +259,13 @@ export const generateStorySlides = async (career: CareerRecommendation, user?: U
         const durationYears = calculateRoadmapDurationYears(career.roadmap);
         const futureAge = user ? user.age + durationYears : 25;
 
-        // Generate personalized images, passing the debug flag down
+        // Generate images using Gemini
         imageUrls = await generateCareerImages(career.title, prompts, user, futureAge, imageGenerationEnabled);
-        
-        // If we get raw base64, prepend header if missing. If it's a http fallback, leave as is.
-        imageUrls = imageUrls.map(url => url.startsWith('http') ? url : `data:image/png;base64,${url}`);
     }
 
     return prompts.map((text, index) => ({
         id: index,
         text,
-        imageUrl: imageUrls[index] || `https://picsum.photos/seed/fallback${index}/1280/720`
+        imageUrl: imageUrls[index]
     }));
 };

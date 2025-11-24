@@ -1,20 +1,23 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAppStore } from '../store';
 import { AppView, UserProfile } from '../types';
 import { Button } from '../components/Button';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { FALLBACK_COUNTRIES } from '../constants';
-import { upsertUserProfile } from '../services/supabaseService';
+import { upsertUserProfile, supabase, getUserProfile } from '../services/supabaseService';
 
 export const Profile: React.FC = () => {
   const { user, setView, setUser } = useAppStore();
   
   // API Data State
   const [countries, setCountries] = useState<string[]>([]);
-  const [loadingCountries, setLoadingCountries] = useState(false);
+  const [isLoadingCountries, setIsLoadingCountries] = useState(true);
+  
   const [isSaving, setIsSaving] = useState(false);
+  const [isLoadingData, setIsLoadingData] = useState(true);
 
-  const [formData, setFormData] = useState<Partial<UserProfile>>(user || {
+  const [formData, setFormData] = useState<Partial<UserProfile>>({
     fullName: '',
     gender: 'Male',
     age: 18,
@@ -24,36 +27,91 @@ export const Profile: React.FC = () => {
     preferredWorkCountry: ''
   });
 
-  // Fetch Countries on Mount
+  // Fetch Countries
   useEffect(() => {
     const fetchCountries = async () => {
-      setLoadingCountries(true);
-      try {
-        const response = await fetch('https://countriesnow.space/api/v0.1/countries/iso');
-        const data = await response.json();
-        if (!data.error) {
-          const countryList = data.data.map((c: any) => c.name).sort();
-          setCountries(countryList);
-        } else {
-          throw new Error("API Error");
+        try {
+            const response = await fetch('https://restcountries.com/v3.1/all?fields=name');
+            if (!response.ok) throw new Error("Failed to fetch countries");
+            
+            const data = await response.json();
+            const countryNames = data
+                .map((c: any) => c.name.common)
+                .sort((a: string, b: string) => a.localeCompare(b));
+            
+            setCountries(countryNames);
+        } catch (error) {
+            console.warn("Country API failed, using fallback list:", error);
+            setCountries(FALLBACK_COUNTRIES);
+        } finally {
+            setIsLoadingCountries(false);
         }
-      } catch (error) {
-        console.warn("Failed to fetch countries, using fallback.", error);
-        setCountries(FALLBACK_COUNTRIES);
-      } finally {
-        setLoadingCountries(false);
-      }
     };
     fetchCountries();
   }, []);
+
+  // Fetch Latest User Profile on Mount with Timeout Safety
+  useEffect(() => {
+    let isMounted = true;
+
+    const initData = async () => {
+      // Safety check for supabase client
+      if (!supabase) {
+          if (isMounted) setIsLoadingData(false);
+          return;
+      }
+
+      // Timeout Promise
+      const timeout = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error("Profile load timeout")), 5000)
+      );
+
+      const fetchProfile = async () => {
+          const { data: { user: authUser } } = await supabase.auth.getUser();
+          if (authUser) {
+              const profile = await getUserProfile(authUser.id);
+              return profile;
+          }
+          return null;
+      };
+
+      try {
+        // Race the fetch against the 5s timeout
+        const profile = await Promise.race([fetchProfile(), timeout]) as UserProfile | null;
+
+        if (profile && isMounted) {
+            setFormData(profile);
+            // Also sync store just in case
+            setUser(profile);
+        }
+      } catch (err) {
+        console.error("Error loading profile data (or timeout):", err);
+      } finally {
+        if (isMounted) setIsLoadingData(false);
+      }
+    };
+
+    initData();
+    
+    return () => { isMounted = false; };
+  }, [setUser]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
     
     try {
+        if (!supabase) throw new Error("Database connection unavailable.");
+
+        // Fetch the REAL authenticated user ID directly from Supabase
+        const { data: { user: authUser } } = await supabase.auth.getUser();
+        
+        if (!authUser) {
+             throw new Error("No active session. Please log in again.");
+        }
+
         const updatedProfile = { 
-            id: user?.id || 'user_123', 
+            id: authUser.id, 
             ...formData,
             preferredWorkCountry: formData.preferredWorkCountry || formData.residenceCountry || 'USA',
         } as UserProfile;
@@ -65,10 +123,11 @@ export const Profile: React.FC = () => {
         setUser(updatedProfile);
         
         // 3. Navigate
+        alert("Profile updated successfully!");
         setView(AppView.DASHBOARD);
-    } catch (error) {
+    } catch (error: any) {
         console.error("Failed to update profile", error);
-        alert("Failed to save changes. Please try again.");
+        alert(`Failed to save changes: ${error.message || "Unknown error"}`);
     } finally {
         setIsSaving(false);
     }
@@ -88,6 +147,14 @@ export const Profile: React.FC = () => {
       setFormData(prev => ({ ...prev, [field]: value }));
     }
   };
+
+  if (isLoadingData) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 transition-colors">
+            <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+        </div>
+      );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 px-4 py-12 transition-colors duration-300">
@@ -178,16 +245,16 @@ export const Profile: React.FC = () => {
                 <div>
                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 flex items-center justify-between">
                         Country
-                        {loadingCountries && <Loader2 className="w-3 h-3 animate-spin text-blue-500 dark:text-blue-400" />}
+                        {isLoadingCountries && <Loader2 size={14} className="animate-spin text-blue-500" />}
                     </label>
                     <select 
                             required
                             value={formData.residenceCountry}
                             onChange={(e) => handleChange('residenceCountry', e.target.value)}
-                            disabled={loadingCountries}
-                            className="w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-600 rounded-xl py-3 px-4 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-50 transition-colors"
+                            disabled={isLoadingCountries}
+                            className="w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-600 rounded-xl py-3 px-4 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors disabled:opacity-50"
                     >
-                        <option value="">Select Country</option>
+                        <option value="">{isLoadingCountries ? "Loading..." : "Select Country"}</option>
                         {countries.map(c => (
                             <option key={c} value={c}>{c}</option>
                         ))}

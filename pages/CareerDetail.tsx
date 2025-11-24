@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { useAppStore } from '../store';
 import { AppView } from '../types';
 import { Button } from '../components/Button';
-import { ChevronLeft, PlayCircle, Heart, MapPin, Briefcase, GraduationCap, Loader2, CheckCircle, ArrowRightCircle, Shuffle, Sun, Moon } from 'lucide-react';
+import { ChevronLeft, PlayCircle, Heart, MapPin, Briefcase, GraduationCap, Loader2, CheckCircle, ArrowRightCircle, Shuffle, Sun, Moon, Star } from 'lucide-react';
 
 export const CareerDetail: React.FC = () => {
-  const { selectedCareer, setView, careerOrigin, user, toggleSavedCareer, savedCareers, isSavingCareer, theme, toggleTheme } = useAppStore();
+  const { selectedCareer, setView, careerOrigin, user, toggleSavedCareer, savedCareers, isSavingCareer, theme, toggleTheme, recommendations } = useAppStore();
   const [showToast, setShowToast] = useState(false);
 
   if (!selectedCareer) {
@@ -13,7 +13,8 @@ export const CareerDetail: React.FC = () => {
     return null;
   }
 
-  const targetCountryDisplay = user?.preferredWorkCountry === 'Undecided' ? 'USA (Global Tech Hub)' : user?.preferredWorkCountry;
+  // UPDATED: Simply use 'USA' if undecided, no extra text
+  const targetCountryDisplay = user?.preferredWorkCountry === 'Undecided' ? 'USA' : user?.preferredWorkCountry;
   const isSameLocation = user?.residenceCountry === user?.preferredWorkCountry;
   const isSaved = savedCareers.some(c => c.id === selectedCareer.id);
 
@@ -21,10 +22,16 @@ export const CareerDetail: React.FC = () => {
   const backTarget = careerOrigin === 'saved' ? AppView.SAVED_PATHS : AppView.RESULTS;
   const backLabel = careerOrigin === 'saved' ? "Back to Saved Paths" : "Back to Results";
 
+  // Check if this is the "Best Match" (Rank 1 in recommendations) AND we are viewing from Results
+  const isBestMatch = careerOrigin === 'results' && recommendations.length > 0 && recommendations[0].id === selectedCareer.id;
+
   const handleSave = async () => {
+    // Determine the state before toggling
     const wasAlreadySaved = savedCareers.some(c => c.id === selectedCareer.id);
+    
     await toggleSavedCareer(selectedCareer);
     
+    // If we just added it (it wasn't saved before), show toast
     if (!wasAlreadySaved) {
         setShowToast(true);
         setTimeout(() => setShowToast(false), 3000);
@@ -42,7 +49,8 @@ export const CareerDetail: React.FC = () => {
             <div className="absolute top-6 left-4 right-4 flex justify-between items-center">
                 <button 
                     onClick={() => setView(backTarget)}
-                    className="text-white/80 hover:text-white flex items-center gap-2 transition-colors font-medium"
+                    disabled={isSavingCareer}
+                    className="text-white/80 hover:text-white flex items-center gap-2 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     <ChevronLeft size={20} /> {backLabel}
                 </button>
@@ -58,6 +66,12 @@ export const CareerDetail: React.FC = () => {
             
             <div className="flex justify-between items-end">
                 <div>
+                    {isBestMatch && (
+                        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-500/20 border border-green-500/40 text-green-300 text-xs font-bold uppercase tracking-wider mb-2 backdrop-blur-md">
+                            <Star size={12} fill="currentColor" />
+                            Best Match
+                        </div>
+                    )}
                     <h1 className="text-4xl md:text-5xl font-bold mb-2 text-white">{selectedCareer.title}</h1>
                     <div className="flex items-center gap-4 text-slate-300">
                         <span>{selectedCareer.salaryRange}</span>
@@ -104,19 +118,22 @@ export const CareerDetail: React.FC = () => {
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
+                <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col">
                     <h3 className="text-lg font-bold mb-4 text-slate-800 dark:text-slate-200">Why this fits you</h3>
-                    <p className="text-slate-600 dark:text-slate-400 leading-relaxed text-lg">
-                        {selectedCareer.summary}
-                    </p>
-                    <div className="mt-6 pt-6 border-t border-slate-200 dark:border-slate-700">
-                        <p className="text-sm text-slate-500 mb-2">Best suited for profiles with:</p>
+                    
+                    {/* Moved Tags ABOVE summary as requested */}
+                    <div className="mb-4">
+                        <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Best suited for profiles with:</p>
                         <div className="flex flex-wrap gap-2">
                              {selectedCareer.tags.map(t => (
                                 <span key={t} className="px-2 py-1 text-xs font-medium rounded bg-blue-100 dark:bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-500/20">{t}</span>
                              ))}
                         </div>
                     </div>
+
+                    <p className="text-slate-600 dark:text-slate-400 leading-relaxed text-lg border-t border-slate-200 dark:border-slate-700 pt-4 mt-auto">
+                        {selectedCareer.summary}
+                    </p>
                 </div>
 
                 <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">

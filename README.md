@@ -14,10 +14,11 @@
 
 ## 3. SQL Database Setup
 
-Go to the **SQL Editor** in your Supabase dashboard and run the following script to create the necessary tables and policies.
+Go to the **SQL Editor** in your Supabase dashboard and run the following scripts.
+
+### Step 1: Create Profiles Table
 
 ```sql
--- 1. Create Profiles Table
 create table public.profiles (
   user_id uuid references auth.users not null primary key,
   full_name text,
@@ -30,24 +31,8 @@ create table public.profiles (
   updated_at timestamp with time zone default timezone('utc'::text, now())
 );
 
--- 2. Create Saved Careers Table
-create table public.saved_careers (
-  id uuid default gen_random_uuid() primary key,
-  user_id uuid references auth.users not null,
-  career_id text not null,
-  title text not null,
-  data jsonb not null,
-  created_at timestamp with time zone default timezone('utc'::text, now()),
-  unique(user_id, career_id)
-);
-
--- 3. Enable Row Level Security (RLS)
 alter table public.profiles enable row level security;
-alter table public.saved_careers enable row level security;
 
--- 4. Create Policies (Users can only see/edit their own data)
-
--- PROFILES
 create policy "Public profiles are viewable by everyone." on public.profiles
   for select using (true);
 
@@ -56,13 +41,40 @@ create policy "Users can insert their own profile." on public.profiles
 
 create policy "Users can update own profile." on public.profiles
   for update using (auth.uid() = user_id);
+```
 
--- SAVED CAREERS
+### Step 2: Reset & Create Saved Careers Table (Run this to fix Save/Delete issues)
+
+This script drops the old table (if it exists) and creates a new one using `career_uid` to strictly identify career paths.
+
+```sql
+-- Drop old table if exists
+drop table if exists public.saved_careers;
+
+-- Create new table with correct schema
+create table public.saved_careers (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references auth.users not null,
+  career_uid text not null, -- This is the string ID (e.g., 'career-123')
+  title text not null,
+  data jsonb not null,
+  created_at timestamp with time zone default timezone('utc'::text, now()),
+  
+  -- Constraint: One entry per career per user
+  unique(user_id, career_uid)
+);
+
+alter table public.saved_careers enable row level security;
+
+-- Policies
 create policy "Users can view own saved careers." on public.saved_careers
   for select using (auth.uid() = user_id);
 
 create policy "Users can insert own saved careers." on public.saved_careers
   for insert with check (auth.uid() = user_id);
+
+create policy "Users can update own saved careers." on public.saved_careers
+  for update using (auth.uid() = user_id);
 
 create policy "Users can delete own saved careers." on public.saved_careers
   for delete using (auth.uid() = user_id);
@@ -100,16 +112,7 @@ on storage.objects for select
 using ( bucket_id = 'career_slideshows' );
 ```
 
-## 5. Google Auth Setup (Optional)
-
-1. Go to **Authentication** -> **Providers**.
-2. Enable **Google**.
-3. Follow the Supabase guide to create credentials in Google Cloud Console.
-4. Add the `Client ID` and `Secret` to Supabase.
-
----
-
-## 6. Deployment & Security
+## 5. Deployment & Security
 
 ### Disabling Local Key Storage (Production)
 
@@ -129,11 +132,3 @@ const getSupabaseConfig = () => {
 };
 ```
 Repeat this for `services/geminiService.ts` for the API Key.
-
-### Setting Environment Variables
-
-In your hosting provider (Vercel, Netlify, etc.), set the following:
-
-- `SUPABASE_URL`: Your Project URL
-- `SUPABASE_KEY`: Your Anon Public Key
-- `API_KEY`: Your Gemini API Key

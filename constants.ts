@@ -1,6 +1,9 @@
+
 import { QuizQuestion } from './types';
 
 // --- CONFIGURATION ---
+export const APP_NAME = "CareerPath AI";
+
 export const AI_CONFIG = {
   // Change these models here to update the entire app
   TEXT_MODEL: 'gemini-2.5-flash',

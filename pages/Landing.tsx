@@ -3,6 +3,7 @@ import { useAppStore } from '../store';
 import { AppView } from '../types';
 import { Button } from '../components/Button';
 import { ArrowRight, Sun, Moon } from 'lucide-react';
+import { APP_NAME } from '../constants';
 
 export const Landing: React.FC = () => {
   const { setView, theme, toggleTheme } = useAppStore();
@@ -27,19 +28,21 @@ export const Landing: React.FC = () => {
 
       <div className="z-10 text-center max-w-4xl px-6">
         <div className="mb-6 flex justify-center">
-          <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-blue-600 dark:text-blue-400 text-sm font-medium shadow-sm">
+          <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 shadow-sm">
             {/* Google Gemini Icon */}
             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" className="text-blue-500">
                 <path d="M12 24C12 24 10 14 0 12C10 10 12 0 12 0C12 0 14 10 24 12C14 14 12 24 12 24Z" />
             </svg>
-            <span>Powered by Gemini</span>
+            <span className="text-sm font-semibold bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-transparent">
+                Powered by Gemini
+            </span>
           </span>
         </div>
 
         <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight text-slate-900 dark:text-white mb-6">
-          Find Your Future <br />
+          Find Your Future with <br />
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400">
-            Powered by AI
+            {APP_NAME}
           </span>
         </h1>
 
@@ -56,20 +59,12 @@ export const Landing: React.FC = () => {
             Get Started 
             <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
           </Button>
-          <Button 
-            variant="secondary" 
-            size="lg"
-            onClick={() => alert("Demo Mode: Click Get Started to bypass login.")}
-            className="bg-white hover:bg-slate-50 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-700 shadow-sm"
-          >
-            View Demo
-          </Button>
         </div>
 
         <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-6 text-left max-w-3xl mx-auto">
            <div className="p-4 rounded-xl bg-white/50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 backdrop-blur-sm">
-              <h3 className="font-bold text-slate-900 dark:text-white mb-1">Global Analysis</h3>
-              <p className="text-sm text-slate-600 dark:text-slate-400">Real-time market trends across 15+ countries.</p>
+              <h3 className="font-bold text-slate-900 dark:text-white mb-1">Holistic Analysis</h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400">Deeply connects your personality, aptitude, and interests to real roles.</p>
            </div>
            <div className="p-4 rounded-xl bg-white/50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 backdrop-blur-sm">
               <h3 className="font-bold text-slate-900 dark:text-white mb-1">Visual Pathways</h3>
