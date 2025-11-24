@@ -1,271 +1,172 @@
-import { createClient, User, SupabaseClient } from '@supabase/supabase-js';
+
 import { CareerRecommendation, UserProfile } from '../types';
+import { API_BASE_URL } from '../constants';
 
-// --- CONFIGURATION HANDLING ---
+// --- CLIENT AUTH CONFIG ---
+// Keys are NO LONGER needed in frontend. Everything goes through the backend proxy.
 
-// ADD WHEN DEPLOY: In production, these should be strictly environment variables.
-// const SUPABASE_URL = process.env.SUPABASE_URL;
-// const SUPABASE_KEY = process.env.SUPABASE_KEY;
+// Helper to get the JWT token
+const getToken = () => localStorage.getItem('access_token');
+const setToken = (token: string) => localStorage.setItem('access_token', token);
+const clearToken = () => localStorage.removeItem('access_token');
 
-// FOR DEVELOPMENT/PREVIEW: Check LocalStorage first, then fall back to env vars (if any)
-const getSupabaseConfig = () => {
-  const localUrl = localStorage.getItem('career_path_sb_url');
-  const localKey = localStorage.getItem('career_path_sb_key');
-  
-  // ADD WHEN DEPLOY: Remove the localStorage fallback for better security in production
-  return {
-    url: localUrl || process.env.SUPABASE_URL || '',
-    key: localKey || process.env.SUPABASE_KEY || ''
-  };
-};
+// --- AUTHENTICATION (Via Backend API) ---
 
-const config = getSupabaseConfig();
-
-export const supabase: SupabaseClient | null = (config.url && config.key) 
-  ? createClient(config.url, config.key) 
-  : null;
-
-// Helper to save keys from the UI (Dev Mode only)
-export const saveSupabaseConfig = (url: string, key: string) => {
-    localStorage.setItem('career_path_sb_url', url);
-    localStorage.setItem('career_path_sb_key', key);
-    window.location.reload(); // Reload to re-initialize the client
-};
-
-export const clearSupabaseConfig = () => {
-    localStorage.removeItem('career_path_sb_url');
-    localStorage.removeItem('career_path_sb_key');
-    window.location.reload();
-};
-
-
-// --- Auth Helpers ---
+export interface AuthUser {
+    id: string;
+    email?: string;
+}
 
 export const signInWithEmail = async (email: string, password: string) => {
-    if (!supabase) throw new Error("Supabase not configured");
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) throw error;
-    return data;
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+        });
+        
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.detail || "Login failed");
+        }
+        
+        const data = await response.json();
+        setToken(data.access_token);
+        return { user: data.user, session: data };
+    } catch (e) {
+        console.error("Sign In Error:", e);
+        throw e;
+    }
 };
 
 export const signUpWithEmail = async (email: string, password: string) => {
-    if (!supabase) throw new Error("Supabase not configured");
-    const { data, error } = await supabase.auth.signUp({ email, password });
-    if (error) throw error;
-    return data;
-};
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/auth/signup`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+        });
 
-export const signInWithGoogle = async () => {
-    if (!supabase) throw new Error("Supabase not configured");
-    const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-            redirectTo: window.location.origin
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.detail || "Signup failed");
         }
-    });
-    if (error) throw error;
-    return data;
+        
+        return await response.json();
+    } catch (e) {
+        console.error("Sign Up Error:", e);
+        throw e;
+    }
 };
 
 export const signOut = async () => {
-    if (!supabase) return;
-    await supabase.auth.signOut();
+    clearToken();
 };
 
-// --- Profile Management ---
+export const getCurrentUser = async (): Promise<AuthUser | null> => {
+    const token = getToken();
+    if (!token) return null;
 
-export const getUserProfile = async (userId: string): Promise<UserProfile | null> => {
-    if (!supabase) return null;
-    
     try {
-        const { data, error } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('user_id', userId)
-            .single();
+        const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
 
-        if (error) {
-            // PGRST116 means row not found (JSON object requested, multiple (or no) rows returned)
-            // This is expected for new users.
-            if (error.code !== 'PGRST116') {
-                console.error("Database error fetching profile:", error);
-            }
+        if (!response.ok) {
+            clearToken(); // Token invalid
             return null;
         }
 
-        if (!data) return null;
-
-        // Map DB columns (snake_case) to App Type (camelCase)
-        return {
-            id: data.user_id,
-            fullName: data.full_name,
-            gender: data.gender,
-            age: data.age,
-            educationLevel: data.education_level,
-            specialization: data.specialization,
-            residenceCountry: data.residence_country,
-            preferredWorkCountry: data.preferred_work_country
-        };
+        const user = await response.json();
+        return user;
     } catch (e) {
-        console.error("Unexpected error fetching profile:", e);
+        return null;
+    }
+};
+
+// --- DATA HELPERS (Via Backend API) ---
+
+const getAuthHeaders = () => {
+    const token = getToken();
+    if (!token) throw new Error("Not Authenticated");
+    return {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+    };
+};
+
+export const supabase = null; // Removed client usage entirely
+
+// --- PROFILE ---
+
+export const getUserProfile = async (userId: string): Promise<UserProfile | null> => {
+    try {
+        const headers = getAuthHeaders();
+        const response = await fetch(`${API_BASE_URL}/api/profile`, { headers });
+        
+        if (response.status === 404) return null;
+        if (!response.ok) throw new Error("Failed to fetch profile");
+
+        return await response.json();
+    } catch (e) {
+        console.error("Error fetching profile:", e);
         return null;
     }
 };
 
 export const upsertUserProfile = async (profile: UserProfile) => {
-    if (!supabase) return;
-
     try {
-        // Map App Type to DB columns
-        const dbProfile = {
-            user_id: profile.id,
-            full_name: profile.fullName,
-            gender: profile.gender,
-            age: profile.age,
-            education_level: profile.educationLevel,
-            specialization: profile.specialization,
-            residence_country: profile.residenceCountry,
-            preferred_work_country: profile.preferredWorkCountry,
-            updated_at: new Date().toISOString()
-        };
-
-        const { error } = await supabase
-            .from('profiles')
-            .upsert(dbProfile, { onConflict: 'user_id' });
-            
-        if (error) throw error;
+        const headers = getAuthHeaders();
+        const response = await fetch(`${API_BASE_URL}/api/profile`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(profile)
+        });
+        
+        if (!response.ok) throw new Error("Failed to save profile");
     } catch (e) {
         console.error("Error saving profile:", e);
         throw e;
     }
 };
 
-// --- Storage & DB Logic (Existing) ---
-
-// Convert Base64 string to Blob for upload
-const base64ToBlob = (base64: string, mimeType: string = 'image/png'): Blob => {
-  // Strip data URI prefix if present
-  const cleanBase64 = base64.replace(/^data:image\/(png|jpeg|jpg);base64,/, '');
-  
-  const byteCharacters = atob(cleanBase64);
-  const byteNumbers = new Array(byteCharacters.length);
-  for (let i = 0; i < byteCharacters.length; i++) {
-    byteNumbers[i] = byteCharacters.charCodeAt(i);
-  }
-  const byteArray = new Uint8Array(byteNumbers);
-  return new Blob([byteArray], { type: mimeType });
-};
+// --- IMAGES & DB ---
 
 export const uploadCareerImages = async (
   userId: string, 
   careerUid: string, 
   images: string[]
 ): Promise<string[]> => {
-  if (!supabase) {
-    console.warn("Supabase not configured. Skipping upload.");
-    return images.map(img => img.startsWith('http') ? img : (img.startsWith('data:') ? img : `data:image/png;base64,${img}`));
-  }
-
-  // Ensure we have a valid UID to prevent path errors
-  if (!careerUid) {
-      console.warn("Invalid careerUid, skipping upload to avoid path errors.");
-      return images;
-  }
-  
-  // Clean UID just in case
-  const safeUid = careerUid.trim();
-
-  const uploadedUrls: string[] = [];
-
-  for (let i = 0; i < images.length; i++) {
-    const imageStr = images[i];
-
-    // Check if it's already a hosted URL (from previous save or fallback)
-    if (imageStr.startsWith('http')) {
-        uploadedUrls.push(imageStr);
-        continue;
-    }
-
-    // It is a base64 or data URI, needs upload
-    const blob = base64ToBlob(imageStr);
-    const fileName = `${userId}/${safeUid}/slide_${i}_${Date.now()}.png`;
-
     try {
-      const { data, error } = await supabase.storage
-        .from('career_slideshows')
-        .upload(fileName, blob, {
-          contentType: 'image/png',
-          upsert: true
+        if (!careerUid) throw new Error("Missing Career UID");
+
+        const headers = getAuthHeaders();
+        const response = await fetch(`${API_BASE_URL}/api/upload-images`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({ career_uid: careerUid, images })
         });
-
-      if (error) throw error;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('career_slideshows')
-        .getPublicUrl(fileName);
-
-      uploadedUrls.push(publicUrl);
-    } catch (err) {
-      console.error(`Failed to upload image ${i}`, err);
-      // Fallback: Use Data URI if upload fails so user still sees it
-      uploadedUrls.push(imageStr.startsWith('data:') ? imageStr : `data:image/png;base64,${imageStr}`);
+        
+        if (!response.ok) throw new Error("Upload Failed");
+        const data = await response.json();
+        return data.urls;
+    } catch (e) {
+        console.warn("Backend upload failed, returning originals", e);
+        return images;
     }
-  }
-
-  return uploadedUrls;
 };
 
-// Deletes all images in the career specific folder
 export const deleteCareerImages = async (userId: string, careerUid: string) => {
-    if (!supabase) return;
-    
-    // Ensure UID is valid
-    if (!careerUid) return;
-    const safeUid = careerUid.trim();
-
-    const folderPath = `${userId}/${safeUid}`;
-    try {
-        // List all files in the folder
-        const { data: listData, error: listError } = await supabase.storage
-            .from('career_slideshows')
-            .list(folderPath);
-
-        if (listError) throw listError;
-
-        if (listData && listData.length > 0) {
-            const filesToRemove = listData.map(x => `${folderPath}/${x.name}`);
-            
-            const { error: removeError } = await supabase.storage
-                .from('career_slideshows')
-                .remove(filesToRemove);
-            
-            if (removeError) throw removeError;
-        }
-    } catch (err) {
-        // Do not throw error here, just log it. We want the DB delete to proceed even if image cleanup fails.
-        console.warn("Failed to delete images from storage, but proceeding to delete career record:", err);
-    }
+     // Handled by backend deleteCareerFromDb
 };
 
 export const getSavedCareers = async (userId: string): Promise<CareerRecommendation[]> => {
-    if (!supabase) return [];
-    
     try {
-        const { data, error } = await supabase
-            .from('saved_careers')
-            .select('*')
-            .eq('user_id', userId)
-            .order('created_at', { ascending: false });
-
-        if (error) throw error;
-
-        // Map back to our app's CareerRecommendation type
-        // IMPORTANT: We map 'career_uid' from DB back to 'id' for the app logic
-        return data.map((row: any) => ({
-            ...row.data,
-            id: row.career_uid // Restoring the string ID used by the app
-        }));
-
+        const headers = getAuthHeaders();
+        const response = await fetch(`${API_BASE_URL}/api/saved-careers`, { headers });
+        if (!response.ok) throw new Error("Failed to fetch saved careers");
+        
+        return await response.json();
     } catch (err) {
         console.error("Failed to fetch saved careers", err);
         return [];
@@ -273,20 +174,14 @@ export const getSavedCareers = async (userId: string): Promise<CareerRecommendat
 };
 
 export const saveCareerToDb = async (userId: string, career: CareerRecommendation) => {
-  if (!supabase) return;
-
   try {
-    const { error } = await supabase
-      .from('saved_careers')
-      .upsert({
-        user_id: userId,
-        career_uid: career.id, // Using career_uid as the unique string identifier
-        title: career.title,
-        data: career, 
-        created_at: new Date().toISOString()
-      }, { onConflict: 'user_id, career_uid' });
-
-    if (error) throw error;
+    const headers = getAuthHeaders();
+    const response = await fetch(`${API_BASE_URL}/api/saved-careers`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(career)
+    });
+    if (!response.ok) throw new Error("Failed to save career");
   } catch (err) {
     console.error("Failed to save career to DB", err);
     throw err; 
@@ -294,20 +189,13 @@ export const saveCareerToDb = async (userId: string, career: CareerRecommendatio
 };
 
 export const deleteCareerFromDb = async (userId: string, careerId: string) => {
-  if (!supabase) return;
-  
   try {
-    // Delete associated images first to ensure no orphans (Wrapped in try/catch inside helper)
-    await deleteCareerImages(userId, careerId);
-
-    // Delete database record using career_uid
-    const { error } = await supabase
-      .from('saved_careers')
-      .delete()
-      .match({ user_id: userId, career_uid: careerId });
-
-    if (error) throw error;
-      
+    const headers = getAuthHeaders();
+    const response = await fetch(`${API_BASE_URL}/api/saved-careers/${careerId}`, {
+        method: 'DELETE',
+        headers
+    });
+    if (!response.ok) throw new Error("Failed to delete career");
   } catch (err) {
     console.error("Failed to delete career from DB", err);
     throw err;

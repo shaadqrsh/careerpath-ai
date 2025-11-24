@@ -5,7 +5,7 @@ import { AppView, UserProfile } from '../types';
 import { Button } from '../components/Button';
 import { Loader2 } from 'lucide-react';
 import { FALLBACK_COUNTRIES } from '../constants';
-import { upsertUserProfile, supabase } from '../services/supabaseService';
+import { upsertUserProfile, getCurrentUser } from '../services/supabaseService';
 
 export const Onboarding: React.FC = () => {
   const { setView, setUser, user } = useAppStore();
@@ -55,20 +55,20 @@ export const Onboarding: React.FC = () => {
     setSaving(true);
 
     try {
-        // CRITICAL: Fetch the REAL authenticated user ID directly from Supabase.
-        const { data: { user: authUser } } = await supabase!.auth.getUser();
+        // Fetch the REAL authenticated user ID directly from Backend Service
+        const authUser = await getCurrentUser();
         
         if (!authUser) {
             throw new Error("No authenticated session found. Please log in again.");
         }
 
         const finalProfile: UserProfile = {
-            id: authUser.id, // STRICTLY use the Auth ID to satisfy RLS
+            id: authUser.id, 
             ...formData,
             preferredWorkCountry: formData.preferredWorkCountry || formData.residenceCountry || 'USA',
         } as UserProfile;
 
-        // Save to Supabase
+        // Save to Supabase (Via Backend)
         await upsertUserProfile(finalProfile);
         
         // Update Store

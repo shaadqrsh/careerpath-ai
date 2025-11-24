@@ -4,14 +4,13 @@ import { QuizQuestion } from './types';
 // --- CONFIGURATION ---
 export const APP_NAME = "CareerPath AI";
 
-export const AI_CONFIG = {
-  // Change these models here to update the entire app
-  TEXT_MODEL: 'gemini-2.5-flash',
-  IMAGE_MODEL: 'gemini-2.5-flash-image'
-};
+// Load from Environment Variable (Vite) or fallback to Localhost
+// The frontend will look for VITE_API_BASE_URL. 
+// If deployed to Vercel/Netlify, you set this env var there to point to Hugging Face.
+export const API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL || "http://localhost:8000"; 
 
 export const QUESTIONS: QuizQuestion[] = [
-  // --- GENERAL / UNDECIDED (Helps identify the domain) ---
+  // --- GENERAL / UNDECIDED (Helps identify the domain) --- //
   {
     id: 101,
     text: "When you walk into a bookstore, which section do you visit first?",

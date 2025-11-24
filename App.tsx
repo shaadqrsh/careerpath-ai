@@ -1,7 +1,8 @@
+
 import React, { useEffect, useState } from 'react';
 import { useAppStore } from './store';
 import { AppView } from './types';
-import { supabase, getUserProfile, getSavedCareers } from './services/supabaseService';
+import { getUserProfile, getSavedCareers, getCurrentUser } from './services/supabaseService';
 import { Loader2, AlertTriangle } from 'lucide-react';
 import { Button } from './components/Button';
 
@@ -32,77 +33,47 @@ const App: React.FC = () => {
     }
   }, [theme]);
 
-  // Auth Listener
+  // Auth Initialization (Token-Based)
   useEffect(() => {
-    if (!supabase) {
-        setIsInitializing(false);
-        return;
-    }
-
     const initAuth = async () => {
         try {
-            // Check active session on mount
-            const { data: { session } } = await supabase.auth.getSession();
-            if (session?.user) {
-                const profile = await getUserProfile(session.user.id);
+            // Check for valid token
+            const authUser = await getCurrentUser();
+            
+            if (authUser) {
+                const profile = await getUserProfile(authUser.id);
                 if (profile) {
                     setUser(profile);
                     
                     // Fetch saved careers
-                    const saved = await getSavedCareers(session.user.id);
+                    const saved = await getSavedCareers(authUser.id);
                     setSavedCareers(saved);
 
-                    // Only redirect if on public pages
+                    // Redirect if on public pages
                     if (currentView === AppView.LANDING || currentView === AppView.AUTH) {
                         setView(AppView.DASHBOARD);
                     }
                 } else {
                     // New user with no profile data
-                    setUser({ id: session.user.id } as any);
+                    setUser({ id: authUser.id } as any);
                     setView(AppView.ONBOARDING);
+                }
+            } else {
+                // No valid session
+                if (currentView !== AppView.LANDING && currentView !== AppView.AUTH) {
+                    setView(AppView.LANDING);
                 }
             }
         } catch (e) {
             console.error("Auth initialization failed", e);
+            setView(AppView.LANDING);
         } finally {
             setIsInitializing(false);
         }
     };
     
     initAuth();
-
-    // Listen for changes (Sign In, Sign Out, Token Refresh)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_OUT') {
-        setUser(null as any);
-        setSavedCareers([]);
-        setView(AppView.LANDING);
-      } else if (event === 'SIGNED_IN' && session?.user) {
-        // We handle the immediate redirect in Auth.tsx to avoid racing, but we keep this
-        // to sync state if the token is refreshed or updated externally.
-        const profile = await getUserProfile(session.user.id);
-        if (profile) {
-            setUser(profile);
-            
-            // Fetch saved careers on sign in event
-            const saved = await getSavedCareers(session.user.id);
-            setSavedCareers(saved);
-
-            // If we are unexpectedly on Landing/Auth but signed in, move to dashboard
-            if (currentView === AppView.LANDING || currentView === AppView.AUTH) {
-                 setView(AppView.DASHBOARD);
-            }
-        } else {
-            setUser({ id: session.user.id } as any);
-            if (currentView !== AppView.ONBOARDING) {
-                setView(AppView.ONBOARDING);
-            }
-        }
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, [setUser, setView, setSavedCareers]); // Remove currentView dependency to avoid loops
+  }, [setUser, setView, setSavedCareers]); // Run once on mount (and if store setters change)
 
   const renderView = () => {
     switch (currentView) {
@@ -160,7 +131,7 @@ const App: React.FC = () => {
                 </div>
                 
                 <p className="text-slate-600 dark:text-slate-300 mb-6">
-                    Are you sure you want to remove <strong>{pendingDeleteCareer.title}</strong> from your saved paths? This action cannot be undone and generated images may be lost.
+                    Are you sure you want to remove <strong>{pendingDeleteCareer.title}</strong> from your saved paths? This action cannot be undone.
                 </p>
                 
                 <div className="flex gap-3 justify-end">

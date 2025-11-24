@@ -94,10 +94,10 @@ export const SavedPaths: React.FC = () => {
              <div className="mt-8 p-8 border-2 border-dashed border-slate-300 dark:border-slate-800 rounded-xl text-center">
                 <p className="text-slate-500 dark:text-slate-400">Go explore some quizzes to find your dream job!</p>
                 <Button 
-                    className="mt-4 group" 
+                    className="mt-4 group transition-transform hover:scale-105" 
                     onClick={() => setView(AppView.DASHBOARD)}
                 >
-                    Explore Careers <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                    Explore Careers
                 </Button>
              </div>
         )}

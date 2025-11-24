@@ -54,6 +54,8 @@ export const Slideshow: React.FC = () => {
         // --- GENERATE NEW IMAGES ---
         try {
             console.log("Generating new slides...");
+            // Backend now handles the generation details, including debug logic if we wanted, 
+            // but we pass the flag just in case the backend wants to short-circuit.
             const generated = await generateStorySlides(selectedCareer, user, debugImageGenerationEnabled);
             
             // CACHE IMMEDIATELY TO STORE

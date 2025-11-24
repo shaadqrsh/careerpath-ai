@@ -5,7 +5,7 @@ import { AppView, UserProfile } from '../types';
 import { Button } from '../components/Button';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { FALLBACK_COUNTRIES } from '../constants';
-import { upsertUserProfile, supabase, getUserProfile } from '../services/supabaseService';
+import { upsertUserProfile, getUserProfile, getCurrentUser } from '../services/supabaseService';
 
 export const Profile: React.FC = () => {
   const { user, setView, setUser } = useAppStore();
@@ -55,19 +55,13 @@ export const Profile: React.FC = () => {
     let isMounted = true;
 
     const initData = async () => {
-      // Safety check for supabase client
-      if (!supabase) {
-          if (isMounted) setIsLoadingData(false);
-          return;
-      }
-
       // Timeout Promise
       const timeout = new Promise((_, reject) => 
         setTimeout(() => reject(new Error("Profile load timeout")), 5000)
       );
 
       const fetchProfile = async () => {
-          const { data: { user: authUser } } = await supabase.auth.getUser();
+          const authUser = await getCurrentUser();
           if (authUser) {
               const profile = await getUserProfile(authUser.id);
               return profile;
@@ -101,10 +95,8 @@ export const Profile: React.FC = () => {
     setIsSaving(true);
     
     try {
-        if (!supabase) throw new Error("Database connection unavailable.");
-
-        // Fetch the REAL authenticated user ID directly from Supabase
-        const { data: { user: authUser } } = await supabase.auth.getUser();
+        // Fetch the REAL authenticated user ID directly from Backend
+        const authUser = await getCurrentUser();
         
         if (!authUser) {
              throw new Error("No active session. Please log in again.");
@@ -116,7 +108,7 @@ export const Profile: React.FC = () => {
             preferredWorkCountry: formData.preferredWorkCountry || formData.residenceCountry || 'USA',
         } as UserProfile;
 
-        // 1. Save to Supabase
+        // 1. Save to Supabase (Via Backend)
         await upsertUserProfile(updatedProfile);
 
         // 2. Update Local State
