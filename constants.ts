@@ -7,7 +7,7 @@ export const APP_NAME = "CareerPath AI";
 // Load from Environment Variable (Vite) or fallback to Localhost
 // The frontend will look for VITE_API_BASE_URL. 
 // If deployed to Vercel/Netlify, you set this env var there to point to Hugging Face.
-export const API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL || "http://localhost:8000"; 
+export const API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL || "https://homitybscit-pathfinder-app.hf.space"; 
 
 export const QUESTIONS: QuizQuestion[] = [
   // --- GENERAL / UNDECIDED (Helps identify the domain) --- //

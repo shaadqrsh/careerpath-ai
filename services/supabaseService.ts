@@ -10,6 +10,60 @@ const getToken = () => localStorage.getItem('access_token');
 const setToken = (token: string) => localStorage.setItem('access_token', token);
 const clearToken = () => localStorage.removeItem('access_token');
 
+// --- DATA MAPPING HELPERS ---
+
+const toDbProfile = (p: UserProfile) => ({
+    id: p.id,
+    full_name: p.fullName || '',
+    gender: p.gender || '',
+    age: p.age || 0,
+    education_level: p.educationLevel || '',
+    specialization: p.specialization || '',
+    residence_country: p.residenceCountry || '',
+    preferred_work_country: p.preferredWorkCountry || ''
+});
+
+const fromDbProfile = (d: any): UserProfile => ({
+    id: d.id,
+    fullName: d.full_name,
+    gender: d.gender,
+    age: d.age,
+    educationLevel: d.education_level,
+    specialization: d.specialization,
+    residenceCountry: d.residence_country,
+    preferredWorkCountry: d.preferred_work_country
+});
+
+const toDbCareer = (c: CareerRecommendation) => ({
+    id: c.id,
+    title: c.title,
+    match_score: c.matchScore,
+    summary: c.summary,
+    salary_range: c.salaryRange,
+    growth: c.growth,
+    tags: c.tags,
+    is_pivot: c.isPivot,
+    pivot_analysis: c.pivotAnalysis,
+    roadmap: c.roadmap, 
+    day_in_life_prompts: c.dayInLifePrompts,
+    slide_images: c.slideImages
+});
+
+const fromDbCareer = (d: any): CareerRecommendation => ({
+    id: d.id,
+    title: d.title,
+    matchScore: d.match_score,
+    summary: d.summary,
+    salaryRange: d.salary_range,
+    growth: d.growth,
+    tags: d.tags || [],
+    isPivot: d.is_pivot,
+    pivotAnalysis: d.pivot_analysis,
+    roadmap: d.roadmap || [],
+    dayInLifePrompts: d.day_in_life_prompts || [],
+    slideImages: d.slide_images || []
+});
+
 // --- AUTHENTICATION (Via Backend API) ---
 
 export interface AuthUser {
@@ -107,7 +161,8 @@ export const getUserProfile = async (userId: string): Promise<UserProfile | null
         if (response.status === 404) return null;
         if (!response.ok) throw new Error("Failed to fetch profile");
 
-        return await response.json();
+        const data = await response.json();
+        return fromDbProfile(data);
     } catch (e) {
         console.error("Error fetching profile:", e);
         return null;
@@ -120,7 +175,7 @@ export const upsertUserProfile = async (profile: UserProfile) => {
         const response = await fetch(`${API_BASE_URL}/api/profile`, {
             method: 'POST',
             headers,
-            body: JSON.stringify(profile)
+            body: JSON.stringify(toDbProfile(profile))
         });
         
         if (!response.ok) throw new Error("Failed to save profile");
@@ -138,66 +193,75 @@ export const uploadCareerImages = async (
   images: string[]
 ): Promise<string[]> => {
     try {
-        if (!careerUid) throw new Error("Missing Career UID");
+        const token = getToken();
+        if (!token) throw new Error("Not authenticated");
 
-        const headers = getAuthHeaders();
-        const response = await fetch(`${API_BASE_URL}/api/upload-images`, {
+        const response = await fetch(`${API_BASE_URL}/api/career-images`, {
             method: 'POST',
-            headers,
-            body: JSON.stringify({ career_uid: careerUid, images })
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                user_id: userId,
+                career_uid: careerUid,
+                images: images
+            })
         });
-        
-        if (!response.ok) throw new Error("Upload Failed");
-        const data = await response.json();
-        return data.urls;
-    } catch (e) {
-        console.warn("Backend upload failed, returning originals", e);
-        return images;
-    }
-};
 
-export const deleteCareerImages = async (userId: string, careerUid: string) => {
-     // Handled by backend deleteCareerFromDb
+        if (!response.ok) throw new Error("Image upload failed");
+        
+        const data = await response.json();
+        return data.image_urls;
+    } catch (e) {
+        console.error("Image upload error:", e);
+        // Fallback: return original strings if they are URLs
+        return images.filter(img => img.startsWith('http'));
+    }
 };
 
 export const getSavedCareers = async (userId: string): Promise<CareerRecommendation[]> => {
     try {
         const headers = getAuthHeaders();
         const response = await fetch(`${API_BASE_URL}/api/saved-careers`, { headers });
-        if (!response.ok) throw new Error("Failed to fetch saved careers");
         
-        return await response.json();
-    } catch (err) {
-        console.error("Failed to fetch saved careers", err);
+        if (!response.ok) throw new Error("Failed to fetch saved careers");
+
+        const data = await response.json();
+        return data.map(fromDbCareer);
+    } catch (e) {
+        console.error("Error fetching saved careers:", e);
         return [];
     }
 };
 
 export const saveCareerToDb = async (userId: string, career: CareerRecommendation) => {
-  try {
-    const headers = getAuthHeaders();
-    const response = await fetch(`${API_BASE_URL}/api/saved-careers`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(career)
-    });
-    if (!response.ok) throw new Error("Failed to save career");
-  } catch (err) {
-    console.error("Failed to save career to DB", err);
-    throw err; 
-  }
+    try {
+        const headers = getAuthHeaders();
+        const response = await fetch(`${API_BASE_URL}/api/saved-careers`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(toDbCareer(career))
+        });
+        
+        if (!response.ok) throw new Error("Failed to save career");
+    } catch (e) {
+        console.error("Error saving career:", e);
+        throw e;
+    }
 };
 
-export const deleteCareerFromDb = async (userId: string, careerId: string) => {
-  try {
-    const headers = getAuthHeaders();
-    const response = await fetch(`${API_BASE_URL}/api/saved-careers/${careerId}`, {
-        method: 'DELETE',
-        headers
-    });
-    if (!response.ok) throw new Error("Failed to delete career");
-  } catch (err) {
-    console.error("Failed to delete career from DB", err);
-    throw err;
-  }
+export const deleteCareerFromDb = async (userId: string, careerUid: string) => {
+    try {
+        const headers = getAuthHeaders();
+        const response = await fetch(`${API_BASE_URL}/api/saved-careers/${careerUid}`, {
+            method: 'DELETE',
+            headers
+        });
+        
+        if (!response.ok) throw new Error("Failed to delete career");
+    } catch (e) {
+        console.error("Error deleting career:", e);
+        throw e;
+    }
 };
