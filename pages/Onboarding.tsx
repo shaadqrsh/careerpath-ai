@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAppStore } from '../store';
 import { AppView, UserProfile } from '../types';
@@ -12,35 +11,30 @@ export const Onboarding: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [isVerifyingSession, setIsVerifyingSession] = useState(true);
   
-  // API Data State
   const [countries, setCountries] = useState<string[]>([]);
   const [isLoadingCountries, setIsLoadingCountries] = useState(true);
 
   const [formData, setFormData] = useState<Partial<UserProfile>>({
     fullName: '',
-    gender: 'Male', // Default to a specific gender for image gen
+    gender: 'Male',
     age: 18,
     educationLevel: 'High School',
     specialization: '',
     residenceCountry: '',
-    preferredWorkCountry: '' // Will default to residence country
+    preferredWorkCountry: '' 
   });
 
-  // 1. Session Safety Check on Mount
   useEffect(() => {
     let isMounted = true;
     const checkSession = async () => {
         try {
             const currentUser = await getCurrentUser();
             if (!currentUser) {
-                // If no valid session, kick back to Auth immediately
-                console.warn("No active session found in Onboarding. Redirecting.");
                 if (isMounted) setView(AppView.AUTH);
             } else {
                 if (isMounted) setIsVerifyingSession(false);
             }
         } catch (e) {
-             console.error("Session check error", e);
              if (isMounted) setView(AppView.AUTH);
         }
     };
@@ -48,11 +42,9 @@ export const Onboarding: React.FC = () => {
     return () => { isMounted = false; };
   }, [setView]);
 
-  // 2. Fetch Countries from Public API
   useEffect(() => {
     const fetchCountries = async () => {
         try {
-            // Using restcountries.com which is CORS-friendly
             const response = await fetch('https://restcountries.com/v3.1/all?fields=name');
             if (!response.ok) throw new Error("Failed to fetch countries");
             
@@ -63,13 +55,11 @@ export const Onboarding: React.FC = () => {
             
             setCountries(countryNames);
         } catch (error) {
-            console.warn("Country API failed, using fallback list:", error);
             setCountries(FALLBACK_COUNTRIES);
         } finally {
             setIsLoadingCountries(false);
         }
     };
-
     fetchCountries();
   }, []);
   
@@ -78,8 +68,6 @@ export const Onboarding: React.FC = () => {
     setSaving(true);
 
     try {
-        // 3. Fetch the REAL authenticated user ID directly from Backend Service
-        // We do this again here to be absolutely sure we have the ID before sending to DB.
         const authUser = await getCurrentUser();
         
         if (!authUser) {
@@ -94,22 +82,17 @@ export const Onboarding: React.FC = () => {
             preferredWorkCountry: formData.preferredWorkCountry || formData.residenceCountry || 'USA',
         } as UserProfile;
 
-        // Save to Supabase (Via Backend)
         await upsertUserProfile(finalProfile);
-        
-        // Update Store
         setUser(finalProfile);
         setView(AppView.DASHBOARD);
     } catch (err: any) {
-        console.error("Profile Save Error:", err);
-        alert(`Failed to save profile: ${err.message || "Unknown error"}. Please check your connection.`);
+        alert(`Failed to save profile: ${err.message}.`);
     } finally {
         setSaving(false);
     }
   };
 
   const handleChange = (field: keyof UserProfile, value: any) => {
-    // If changing residence country, update preferred country if it wasn't manually changed
     if (field === 'residenceCountry') {
       const isPreferredSameAsOldResidence = formData.preferredWorkCountry === formData.residenceCountry || formData.preferredWorkCountry === '';
       
@@ -126,25 +109,22 @@ export const Onboarding: React.FC = () => {
   if (isVerifyingSession) {
       return (
         <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 transition-colors">
-            <div className="flex flex-col items-center gap-4">
-                <Loader2 className="w-10 h-10 animate-spin text-blue-500" />
-                <p className="text-slate-500 dark:text-slate-400">Verifying session...</p>
-            </div>
+            <Loader2 className="w-10 h-10 animate-spin text-blue-500" />
         </div>
       );
   }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 px-4 py-6 transition-colors">
-      <div className="w-full max-w-lg">
+      {/* Widened Layout: max-w-4xl */}
+      <div className="w-full max-w-4xl">
         <div className="mb-8">
             <h2 className="text-3xl font-bold text-slate-900 dark:text-white mt-6">Tell us about yourself</h2>
             <p className="text-slate-600 dark:text-slate-400 mt-2">This helps our AI calibrate your recommendations based on location and demographics.</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Personal Info */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div>
                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Full Name</label>
                     <input 
@@ -170,7 +150,7 @@ export const Onboarding: React.FC = () => {
                 </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-6">
                 <div>
                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Age</label>
                     <input 
@@ -199,7 +179,6 @@ export const Onboarding: React.FC = () => {
                 </div>
             </div>
 
-             {/* Specialization */}
              <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Major / Specialization</label>
                 <input 
@@ -212,7 +191,6 @@ export const Onboarding: React.FC = () => {
                 />
             </div>
 
-            {/* Current Residence */}
             <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
                 <h3 className="text-sm font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-4">Current Residence</h3>
                 <div>
@@ -235,7 +213,6 @@ export const Onboarding: React.FC = () => {
                 </div>
             </div>
 
-            {/* Preferences */}
             <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
                 <h3 className="text-sm font-bold text-green-600 dark:text-green-400 uppercase tracking-wider mb-4">Future Work Preference</h3>
                 

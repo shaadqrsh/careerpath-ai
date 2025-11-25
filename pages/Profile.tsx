@@ -2,19 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { useAppStore } from '../store';
 import { AppView, UserProfile } from '../types';
 import { Button } from '../components/Button';
-import { ArrowLeft, Loader2, Shield } from 'lucide-react';
+import { ArrowLeft, Loader2, Shield, CheckCircle } from 'lucide-react';
 import { FALLBACK_COUNTRIES } from '../constants';
 import { upsertUserProfile, getUserProfile, getCurrentUser, sendPasswordResetEmail } from '../services/supabaseService';
 
 export const Profile: React.FC = () => {
   const { user, setView, setUser } = useAppStore();
   
-  // API Data State
   const [countries, setCountries] = useState<string[]>([]);
   const [isLoadingCountries, setIsLoadingCountries] = useState(true);
   
   const [isSaving, setIsSaving] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(true);
+  const [showToast, setShowToast] = useState(false);
 
   const [formData, setFormData] = useState<Partial<UserProfile>>({
     fullName: '',
@@ -26,7 +26,6 @@ export const Profile: React.FC = () => {
     preferredWorkCountry: ''
   });
 
-  // Fetch Countries
   useEffect(() => {
     const fetchCountries = async () => {
         try {
@@ -49,40 +48,25 @@ export const Profile: React.FC = () => {
     fetchCountries();
   }, []);
 
-  // Fetch Latest User Profile on Mount with Timeout Safety
   useEffect(() => {
     let isMounted = true;
-
     const initData = async () => {
-      const timeout = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error("Profile load timeout")), 5000)
-      );
-
-      const fetchProfile = async () => {
-          const authUser = await getCurrentUser();
-          if (authUser) {
-              const profile = await getUserProfile(authUser.id);
-              return profile;
-          }
-          return null;
-      };
-
       try {
-        const profile = await Promise.race([fetchProfile(), timeout]) as UserProfile | null;
-
-        if (profile && isMounted) {
-            setFormData(profile);
-            setUser(profile);
+        const authUser = await getCurrentUser();
+        if (authUser) {
+           const profile = await getUserProfile(authUser.id);
+           if (profile && isMounted) {
+             setFormData(profile);
+             setUser(profile);
+           }
         }
       } catch (err) {
-        console.error("Error loading profile data (or timeout):", err);
+        console.error("Error loading profile data", err);
       } finally {
         if (isMounted) setIsLoadingData(false);
       }
     };
-
     initData();
-    
     return () => { isMounted = false; };
   }, [setUser]);
 
@@ -92,10 +76,7 @@ export const Profile: React.FC = () => {
     
     try {
         const authUser = await getCurrentUser();
-        
-        if (!authUser) {
-             throw new Error("No active session. Please log in again.");
-        }
+        if (!authUser) throw new Error("No active session");
 
         const updatedProfile = { 
             id: authUser.id, 
@@ -106,8 +87,9 @@ export const Profile: React.FC = () => {
         await upsertUserProfile(updatedProfile);
         setUser(updatedProfile);
         
-        alert("Profile updated successfully!");
-        setView(AppView.DASHBOARD);
+        // Show Success Toast
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 3000);
     } catch (error: any) {
         console.error("Failed to update profile", error);
         alert(`Failed to save changes: ${error.message || "Unknown error"}`);
@@ -118,11 +100,7 @@ export const Profile: React.FC = () => {
 
   const handlePasswordReset = async () => {
       if (!window.confirm("Send a password reset link to your email?")) return;
-      
       try {
-          // We assume we have the email in the auth session on the backend
-          // But to keep it simple, we ask for it or use the context if we had it.
-          // Since our UserProfile doesn't strictly store Email, we fetch current auth user to get it.
           const authUser = await getCurrentUser();
           if (authUser && authUser.email) {
               await sendPasswordResetEmail(authUser.email);
@@ -138,7 +116,6 @@ export const Profile: React.FC = () => {
   const handleChange = (field: keyof UserProfile, value: any) => {
     if (field === 'residenceCountry') {
       const isPreferredSameAsOldResidence = formData.preferredWorkCountry === formData.residenceCountry || formData.preferredWorkCountry === '';
-
       setFormData(prev => ({ 
           ...prev, 
           [field]: value, 
@@ -159,11 +136,13 @@ export const Profile: React.FC = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 px-4 py-12 transition-colors duration-300">
-      <div className="w-full max-w-lg">
+      {/* Widened Layout: max-w-4xl */}
+      <div className="w-full max-w-4xl">
         <div className="mb-6">
             <button 
-                onClick={() => setView(AppView.DASHBOARD)} 
-                className="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white flex items-center gap-2 transition-colors mb-6"
+                onClick={() => setView(AppView.DASHBOARD)}
+                disabled={isSaving} 
+                className="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white flex items-center gap-2 transition-colors mb-6 disabled:opacity-50 disabled:cursor-not-allowed"
             >
                 <ArrowLeft size={20} /> Back to Dashboard
             </button>
@@ -171,8 +150,7 @@ export const Profile: React.FC = () => {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6 bg-white dark:bg-slate-800 p-8 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xl transition-all">
-             {/* Personal Info */}
-             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div>
                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Full Name</label>
                     <input 
@@ -197,7 +175,7 @@ export const Profile: React.FC = () => {
                 </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-6">
                 <div>
                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Age</label>
                     <input 
@@ -226,7 +204,6 @@ export const Profile: React.FC = () => {
                 </div>
             </div>
 
-            {/* Specialization */}
             <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Major / Specialization</label>
                 <input 
@@ -239,7 +216,6 @@ export const Profile: React.FC = () => {
                 />
             </div>
 
-            {/* Current Residence */}
             <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
                 <h3 className="text-sm font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-4">Current Residence</h3>
                 <div>
@@ -262,7 +238,6 @@ export const Profile: React.FC = () => {
                 </div>
             </div>
 
-            {/* Preferences */}
             <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
                 <h3 className="text-sm font-bold text-green-600 dark:text-green-400 uppercase tracking-wider mb-4">Future Work Preference</h3>
                 
@@ -287,7 +262,6 @@ export const Profile: React.FC = () => {
                 </div>
             </div>
             
-            {/* Account Security Section */}
             <div className="border-t border-slate-200 dark:border-slate-700 pt-6">
                  <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-2">
                     <Shield size={16} /> Security
@@ -302,6 +276,15 @@ export const Profile: React.FC = () => {
             </Button>
         </form>
       </div>
+
+      {showToast && (
+        <div className="fixed top-24 left-1/2 -translate-x-1/2 bg-slate-800 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 animate-[fadeIn_0.3s_ease-out] z-50">
+            <CheckCircle className="text-green-400 shrink-0" />
+            <div>
+                <p className="font-bold">Profile Updated Successfully!</p>
+            </div>
+        </div>
+      )}
     </div>
   );
 };

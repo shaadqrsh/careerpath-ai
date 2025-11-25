@@ -40,7 +40,6 @@
     <style>
       body {
         font-family: 'Inter', sans-serif;
-        /* Background handled by App.tsx for theme toggling */
         transition: background-color 0.3s ease, color 0.3s ease;
       }
       /* Custom Scrollbar */
@@ -58,7 +57,6 @@
         background: #64748b; 
       }
       
-      /* Dark mode scrollbar override */
       .dark ::-webkit-scrollbar-track {
         background: #1e293b;
       }
@@ -66,7 +64,16 @@
         background: #475569;
       }
     </style>
-  <script type="importmap">
+<script type="importmap">
+{
+  "imports": {
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "zustand": "https://aistudiocdn.com/zustand@^5.0.8",
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.554.0"
+  }
+}
 </script>
 </head>
   <body>

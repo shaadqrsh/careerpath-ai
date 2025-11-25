@@ -1,15 +1,9 @@
 import { CareerRecommendation, UserProfile } from '../types';
 import { API_BASE_URL } from '../constants';
 
-// --- CLIENT AUTH CONFIG ---
-// Keys are NO LONGER needed in frontend. Everything goes through the backend proxy.
-
-// Helper to get the JWT token
 const getToken = () => localStorage.getItem('access_token');
 const setToken = (token: string) => localStorage.setItem('access_token', token);
 const clearToken = () => localStorage.removeItem('access_token');
-
-// --- DATA MAPPING HELPERS ---
 
 const toDbProfile = (p: UserProfile) => ({
     id: p.id,
@@ -62,8 +56,6 @@ const fromDbCareer = (d: any): CareerRecommendation => ({
     dayInLifePrompts: d.day_in_life_prompts || [],
     slideImages: d.slide_images || []
 });
-
-// --- AUTHENTICATION (Via Backend API) ---
 
 export interface AuthUser {
     id: string;
@@ -120,12 +112,32 @@ export const sendPasswordResetEmail = async (email: string) => {
             body: JSON.stringify({ email })
         });
 
-        if (!response.ok) {
-             throw new Error("Failed to send reset email");
-        }
+        if (!response.ok) throw new Error("Failed to send reset email");
         return true;
     } catch (e) {
         console.error("Reset Password Error:", e);
+        throw e;
+    }
+};
+
+export const updateUserPassword = async (password: string) => {
+    try {
+        const token = getToken();
+        if (!token) throw new Error("Not authenticated");
+
+        const response = await fetch(`${API_BASE_URL}/api/auth/update-password`, {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}` 
+            },
+            body: JSON.stringify({ password })
+        });
+
+        if (!response.ok) throw new Error("Failed to update password");
+        return true;
+    } catch (e) {
+        console.error("Update Password Error:", e);
         throw e;
     }
 };
@@ -144,7 +156,7 @@ export const getCurrentUser = async (): Promise<AuthUser | null> => {
         });
 
         if (!response.ok) {
-            clearToken(); // Token invalid
+            clearToken();
             return null;
         }
 
@@ -155,8 +167,6 @@ export const getCurrentUser = async (): Promise<AuthUser | null> => {
     }
 };
 
-// --- DATA HELPERS (Via Backend API) ---
-
 const getAuthHeaders = () => {
     const token = getToken();
     if (!token) throw new Error("Not Authenticated");
@@ -166,9 +176,7 @@ const getAuthHeaders = () => {
     };
 };
 
-export const supabase = null; // Removed client usage entirely
-
-// --- PROFILE ---
+export const supabase = null; 
 
 export const getUserProfile = async (userId: string): Promise<UserProfile | null> => {
     try {
@@ -202,8 +210,6 @@ export const upsertUserProfile = async (profile: UserProfile) => {
     }
 };
 
-// --- IMAGES & DB ---
-
 export const uploadCareerImages = async (
   userId: string, 
   careerUid: string, 
@@ -232,7 +238,6 @@ export const uploadCareerImages = async (
         return data.image_urls;
     } catch (e) {
         console.error("Image upload error:", e);
-        // Fallback: return original strings if they are URLs
         return images.filter(img => img.startsWith('http'));
     }
 };

@@ -6,7 +6,7 @@ export interface UserProfile {
   educationLevel: string;
   specialization: string;
   residenceCountry: string;
-  preferredWorkCountry: string; // Supports 'Undecided'
+  preferredWorkCountry: string;
 }
 
 export type CareerDomain = 'science' | 'commerce' | 'arts' | 'general';
@@ -27,25 +27,25 @@ export interface QuizAnswer {
 
 export interface CareerRoadmapStep {
   title: string;
-  description: string; // General description
-  localPath?: string; // Specific to residence
-  targetPath?: string; // Specific to target country
+  description: string;
+  localPath?: string;
+  targetPath?: string;
   duration: string;
 }
 
 export interface CareerRecommendation {
   id: string;
   title: string;
-  matchScore: number; // 0-100
+  matchScore: number;
   summary: string;
   salaryRange: string;
   growth: string;
   tags: string[];
-  isPivot?: boolean; // New: Is this a major domain switch?
-  pivotAnalysis?: string; // New: Explanation of the gap/eligibility
+  isPivot?: boolean;
+  pivotAnalysis?: string;
   roadmap: CareerRoadmapStep[];
-  dayInLifePrompts?: string[]; // For slideshow generation
-  slideImages?: string[]; // URLs of generated/saved images
+  dayInLifePrompts?: string[];
+  slideImages?: string[];
 }
 
 export interface Slide {
@@ -57,6 +57,7 @@ export interface Slide {
 export enum AppView {
   LANDING = 'LANDING',
   AUTH = 'AUTH',
+  UPDATE_PASSWORD = 'UPDATE_PASSWORD',
   ONBOARDING = 'ONBOARDING',
   DASHBOARD = 'DASHBOARD',
   PROFILE = 'PROFILE',

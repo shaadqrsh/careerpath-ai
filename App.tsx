@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useAppStore } from './store';
 import { AppView } from './types';
@@ -6,7 +5,6 @@ import { getUserProfile, getSavedCareers, getCurrentUser } from './services/supa
 import { Loader2, AlertTriangle } from 'lucide-react';
 import { Button } from './components/Button';
 
-// Page Imports
 import { Landing } from './pages/Landing';
 import { Auth } from './pages/Auth';
 import { Onboarding } from './pages/Onboarding';
@@ -18,12 +16,13 @@ import { CareerDetail } from './pages/CareerDetail';
 import { Slideshow } from './pages/Slideshow';
 import { Profile } from './pages/Profile';
 import { SavedPaths } from './pages/SavedPaths';
+import { UpdatePassword } from './pages/UpdatePassword';
 
 const App: React.FC = () => {
   const { currentView, theme, setView, setUser, setSavedCareers, pendingDeleteCareer, confirmDeleteCareer, cancelDeleteCareer } = useAppStore();
   const [isInitializing, setIsInitializing] = useState(true);
 
-  // Handle Dark/Light Mode Class on HTML element
+  // Handle Dark/Light Mode
   useEffect(() => {
     const root = window.document.documentElement;
     if (theme === 'dark') {
@@ -33,33 +32,47 @@ const App: React.FC = () => {
     }
   }, [theme]);
 
-  // Auth Initialization (Token-Based)
+  // Auth Initialization & Deep Link Detection
   useEffect(() => {
     const initAuth = async () => {
         try {
-            // Check for valid token
+            // 1. Check for Password Reset Hash (Supabase sends #access_token=...&type=recovery)
+            const hash = window.location.hash;
+            if (hash && (hash.includes('access_token') || hash.includes('type=recovery'))) {
+                // Extract access token
+                const params = new URLSearchParams(hash.substring(1)); // remove #
+                const accessToken = params.get('access_token');
+                
+                if (accessToken) {
+                    // Manually set token
+                    localStorage.setItem('access_token', accessToken);
+                    // Clear hash to clean URL
+                    window.history.replaceState(null, '', window.location.pathname);
+                    // Force view to update password
+                    setView(AppView.UPDATE_PASSWORD);
+                    setIsInitializing(false);
+                    return; // Stop further checks
+                }
+            }
+
+            // 2. Normal Session Check
             const authUser = await getCurrentUser();
             
             if (authUser) {
                 const profile = await getUserProfile(authUser.id);
                 if (profile) {
                     setUser(profile);
-                    
-                    // Fetch saved careers
                     const saved = await getSavedCareers(authUser.id);
                     setSavedCareers(saved);
 
-                    // Redirect if on public pages
                     if (currentView === AppView.LANDING || currentView === AppView.AUTH) {
                         setView(AppView.DASHBOARD);
                     }
                 } else {
-                    // New user with no profile data
                     setUser({ id: authUser.id } as any);
                     setView(AppView.ONBOARDING);
                 }
             } else {
-                // No valid session
                 if (currentView !== AppView.LANDING && currentView !== AppView.AUTH) {
                     setView(AppView.LANDING);
                 }
@@ -73,7 +86,7 @@ const App: React.FC = () => {
     };
     
     initAuth();
-  }, [setUser, setView, setSavedCareers]); // Run once on mount (and if store setters change)
+  }, [setUser, setView, setSavedCareers]);
 
   const renderView = () => {
     switch (currentView) {
@@ -81,6 +94,8 @@ const App: React.FC = () => {
         return <Landing />;
       case AppView.AUTH:
         return <Auth />;
+      case AppView.UPDATE_PASSWORD:
+        return <UpdatePassword />;
       case AppView.ONBOARDING:
         return <Onboarding />;
       case AppView.DASHBOARD:
@@ -113,27 +128,20 @@ const App: React.FC = () => {
   }
 
   return (
-    // Global Theme Wrapper
     <div className="min-h-screen transition-colors duration-300 bg-slate-50 text-slate-900 dark:bg-slate-900 dark:text-slate-50 relative">
       {renderView()}
 
-      {/* Global Delete Confirmation Modal */}
       {pendingDeleteCareer && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
-            {/* Backdrop */}
             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={cancelDeleteCareer}></div>
-            
-            {/* Modal */}
             <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-md w-full p-6 relative z-10 animate-[scaleIn_0.2s_ease-out] border border-slate-200 dark:border-slate-700">
                 <div className="flex items-center gap-3 mb-4 text-amber-600 dark:text-amber-500">
                     <AlertTriangle size={28} />
                     <h3 className="text-xl font-bold text-slate-900 dark:text-white">Unsave Career?</h3>
                 </div>
-                
                 <p className="text-slate-600 dark:text-slate-300 mb-6">
                     Are you sure you want to remove <strong>{pendingDeleteCareer.title}</strong> from your saved paths? This action cannot be undone.
                 </p>
-                
                 <div className="flex gap-3 justify-end">
                     <Button variant="ghost" onClick={cancelDeleteCareer}>Cancel</Button>
                     <Button 
