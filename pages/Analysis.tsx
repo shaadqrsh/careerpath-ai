@@ -27,6 +27,9 @@ export const Analysis: React.FC = () => {
   const [currentCharIndex, setCurrentCharIndex] = useState(0);
   
   const scrollRef = useRef<HTMLDivElement>(null);
+  
+  // Guard to prevent double execution due to dependency updates (like setUser for quota)
+  const hasStartedAnalysis = useRef(false);
 
   const targetLogs = React.useMemo(() => {
     if (!user) return [];
@@ -91,6 +94,10 @@ export const Analysis: React.FC = () => {
 
     const performAnalysis = async () => {
       if (user) {
+        // Double-check guard inside async function to be safe
+        if (hasStartedAnalysis.current) return;
+        hasStartedAnalysis.current = true;
+
         try {
             const results = await generateCareerRecommendations(user, quizAnswers);
             
@@ -113,6 +120,7 @@ export const Analysis: React.FC = () => {
 
             setTimeout(() => setView(AppView.RESULTS), 2000);
         } catch (e: any) {
+            hasStartedAnalysis.current = false; // Reset if failed so user can try again if they navigate back
             if (e.message === "QUOTA_EXCEEDED") {
                 showToast(`Daily limit reached (${DAILY_CAREER_LIMIT} paths/day). Try again tomorrow.`);
                 setView(AppView.DASHBOARD);
@@ -125,7 +133,9 @@ export const Analysis: React.FC = () => {
     };
 
     const startDelay = setTimeout(() => {
-        performAnalysis();
+        if (!hasStartedAnalysis.current) {
+            performAnalysis();
+        }
     }, 1500);
 
     return () => {

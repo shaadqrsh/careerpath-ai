@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { useAppStore } from '../store';
 import { AppView } from '../types';
@@ -30,13 +31,13 @@ export const CareerDetail: React.FC = () => {
     // Added pb-32 for extra bottom padding on mobile
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white pb-32 transition-colors">
       {/* Header */}
-      <div className="relative min-h-[16rem] h-auto bg-slate-800 overflow-hidden pt-20 pb-8">
+      <div className="relative min-h-[16rem] h-auto bg-slate-800 overflow-hidden py-8">
         <div className="absolute inset-0 bg-gradient-to-r from-blue-900 to-slate-900 opacity-90"></div>
         <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?auto=format&fit=crop&q=80')] bg-cover bg-center mix-blend-overlay"></div>
         
-        <div className="relative max-w-7xl mx-auto px-4 h-full flex flex-col justify-end">
-            {/* Back Button positioned safely at top */}
-            <div className="absolute top-6 left-4 right-4 flex justify-between items-center z-10">
+        <div className="relative max-w-7xl mx-auto px-4 h-full flex flex-col gap-6">
+            {/* Back Button positioned in flow to avoid overlap */}
+            <div className="flex justify-between items-center z-10">
                 <button 
                     onClick={() => setView(backTarget)}
                     disabled={isSavingCareer}
@@ -46,7 +47,7 @@ export const CareerDetail: React.FC = () => {
                 </button>
             </div>
             
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 md:gap-4">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 md:gap-4 mt-auto">
                 <div className="flex-1 min-w-0">
                     {isBestMatch && (
                         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-500/20 border border-green-500/40 text-green-300 text-xs font-bold uppercase tracking-wider mb-3 backdrop-blur-md">

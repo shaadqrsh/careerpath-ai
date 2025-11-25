@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { useAppStore } from '../store';
 import { AppView, UserProfile } from '../types';
@@ -124,19 +125,19 @@ export const Onboarding: React.FC = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 px-4 py-12 transition-colors relative">
       
-      {/* Top Right Controls */}
-      <div className="absolute top-6 right-6 flex items-center gap-4">
-        <button 
-            onClick={handleLogout}
-            className="text-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white flex items-center gap-2 transition-colors font-medium"
-        >
-            <LogOut size={16} /> Wrong Account?
-        </button>
-      </div>
-
       <div className="w-full max-w-3xl">
+        {/* Controls moved inside container for alignment */}
+        <div className="flex justify-end mb-4">
+            <button 
+                onClick={handleLogout}
+                className="text-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white flex items-center gap-2 transition-colors font-medium"
+            >
+                <LogOut size={16} /> Wrong Account?
+            </button>
+        </div>
+
         <div className="mb-8">
-            <h2 className="text-3xl font-bold text-slate-900 dark:text-white mt-6">Tell us about yourself</h2>
+            <h2 className="text-3xl font-bold text-slate-900 dark:text-white mt-2">Tell us about yourself</h2>
             <p className="text-slate-600 dark:text-slate-400 mt-2">This helps our AI calibrate your recommendations based on location and demographics.</p>
         </div>
 
