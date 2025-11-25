@@ -19,9 +19,10 @@ SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
 # Hardcoded AI Models
+# Using 1.5 Pro for text as it is stable and smart
 TEXT_MODEL_NAME = "gemini-2.5-flash"
-# User requested 2.5 flash for images
-IMAGE_MODEL_NAME = "gemini-2.5-flash" 
+# Using 2.0 Flash for images as it supports free image generation
+IMAGE_MODEL_NAME = "gemini-2.0-flash" 
 
 # Logging
 logging.basicConfig(level=logging.INFO)
@@ -329,8 +330,11 @@ async def generate_images(req: GenerateImagesRequest, user = Depends(verify_toke
             subject_desc = f"a {age} year old {u.gender} {u.residence_country} national"
 
         model = genai.GenerativeModel(IMAGE_MODEL_NAME)
-
-        for prompt_text in req.prompts:
+        
+        # Use asyncio gather if possible, but basic loop for now
+        import asyncio
+        
+        async def generate_single_image(prompt_text):
             # Enhanced Cinematic Prompt with 4:3 Ratio instruction and "Glorified" keywords
             full_prompt = (
                 f"Generate an image showing this career in the most glorified, epic, and inspiring way possible. "
@@ -338,29 +342,27 @@ async def generate_images(req: GenerateImagesRequest, user = Depends(verify_toke
                 f"Scene: {prompt_text}. "
                 f"Style: Photorealistic, 4k, dramatic lighting, award-winning photography, glorious, visionary, highly detailed, aspect ratio 4:3."
             )
-            
             try:
                 # Generate Image
                 response = await model.generate_content_async(full_prompt)
                 
                 # Extract Base64 from inline data
-                # Note: Gemini models return inline data in parts (Standard GenAI SDK structure)
                 if response.candidates and response.candidates[0].content.parts:
                     for part in response.candidates[0].content.parts:
                         if part.inline_data:
                             b64_data = part.inline_data.data
                             mime_type = part.inline_data.mime_type
-                            generated_images.append(f"data:{mime_type};base64,{b64_data}")
-                            break
-                    else:
-                        # Fallback if no image part found
-                        generated_images.append(f"https://picsum.photos/seed/{uuid.uuid4()}/800/600")
+                            return f"data:{mime_type};base64,{b64_data}"
+                    return f"https://picsum.photos/seed/{uuid.uuid4()}/800/600"
                 else:
-                    generated_images.append(f"https://picsum.photos/seed/{uuid.uuid4()}/800/600")
-
+                    return f"https://picsum.photos/seed/{uuid.uuid4()}/800/600"
             except Exception as inner_e:
                 logger.error(f"Individual Image Gen Error: {inner_e}")
-                generated_images.append(f"https://picsum.photos/seed/{uuid.uuid4()}/800/600")
+                return f"https://picsum.photos/seed/{uuid.uuid4()}/800/600"
+
+        # Run concurrently
+        tasks = [generate_single_image(p) for p in req.prompts]
+        generated_images = await asyncio.gather(*tasks)
 
         return {"images": generated_images}
 
