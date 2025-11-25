@@ -55,6 +55,17 @@ export const Quiz: React.FC = () => {
     }
   };
 
+  // Handle "Enter" Key Press for Quick Navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Enter' && selectedOption) {
+            handleNext();
+        }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedOption, currentIndex]); // Re-bind when selection changes
+
   const handleContinueToDomain = () => {
     if (suggestedDomain) {
         setDomain(suggestedDomain);
@@ -101,7 +112,6 @@ export const Quiz: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col items-center pt-20 px-4 transition-colors duration-300">
-      {/* UPDATED WIDTH: max-w-3xl for both bar and content */}
       <div className="w-full max-w-3xl fixed top-0 left-0 right-0 mx-auto pt-8 px-4 z-10 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-sm pb-4 transition-colors">
         <div className="flex justify-between text-xs font-medium text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-wide">
           <span>{selectedDomain} Assessment</span>

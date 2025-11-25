@@ -239,7 +239,6 @@ export const Profile: React.FC = () => {
             <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
                 <h3 className="text-sm font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-4">Current Residence</h3>
                 <div>
-                    {/* LABEL REMOVED AS REQUESTED */}
                     <select 
                             required
                             value={formData.residenceCountry}
@@ -259,7 +258,6 @@ export const Profile: React.FC = () => {
                 <h3 className="text-sm font-bold text-green-600 dark:text-green-400 uppercase tracking-wider mb-4">Future Work Preference</h3>
                 
                 <div className="mb-4">
-                    {/* LABEL REMOVED AS REQUESTED */}
                     <select 
                         value={formData.preferredWorkCountry}
                         onChange={(e) => handleChange('preferredWorkCountry', e.target.value)}
@@ -279,6 +277,14 @@ export const Profile: React.FC = () => {
                 </div>
             </div>
             
+            {/* SAVE CHANGES - MOVED UP */}
+            <div className="border-t border-slate-200 dark:border-slate-700 pt-6">
+                <Button type="submit" fullWidth size="lg" disabled={isSaving}>
+                    {isSaving ? "Saving Changes..." : "Save Changes"}
+                </Button>
+            </div>
+
+            {/* SECURITY - MOVED DOWN */}
             <div className="border-t border-slate-200 dark:border-slate-700 pt-6">
                  <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-2">
                     <Shield size={16} /> Security
@@ -287,10 +293,6 @@ export const Profile: React.FC = () => {
                     Send Password Reset Email
                  </Button>
             </div>
-
-            <Button type="submit" fullWidth size="lg" disabled={isSaving}>
-                {isSaving ? "Saving Changes..." : "Save Changes"}
-            </Button>
         </form>
       </div>
 
