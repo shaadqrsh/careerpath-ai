@@ -24,6 +24,7 @@ export const Analysis: React.FC = () => {
   const [displayLog, setDisplayLog] = useState<string[]>([]);
   const [currentLineIndex, setCurrentLineIndex] = useState(0);
   const [currentCharIndex, setCurrentCharIndex] = useState(0);
+  const [canStartTyping, setCanStartTyping] = useState(false);
   
   const scrollRef = useRef<HTMLDivElement>(null);
   
@@ -45,7 +46,16 @@ export const Analysis: React.FC = () => {
     ];
   }, [user]);
 
+  // Start typing after initial animation
   useEffect(() => {
+      const timer = setTimeout(() => {
+          setCanStartTyping(true);
+      }, 800);
+      return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (!canStartTyping) return;
     if (currentLineIndex >= targetLogs.length) return;
 
     const currentLineText = targetLogs[currentLineIndex];
@@ -74,7 +84,7 @@ export const Analysis: React.FC = () => {
     }
 
     return () => clearTimeout(timeout);
-  }, [currentLineIndex, currentCharIndex, targetLogs]);
+  }, [currentLineIndex, currentCharIndex, targetLogs, canStartTyping]);
 
 
   useEffect(() => {
@@ -142,29 +152,31 @@ export const Analysis: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col items-center justify-center p-4 transition-colors duration-300">
-      <div className="relative">
+      <div className="relative animate-fade-in-up opacity-0" style={{ animationDelay: '0ms' }}>
         <div className="absolute inset-0 bg-blue-500 blur-xl opacity-20 animate-pulse-slow"></div>
-        <Loader2 className="w-16 h-16 text-blue-600 dark:text-blue-500 animate-spin relative z-10" />
+        <Loader2 className="w-16 h-16 text-blue-600 dark:text-blue-500 animate-spin relative z-10 mx-auto" />
       </div>
       
-      <h2 className="mt-8 text-2xl md:text-3xl font-bold text-slate-900 dark:text-white text-center">
-        Generating a career path for you
-      </h2>
-      
-      <div className="mt-4 flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-         <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" className="text-blue-500">
-            <path d="M12 24C12 24 10 14 0 12C10 10 12 0 12 0C12 0 14 10 24 12C14 14 12 24 12 24Z" />
-         </svg>
-         <span className="text-xs font-semibold bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-transparent">
-            Powered by Gemini
-         </span>
+      <div className="animate-fade-in-up opacity-0 text-center" style={{ animationDelay: '150ms' }}>
+        <h2 className="mt-8 text-2xl md:text-3xl font-bold text-slate-900 dark:text-white text-center">
+            Generating a career path for you
+        </h2>
+        
+        <div className="mt-4 flex items-center justify-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 w-fit mx-auto">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" className="text-blue-500">
+                <path d="M12 24C12 24 10 14 0 12C10 10 12 0 12 0C12 0 14 10 24 12C14 14 12 24 12 24Z" />
+            </svg>
+            <span className="text-xs font-semibold bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-transparent">
+                Powered by Gemini
+            </span>
+        </div>
+        
+        <p className="mt-6 text-slate-600 dark:text-slate-400 text-lg animate-pulse min-h-[1.75rem] transition-opacity duration-500">
+            {loadingText}
+        </p>
       </div>
-      
-      <p className="mt-6 text-slate-600 dark:text-slate-400 text-lg animate-pulse min-h-[1.75rem] transition-opacity duration-500">
-        {loadingText}
-      </p>
 
-      <div ref={scrollRef} className="mt-12 w-full max-w-lg bg-white dark:bg-slate-950 rounded-lg p-6 font-mono text-xs md:text-sm text-slate-800 dark:text-green-400 border border-slate-300 dark:border-slate-800 shadow-2xl overflow-y-auto max-h-[350px] min-h-[280px] relative transition-colors scroll-smooth">
+      <div ref={scrollRef} className="mt-12 w-full max-w-lg bg-white dark:bg-slate-950 rounded-lg p-6 font-mono text-xs md:text-sm text-slate-800 dark:text-green-400 border border-slate-300 dark:border-slate-800 shadow-2xl overflow-y-auto max-h-[350px] min-h-[280px] relative transition-colors scroll-smooth animate-fade-in-up opacity-0" style={{ animationDelay: '300ms' }}>
         <div className="flex items-center gap-2 mb-4 border-b border-slate-200 dark:border-slate-800 pb-2 sticky top-0 bg-white dark:bg-slate-950 z-10">
             <div className="w-3 h-3 rounded-full bg-red-500"></div>
             <div className="w-3 h-3 rounded-full bg-yellow-500"></div>

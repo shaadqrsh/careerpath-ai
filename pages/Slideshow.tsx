@@ -1,5 +1,4 @@
 
-
 import React, { useEffect, useState, useRef } from 'react';
 import { useAppStore } from '../store';
 import { AppView, Slide } from '../types';
@@ -7,6 +6,22 @@ import { generateStorySlides } from '../services/geminiService';
 import { uploadCareerImages, saveCareerToDb, getUserProfile } from '../services/supabaseService';
 import { X, ChevronLeft, ChevronRight, Loader2, ImageOff, AlertOctagon } from 'lucide-react';
 import { DAILY_IMAGE_LIMIT } from '../constants';
+
+const BananaIcon = ({ className }: { className?: string }) => (
+    <svg 
+        xmlns="http://www.w3.org/2000/svg" 
+        viewBox="0 0 24 24" 
+        fill="currentColor" 
+        stroke="currentColor" 
+        strokeWidth="2" 
+        strokeLinecap="round" 
+        strokeLinejoin="round" 
+        className={className}
+    >
+        <path d="M4 13c3.5-2 8-2 10 2a5.5 5.5 0 0 1 8 5" />
+        <path d="M5.15 17a9 9 0 1 0 17.77-2.88" />
+    </svg>
+);
 
 export const Slideshow: React.FC = () => {
   const { selectedCareer, setView, user, setUser, updateCareerImages, savedCareers } = useAppStore();
@@ -17,12 +32,51 @@ export const Slideshow: React.FC = () => {
   const [quotaError, setQuotaError] = useState(false);
   const [allFailed, setAllFailed] = useState(false);
   
+  const [loadingText, setLoadingText] = useState("Dreaming up possibilities...");
+
   const hasStartedRef = useRef(false);
+
+  // Cycling text effect for loading
+  useEffect(() => {
+    const texts = [
+        "Dreaming up possibilities...",
+        "Sketching the scene...",
+        "Rendering light and shadow...",
+        "Adding final touches..."
+    ];
+    let i = 0;
+    const interval = setInterval(() => {
+        i = (i + 1) % texts.length;
+        setLoadingText(texts[i]);
+    }, 2500);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
     
     const loadSlides = async () => {
+      // Pre-check quota locally if possible to avoid flash of loading
+      if (user) {
+          const lastDateStr = user.lastImageGenerationDate;
+          let remaining = DAILY_IMAGE_LIMIT;
+          
+          if (lastDateStr) {
+              const lastDate = new Date(lastDateStr);
+              const now = new Date();
+              const isSameDay = lastDate.toISOString().split('T')[0] === now.toISOString().split('T')[0];
+              if (isSameDay) {
+                  remaining = Math.max(0, DAILY_IMAGE_LIMIT - (user.dailyImageGenerationsCount || 0));
+              }
+          }
+          
+          if (remaining <= 0) {
+              setQuotaError(true);
+              setLoading(false);
+              return;
+          }
+      }
+
       if (selectedCareer && !hasStartedRef.current) {
         hasStartedRef.current = true;
         
@@ -102,8 +156,8 @@ export const Slideshow: React.FC = () => {
 
   if (quotaError) {
       return (
-        <div className="fixed inset-0 bg-black/95 z-[60] flex flex-col items-center justify-center text-white p-4 text-center animate-in fade-in duration-300">
-            <div className="bg-slate-900 p-8 rounded-2xl border border-red-900/50 max-w-md shadow-2xl">
+        <div className="fixed inset-0 bg-black/95 z-[60] flex flex-col items-center justify-center text-white p-4 text-center">
+            <div className="bg-slate-900 p-8 rounded-2xl border border-red-900/50 max-w-md shadow-2xl animate-fade-in-up">
                 <AlertOctagon className="w-16 h-16 text-red-500 mx-auto mb-6" />
                 <h3 className="text-2xl font-bold mb-3">Daily Limit Reached</h3>
                 <p className="text-slate-400 mb-8 leading-relaxed">
@@ -124,20 +178,31 @@ export const Slideshow: React.FC = () => {
   if (loading) {
     return (
       <div className="fixed inset-0 bg-black/95 z-[60] flex flex-col items-center justify-center">
-        <div className="relative">
+        <div className="relative animate-fade-in-up opacity-0" style={{ animationDelay: '0ms' }}>
             <div className="absolute inset-0 bg-blue-500 blur-xl opacity-20 animate-pulse"></div>
             <Loader2 className="w-12 h-12 text-blue-500 animate-spin relative z-10" />
         </div>
-        <p className="text-white text-lg font-medium mt-6 animate-pulse">Visualizing your future...</p>
-        <p className="text-slate-500 text-sm mt-2">AI is painting the scene</p>
+        
+        <div className="mt-8 flex flex-col items-center animate-fade-in-up opacity-0" style={{ animationDelay: '100ms' }}>
+            <p className="text-white text-lg font-medium animate-pulse min-h-[1.75rem] transition-opacity duration-500 mb-4">
+                {loadingText}
+            </p>
+            
+            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-yellow-500/10 border border-yellow-500/20 backdrop-blur-md">
+                <BananaIcon className="w-3 h-3 text-yellow-500" />
+                <span className="text-xs font-semibold text-yellow-500">
+                    Powered by Nano Banana
+                </span>
+            </div>
+        </div>
       </div>
     );
   }
 
   if (allFailed || slides.length === 0) {
       return (
-        <div className="fixed inset-0 bg-black/95 z-[60] flex flex-col items-center justify-center text-white p-4 text-center animate-in fade-in duration-300">
-            <div className="bg-slate-900 p-8 rounded-2xl border border-slate-800 max-w-md shadow-2xl">
+        <div className="fixed inset-0 bg-black/95 z-[60] flex flex-col items-center justify-center text-white p-4 text-center">
+            <div className="bg-slate-900 p-8 rounded-2xl border border-slate-800 max-w-md shadow-2xl animate-fade-in-up">
                 <ImageOff className="w-12 h-12 text-slate-600 mx-auto mb-6" />
                 <h3 className="text-xl font-bold mb-3">Visualizations are not available</h3>
                 <p className="text-slate-400 mb-8">

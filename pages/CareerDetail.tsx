@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useAppStore } from '../store';
 import { AppView } from '../types';
@@ -179,7 +180,7 @@ export const CareerDetail: React.FC = () => {
 
                 {selectedCareer.roadmap.map((step, idx) => (
                     <div key={idx} className="relative group animate-fade-in-up opacity-0" style={{ animationDelay: `${500 + (idx * 150)}ms` }}>
-                        <div className="absolute -left-[41px] top-0 w-6 h-6 rounded-full bg-white dark:bg-slate-800 border-2 border-green-500 group-hover:bg-green-500 transition-colors z-10"></div>
+                        <div className="absolute -left-[41px] top-6 w-6 h-6 rounded-full bg-white dark:bg-slate-800 border-2 border-green-500 group-hover:bg-green-500 transition-colors z-10"></div>
                         <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
                             <span className="text-xs font-bold text-green-600 dark:text-green-400 tracking-wider uppercase mb-1 block">{step.duration}</span>
                             <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">{step.title}</h3>

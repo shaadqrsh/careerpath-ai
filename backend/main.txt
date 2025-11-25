@@ -146,10 +146,20 @@ def check_quota(user_id: str, count_col: str, date_col: str, limit: int) -> int:
         last_date_str = data.get(date_col)
         
         now = datetime.now(timezone.utc)
+        # Parse Supabase timestamptz
         last_date = datetime.fromisoformat(last_date_str.replace('Z', '+00:00')) if last_date_str else now
         
-        if (now - last_date).days >= 1 or now.date() > last_date.date():
-            count = 0
+        # Reset if different day
+        if now.date() > last_date.date():
+            try:
+                # Reset in DB immediately
+                supabase.table("profiles").update({
+                    count_col: 0,
+                    date_col: now.isoformat()
+                }).eq("id", user_id).execute()
+                count = 0
+            except Exception as update_error:
+                logger.error(f"Failed to reset daily quota: {update_error}")
         
         if count >= limit:
              raise HTTPException(status_code=429, detail=f"Daily limit reached ({limit}). Please try again tomorrow.")
@@ -262,6 +272,8 @@ async def upsert_profile(profile: UserProfile, user = Depends(verify_token)):
 
 @app.post("/api/generate-domain")
 async def generate_domain(req: GenerateDomainRequest, user = Depends(verify_token)):
+    current_count = check_quota(user.id, "daily_career_generations_count", "last_career_generation_date", DAILY_CAREER_LIMIT)
+    
     try:
         answers = req.quiz_answers
         prompt = f"""
@@ -273,9 +285,14 @@ async def generate_domain(req: GenerateDomainRequest, user = Depends(verify_toke
         """
         model = genai.GenerativeModel(TEXT_MODEL_NAME)
         response = await model.generate_content_async(prompt, generation_config={"response_mime_type": "application/json"})
+        
+        update_quota(user.id, "daily_career_generations_count", current_count + 1)
+        
         return json.loads(response.text)
     except Exception as e:
         logger.error(f"Domain Gen Error: {e}")
+        # Even if error, if quota was checked we might not increment or handle gracefully
+        # For now, return default
         return {"suggested_domain": "general"}
 
 @app.post("/api/generate-career")
@@ -298,6 +315,7 @@ async def generate_career(req: GenerateCareerRequest, user = Depends(verify_toke
         4. ROADMAP: Split into 'localPath' ({user_p.residence_country}) and 'targetPath' ({user_p.preferred_work_country}) if different.
         5. DATA INTEGRITY: Ensure 'salaryRange', 'growth', and 'roadmap' are FILLED for every recommendation. Do not leave null.
         6. Do not refer to the user by name in the output text. Use 'You' or 'Your'.
+        7. IMPORTANT: Do not mention specific question numbers or quote exact answers. Synthesize the user's responses into general traits (e.g., "Given your interest in visual problem solving...").
         
         OUTPUT FORMAT: STRICT JSON.
         JSON Structure:
