@@ -203,7 +203,22 @@ export const Slideshow: React.FC = () => {
   };
 
   const onTouchEnd = () => {
-    if (!touchStartX.current || !touchEndX.current) return;
+    if (touchStartX.current === null) return;
+    
+    // If no movement recorded, treat as tap
+    if (touchEndX.current === null) {
+        const x = touchStartX.current;
+        const width = window.innerWidth;
+        
+        if (x < width * 0.35) {
+            handlePrev();
+        } else if (x > width * 0.65) {
+            handleNext();
+        }
+        
+        touchStartX.current = null;
+        return;
+    }
     
     const distance = touchStartX.current - touchEndX.current;
     const isLeftSwipe = distance > 50;
@@ -220,14 +235,19 @@ export const Slideshow: React.FC = () => {
   };
 
   const handleContainerClick = (e: React.MouseEvent) => {
+    // If it's a touch device, onTouchEnd might handle it. 
+    // But to be safe and support mouse users:
     if (touchStartX.current) return;
 
-    const width = e.currentTarget.clientWidth;
-    const x = e.clientX;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const width = rect.width;
     
     if (x < width * 0.35) {
+        e.stopPropagation();
         handlePrev();
     } else if (x > width * 0.65) {
+        e.stopPropagation();
         handleNext();
     }
   };

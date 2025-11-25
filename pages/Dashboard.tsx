@@ -212,7 +212,7 @@ export const Dashboard: React.FC = () => {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="text-center mb-12 animate-fade-in-up opacity-0" style={{ animationDelay: '0ms' }}>
           <h2 className="text-3xl md:text-4xl font-bold mb-4 text-slate-900 dark:text-white">Start Your Discovery</h2>
-          <p className="text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">Select a domain to begin a specialized assessment, or use our General Assessment if you are unsure.</p>
+          <p className="text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">Select a domain to begin a specialized career assessment, or use our General Assessment if you are unsure.</p>
         </div>
 
         {careerQuota === 0 && (
