@@ -54,7 +54,7 @@ export const Results: React.FC = () => {
                 >
                     <div 
                         onClick={() => handleSelect(career)}
-                        className={`group relative bg-white dark:bg-slate-800 rounded-2xl p-6 md:p-8 border transition-all duration-300 flex flex-col md:flex-row gap-6 md:items-center shadow-sm cursor-pointer hover:shadow-xl hover:border-blue-500 dark:hover:border-slate-500 hover:scale-[1.02] dark:hover:bg-slate-750 overflow-hidden ${isBestMatch ? 'border-green-500/50 dark:border-green-500/50 ring-1 ring-green-500/20' : 'border-slate-200 dark:border-slate-700'}`}
+                        className={`group relative bg-white dark:bg-slate-800/50 backdrop-blur-sm rounded-2xl p-6 md:p-8 border transition-all duration-300 flex flex-col md:flex-row gap-6 md:items-center shadow-sm cursor-pointer hover:shadow-xl hover:border-blue-500 dark:hover:border-slate-500 hover:scale-[1.02] dark:hover:bg-slate-800 overflow-hidden ${isBestMatch ? 'border-green-500/50 dark:border-green-500/50 ring-1 ring-green-500/20' : 'border-slate-200 dark:border-slate-700'}`}
                     >
                         <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-indigo-500 opacity-0 group-hover:opacity-5 transition-opacity duration-300" />
                         

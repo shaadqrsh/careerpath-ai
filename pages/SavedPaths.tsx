@@ -60,7 +60,7 @@ export const SavedPaths: React.FC = () => {
                 <div key={career.id} style={{ animationDelay: `${200 + (index * 100)}ms` }} className="flex items-center gap-6 group-outer relative animate-fade-in-up opacity-0">
                     <div 
                         onClick={() => handleSelect(career)}
-                        className="group flex-1 relative bg-white dark:bg-slate-800 rounded-2xl p-6 md:p-8 border border-slate-200 dark:border-slate-700 transition-all duration-300 flex flex-col md:flex-row gap-6 md:items-center shadow-sm cursor-pointer hover:shadow-xl hover:border-blue-500 dark:hover:border-slate-500 hover:scale-[1.02] dark:hover:bg-slate-750 overflow-hidden"
+                        className="group flex-1 relative bg-white dark:bg-slate-800/50 backdrop-blur-sm rounded-2xl p-6 md:p-8 border border-slate-200 dark:border-slate-700 transition-all duration-300 flex flex-col md:flex-row gap-6 md:items-center shadow-sm cursor-pointer hover:shadow-xl hover:border-blue-500 dark:hover:border-slate-500 hover:scale-[1.02] dark:hover:bg-slate-800 overflow-hidden"
                     >
                          <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-indigo-500 opacity-0 group-hover:opacity-5 transition-opacity duration-300" />
                         
@@ -98,7 +98,7 @@ export const SavedPaths: React.FC = () => {
                             toggleSavedCareer(career); 
                         }}
                         title="Remove Saved Career"
-                        className="hidden md:flex flex-shrink-0 w-12 h-12 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-400 hover:text-pink-500 hover:border-pink-500 dark:hover:border-pink-500 hover:shadow-lg hover:shadow-pink-500/20 items-center justify-center transition-all duration-300 hover:scale-110 z-20"
+                        className="hidden md:flex flex-shrink-0 w-12 h-12 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 backdrop-blur-sm text-slate-400 hover:text-pink-500 hover:border-pink-500 dark:hover:border-pink-500 hover:shadow-lg hover:shadow-pink-500/20 items-center justify-center transition-all duration-300 hover:scale-110 z-20"
                     >
                         <Trash2 size={20} />
                     </button>
