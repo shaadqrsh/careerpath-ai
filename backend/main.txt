@@ -2,6 +2,7 @@ import os
 import json
 import uuid
 import logging
+import traceback  # Added for detailed error logging
 from typing import List, Optional, Dict, Any
 
 from fastapi import FastAPI, HTTPException, Depends, Header, Request
@@ -17,7 +18,7 @@ SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
 TEXT_MODEL_NAME = "gemini-2.5-flash"
-IMAGE_MODEL_NAME = "gemini-2.5-flash-image" 
+IMAGE_MODEL_NAME = "gemini-2.5-flash" # Try using the standard flash model, as it may handle image gen requests or specific Imagen model name
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -281,6 +282,7 @@ async def generate_career(req: GenerateCareerRequest, user = Depends(verify_toke
 @app.post("/api/generate-images")
 async def generate_images(req: GenerateImagesRequest, user = Depends(verify_token)):
     try:
+        logger.info(f"Starting Image Generation for: {req.career_title}")
         generated_images = []
         subject_desc = "a professional"
         if req.user_context:
@@ -288,25 +290,44 @@ async def generate_images(req: GenerateImagesRequest, user = Depends(verify_toke
             age = req.future_age or (u.age + 5)
             subject_desc = f"a {age} year old {u.gender} {u.residence_country} national"
 
-        model = genai.GenerativeModel(IMAGE_MODEL_NAME)
+        # Using the constant defined at top. If this fails, user might need 'imagen-3.0-generate-001'
+        # depending on their Google AI Studio access.
+        model = genai.GenerativeModel(IMAGE_MODEL_NAME) 
+        
         import asyncio
         async def generate_single_image(prompt_text):
-            full_prompt = f"Generate an image. Cinematic shot of {subject_desc} working as a {req.career_title}. Scene: {prompt_text}. Style: Photorealistic, 4k, dramatic lighting."
+            full_prompt = f"Cinematic shot of {subject_desc} working as a {req.career_title}. Scene: {prompt_text}. Style: Photorealistic, 4k, dramatic lighting."
             try:
+                # DEBUG: Log before request
+                logger.info(f"Requesting Image Gen with Prompt: {full_prompt}")
+                
                 response = await model.generate_content_async(full_prompt)
+                
+                # Check response validity
                 if response.candidates and response.candidates[0].content.parts:
                     for part in response.candidates[0].content.parts:
                         if part.inline_data:
+                            logger.info("Image Generation Successful.")
                             return f"data:{part.inline_data.mime_type};base64,{part.inline_data.data}"
+                    
+                    logger.warning("Response returned but no inline_data found.")
                     return f"https://picsum.photos/seed/{uuid.uuid4()}/800/600"
-                else: return f"https://picsum.photos/seed/{uuid.uuid4()}/800/600"
-            except Exception: return f"https://picsum.photos/seed/{uuid.uuid4()}/800/600"
+                else:
+                    logger.warning("Response returned but candidates/parts missing.")
+                    return f"https://picsum.photos/seed/{uuid.uuid4()}/800/600"
+            except Exception as e:
+                # --- DETAILED ERROR LOGGING ---
+                logger.error(f"Image Gen FAILED for prompt: {prompt_text}")
+                logger.error(f"Error Message: {str(e)}")
+                logger.error(f"Traceback: {traceback.format_exc()}")
+                # ------------------------------
+                return f"https://picsum.photos/seed/{uuid.uuid4()}/800/600"
 
         tasks = [generate_single_image(p) for p in req.prompts]
         generated_images = await asyncio.gather(*tasks)
         return {"images": generated_images}
     except Exception as e:
-        logger.error(f"Image API Error: {e}")
+        logger.error(f"Image API Global Error: {e}")
         return {"images": [f"https://picsum.photos/seed/{i}/800/600" for i in range(len(req.prompts))]}
 
 # --- SAVED CAREER ROUTES ---

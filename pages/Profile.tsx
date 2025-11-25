@@ -2,12 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useAppStore } from '../store';
 import { AppView, UserProfile } from '../types';
 import { Button } from '../components/Button';
-import { ArrowLeft, Loader2, Shield, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Loader2, Shield, CheckCircle, AlertTriangle } from 'lucide-react';
 import { FALLBACK_COUNTRIES } from '../constants';
 import { upsertUserProfile, getUserProfile, getCurrentUser, sendPasswordResetEmail } from '../services/supabaseService';
 
 export const Profile: React.FC = () => {
-  const { user, setView, setUser } = useAppStore();
+  const { user, setView, setUser, showPasswordResetModal, setShowPasswordResetModal } = useAppStore();
   
   const [countries, setCountries] = useState<string[]>([]);
   const [isLoadingCountries, setIsLoadingCountries] = useState(true);
@@ -15,6 +15,7 @@ export const Profile: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
 
   const [formData, setFormData] = useState<Partial<UserProfile>>({
     fullName: '',
@@ -70,6 +71,12 @@ export const Profile: React.FC = () => {
     return () => { isMounted = false; };
   }, [setUser]);
 
+  const triggerToast = (msg: string) => {
+      setToastMessage(msg);
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
@@ -86,10 +93,7 @@ export const Profile: React.FC = () => {
 
         await upsertUserProfile(updatedProfile);
         setUser(updatedProfile);
-        
-        // Show Success Toast
-        setShowToast(true);
-        setTimeout(() => setShowToast(false), 3000);
+        triggerToast("Profile Updated Successfully!");
     } catch (error: any) {
         console.error("Failed to update profile", error);
         alert(`Failed to save changes: ${error.message || "Unknown error"}`);
@@ -98,13 +102,13 @@ export const Profile: React.FC = () => {
     }
   };
 
-  const handlePasswordReset = async () => {
-      if (!window.confirm("Send a password reset link to your email?")) return;
+  const confirmPasswordReset = async () => {
+      setShowPasswordResetModal(false);
       try {
           const authUser = await getCurrentUser();
           if (authUser && authUser.email) {
               await sendPasswordResetEmail(authUser.email);
-              alert(`Password reset link sent to ${authUser.email}`);
+              triggerToast(`Email sent successfully to ${authUser.email}`);
           } else {
               alert("Could not determine your email address.");
           }
@@ -266,7 +270,7 @@ export const Profile: React.FC = () => {
                  <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-2">
                     <Shield size={16} /> Security
                  </h3>
-                 <Button type="button" variant="outline" fullWidth onClick={handlePasswordReset}>
+                 <Button type="button" variant="outline" fullWidth onClick={() => setShowPasswordResetModal(true)}>
                     Send Password Reset Email
                  </Button>
             </div>
@@ -281,10 +285,36 @@ export const Profile: React.FC = () => {
         <div className="fixed top-24 left-1/2 -translate-x-1/2 bg-slate-800 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 animate-[fadeIn_0.3s_ease-out] z-50">
             <CheckCircle className="text-green-400 shrink-0" />
             <div>
-                <p className="font-bold">Profile Updated Successfully!</p>
+                <p className="font-bold">{toastMessage}</p>
             </div>
         </div>
       )}
+
+      {/* Password Reset Confirmation Modal */}
+      {showPasswordResetModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowPasswordResetModal(false)}></div>
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-md w-full p-6 relative z-10 animate-[scaleIn_0.2s_ease-out] border border-slate-200 dark:border-slate-700">
+                <div className="flex items-center gap-3 mb-4 text-amber-600 dark:text-amber-500">
+                    <AlertTriangle size={28} />
+                    <h3 className="text-xl font-bold text-slate-900 dark:text-white">Reset Password?</h3>
+                </div>
+                <p className="text-slate-600 dark:text-slate-300 mb-6">
+                    This will send a secure link to your registered email address to reset your password.
+                </p>
+                <div className="flex gap-3 justify-end">
+                    <Button variant="ghost" onClick={() => setShowPasswordResetModal(false)}>Cancel</Button>
+                    <Button 
+                        className="bg-blue-600 hover:bg-blue-700 text-white border-blue-600"
+                        onClick={confirmPasswordReset}
+                    >
+                        Yes, Send Email
+                    </Button>
+                </div>
+            </div>
+        </div>
+      )}
+
     </div>
   );
 };
