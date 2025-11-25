@@ -44,14 +44,6 @@ export const SavedPaths: React.FC = () => {
             >
                 <ArrowLeft size={20} /> Back to Dashboard
             </button>
-            <button
-                onClick={handleRefresh}
-                disabled={isRefreshing}
-                className="text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-2 transition-colors disabled:opacity-50"
-            >
-                {isRefreshing ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />}
-                Refresh List
-            </button>
         </div>
 
         <div className="mb-10 animate-fade-in-up opacity-0" style={{ animationDelay: '100ms' }}>
@@ -124,13 +116,6 @@ export const SavedPaths: React.FC = () => {
                         className="group transition-transform hover:scale-105" 
                     >
                         Explore Careers
-                    </Button>
-                    <Button 
-                        onClick={handleRefresh}
-                        variant="secondary"
-                        disabled={isRefreshing}
-                    >
-                         {isRefreshing ? 'Refreshing...' : 'Refresh List'}
                     </Button>
                 </div>
              </div>

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAppStore } from '../store';
 import { AppView, UserProfile } from '../types';
@@ -171,7 +172,7 @@ export const Profile: React.FC = () => {
 
         <form onSubmit={handleSubmit} className="space-y-8 bg-white dark:bg-slate-800 p-8 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xl transition-all animate-fade-in-up opacity-0" style={{ animationDelay: '100ms' }}>
              
-             <div className="animate-fade-in-up opacity-0" style={{ animationDelay: '200ms' }}>
+             <div className="animate-fade-in-up opacity-0 relative z-30" style={{ animationDelay: '200ms' }}>
                 <h3 className="text-sm font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-6 flex items-center gap-2">
                     <User size={18} /> Personal Details
                 </h3>
@@ -184,7 +185,7 @@ export const Profile: React.FC = () => {
                                 required
                                 value={formData.fullName}
                                 onChange={(e) => handleChange('fullName', e.target.value)}
-                                className="w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-600 rounded-xl py-3 px-4 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors"
+                                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl py-3 px-4 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors"
                             />
                         </div>
                         <div>
@@ -207,7 +208,7 @@ export const Profile: React.FC = () => {
                                 max={80}
                                 value={formData.age}
                                 onChange={(e) => handleChange('age', parseInt(e.target.value))}
-                                className="w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-600 rounded-xl py-3 px-4 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors"
+                                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl py-3 px-4 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors"
                             />
                         </div>
                         <div>
@@ -227,14 +228,14 @@ export const Profile: React.FC = () => {
                             required
                             value={formData.specialization}
                             onChange={(e) => handleChange('specialization', e.target.value)}
-                            className="w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-600 rounded-xl py-3 px-4 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors"
+                            className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl py-3 px-4 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors"
                             placeholder="e.g. Commerce, Computer Science, Biology"
                         />
                     </div>
                 </div>
             </div>
 
-            <div className="border-t border-slate-200 dark:border-slate-700 pt-6 animate-fade-in-up opacity-0" style={{ animationDelay: '300ms' }}>
+            <div className="border-t border-slate-200 dark:border-slate-700 pt-6 animate-fade-in-up opacity-0 relative z-20" style={{ animationDelay: '300ms' }}>
                 <h3 className="text-sm font-bold text-green-600 dark:text-green-400 uppercase tracking-wider mb-6 flex items-center gap-2">
                     <MapPin size={18} /> Location Details
                 </h3>
@@ -267,7 +268,7 @@ export const Profile: React.FC = () => {
                 </div>
             </div>
 
-            <div className="border-t border-slate-200 dark:border-slate-700 pt-6 animate-fade-in-up opacity-0" style={{ animationDelay: '400ms' }}>
+            <div className="border-t border-slate-200 dark:border-slate-700 pt-6 animate-fade-in-up opacity-0 relative z-10" style={{ animationDelay: '400ms' }}>
                  <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-6 flex items-center gap-2">
                     <Settings size={18} /> Account Details
                  </h3>
@@ -294,7 +295,7 @@ export const Profile: React.FC = () => {
                  </div>
             </div>
             
-            <div className="border-t border-slate-200 dark:border-slate-700 pt-6 animate-fade-in-up opacity-0" style={{ animationDelay: '500ms' }}>
+            <div className="border-t border-slate-200 dark:border-slate-700 pt-6 animate-fade-in-up opacity-0 relative z-0" style={{ animationDelay: '500ms' }}>
                 <Button type="submit" fullWidth size="lg" disabled={isSaving}>
                     {isSaving ? "Saving Changes..." : "Save Changes"}
                 </Button>

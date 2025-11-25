@@ -217,15 +217,15 @@ export const Dashboard: React.FC = () => {
 
         {careerQuota === 0 && (
             <div 
-                className="mb-8 p-4 rounded-xl border border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800 text-red-700 dark:text-red-400 flex flex-col items-start gap-3 animate-fade-in-up opacity-0"
+                className="mb-8 p-4 rounded-xl border border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800 text-red-700 dark:text-red-400 flex flex-row justify-between items-center animate-fade-in-up opacity-0 w-full"
                 style={{ animationDelay: '100ms' }}
             >
                 <div className="flex items-center gap-3">
                     <Zap className="shrink-0" size={20} />
                     <span className="font-medium">Daily Career assessments reached</span>
                 </div>
-                <div className="flex items-center gap-4">
-                    <span className="text-sm opacity-80">Come back tomorrow for more</span>
+                <div className="text-right">
+                    <span className="text-sm opacity-80 whitespace-nowrap">Come back tomorrow for more</span>
                 </div>
             </div>
         )}
@@ -243,17 +243,17 @@ export const Dashboard: React.FC = () => {
                 >
                   <div className={`absolute inset-0 bg-gradient-to-br ${cat.color} opacity-0 group-hover:opacity-5 rounded-2xl transition-opacity`} />
                   
-                  <div className="flex flex-row md:flex-col items-center gap-4 flex-1">
+                  <div className="flex flex-row md:flex-col md:items-start gap-4 flex-1">
                       <div className={`w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-gradient-to-br ${cat.color} flex items-center justify-center mb-0 md:mb-6 text-white shadow-lg shrink-0`}>
                         {cat.icon}
                       </div>
-                      <div className="flex-1">
+                      <div className="flex-1 text-left">
                           <h3 className="text-xl md:text-2xl font-bold mb-1 md:mb-2 text-slate-900 dark:text-white">{cat.title}</h3>
                           <p className="text-sm md:text-base text-slate-600 dark:text-slate-400 mb-0">{cat.desc}</p>
                       </div>
                   </div>
 
-                  <div className="mt-4 md:mt-6">
+                  <div className="mt-4 md:mt-6 md:self-end">
                       <span className="text-blue-600 dark:text-blue-400 font-medium group-hover:translate-x-2 transition-transform inline-flex items-center text-sm md:text-base">
                         Start {cat.title.split(' ')[0]} Quiz <ArrowRight className="ml-1 w-4 h-4" />
                       </span>

@@ -45,6 +45,7 @@ export const Slideshow: React.FC = () => {
 
   const touchStartX = useRef<number | null>(null);
   const touchEndX = useRef<number | null>(null);
+  const lastTouchTime = useRef<number>(0);
 
   const hasStartedRef = useRef(false);
 
@@ -186,11 +187,11 @@ export const Slideshow: React.FC = () => {
   }, [selectedCareer, user, updateCareerImages, savedCareers, setUser]);
 
   const handleNext = () => {
-    if (currentSlide < slides.length - 1) setCurrentSlide(curr => curr + 1);
+    setCurrentSlide(curr => Math.min(curr + 1, slides.length - 1));
   };
 
   const handlePrev = () => {
-    if (currentSlide > 0) setCurrentSlide(curr => curr - 1);
+    setCurrentSlide(curr => Math.max(curr - 1, 0));
   };
 
   const onTouchStart = (e: React.TouchEvent) => {
@@ -203,6 +204,8 @@ export const Slideshow: React.FC = () => {
   };
 
   const onTouchEnd = () => {
+    lastTouchTime.current = Date.now();
+
     if (touchStartX.current === null) return;
     
     // If no movement recorded, treat as tap
@@ -235,9 +238,8 @@ export const Slideshow: React.FC = () => {
   };
 
   const handleContainerClick = (e: React.MouseEvent) => {
-    // If it's a touch device, onTouchEnd might handle it. 
-    // But to be safe and support mouse users:
-    if (touchStartX.current) return;
+    // Prevent mouse click from firing immediately after a touch event
+    if (Date.now() - lastTouchTime.current < 500) return;
 
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
