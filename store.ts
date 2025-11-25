@@ -10,30 +10,25 @@ interface AppState {
   user: UserProfile | null;
   theme: 'dark' | 'light';
   
-  // Settings
   debugImageGenerationEnabled: boolean; 
 
-  // Quiz State
   selectedDomain: CareerDomain;
   quizAnswers: QuizAnswer[];
   
-  // Data State
   recommendations: CareerRecommendation[];
   selectedCareer: CareerRecommendation | null;
   savedCareers: CareerRecommendation[];
   hasViewedSavedPaths: boolean; 
   
   isLoading: boolean;
-  isSavingCareer: boolean; 
+  isSavingCareer: boolean;
+  isDeletingCareer: boolean;
   
-  // Modals
   pendingDeleteCareer: CareerRecommendation | null;
   showPasswordResetModal: boolean;
 
-  // Global Toast
   toast: { show: boolean; message: string };
 
-  // Actions
   setView: (view: AppView) => void;
   setCareerOrigin: (origin: 'results' | 'saved') => void;
   setUser: (user: UserProfile) => void;
@@ -79,6 +74,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   
   isLoading: false,
   isSavingCareer: false,
+  isDeletingCareer: false,
   
   pendingDeleteCareer: null,
   showPasswordResetModal: false,
@@ -146,19 +142,18 @@ export const useAppStore = create<AppState>((set, get) => ({
       if (!career) return;
       if (!state.user) return;
       
+      set({ isDeletingCareer: true });
+
       try {
         await deleteCareerFromDb(state.user.id, career.id);
         
-        // Success! Now update UI
         set({ 
             savedCareers: state.savedCareers.filter(c => c.id !== career.id),
             pendingDeleteCareer: null 
         });
 
-        // Trigger Global Toast
         state.showToast("Career deleted successfully");
 
-        // Redirect if we are currently looking at the deleted career
         if (state.currentView === AppView.CAREER_DETAIL && state.selectedCareer?.id === career.id) {
             if (state.careerOrigin === 'saved') {
                  set({ currentView: AppView.SAVED_PATHS });
@@ -168,6 +163,8 @@ export const useAppStore = create<AppState>((set, get) => ({
         console.error("Error deleting from DB", e);
         alert("Failed to delete career. Please try again.");
         set({ pendingDeleteCareer: null });
+      } finally {
+        set({ isDeletingCareer: false });
       }
   },
 
@@ -175,13 +172,11 @@ export const useAppStore = create<AppState>((set, get) => ({
     const state = get();
     const exists = state.savedCareers.find(c => c.id === career.id);
 
-    // If it exists, we open the delete modal
     if (exists) {
       set({ pendingDeleteCareer: career });
       return;
     }
 
-    // Saving Process
     set({ isSavingCareer: true });
     
     try {
@@ -240,7 +235,6 @@ export const useAppStore = create<AppState>((set, get) => ({
             };
         });
 
-        // Trigger Global Toast
         state.showToast("Career saved successfully");
 
     } catch (e) {

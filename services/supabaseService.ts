@@ -43,8 +43,6 @@ const toDbCareer = (c: CareerRecommendation) => ({
 });
 
 const fromDbCareer = (d: any): CareerRecommendation => ({
-    // CRITICAL FIX: Map the DB 'career_uid' to the frontend 'id'.
-    // The backend delete endpoint requires 'career_uid'.
     id: d.career_uid, 
     title: d.title,
     matchScore: d.match_score,
@@ -185,14 +183,15 @@ export const getUserProfile = async (userId: string): Promise<UserProfile | null
         const headers = getAuthHeaders();
         const response = await fetch(`${API_BASE_URL}/api/profile`, { headers });
         
+        // FIX: Only return null for 404s. Throw for everything else so App.tsx knows it failed.
         if (response.status === 404) return null;
-        if (!response.ok) throw new Error("Failed to fetch profile");
+        if (!response.ok) throw new Error(`Profile fetch failed: ${response.status}`);
 
         const data = await response.json();
         return fromDbProfile(data);
     } catch (e) {
         console.error("Error fetching profile:", e);
-        return null;
+        throw e; // Propagate error so app knows it's a failure, not a missing profile
     }
 };
 

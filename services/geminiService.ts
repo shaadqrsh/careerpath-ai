@@ -1,6 +1,5 @@
-
 import { UserProfile, QuizAnswer, CareerRecommendation, Slide, CareerRoadmapStep, CareerDomain } from "../types";
-import { MOCK_CAREERS, API_BASE_URL } from "../constants";
+import { MOCK_CAREERS, API_BASE_URL, SLIDESHOW_IMAGE_COUNT } from "../constants";
 
 // Helper to calculate estimated roadmap duration in years
 export const calculateRoadmapDurationYears = (roadmap: CareerRoadmapStep[]): number => {
@@ -126,11 +125,18 @@ export const generateCareerImages = async (
 }
 
 export const generateStorySlides = async (career: CareerRecommendation, user?: UserProfile | null, imageGenerationEnabled: boolean = true): Promise<Slide[]> => {
-    const prompts = career.dayInLifePrompts || [
-        "Working focused on a key task in a professional environment",
-        "Collaborating with colleagues in a meeting",
-        "Achieving a successful outcome or milestone"
-    ];
+    // USE CONSTANT HERE: If prompts are missing or fewer than needed, fill them up
+    let prompts = career.dayInLifePrompts || [];
+    
+    if (prompts.length < SLIDESHOW_IMAGE_COUNT) {
+        const missingCount = SLIDESHOW_IMAGE_COUNT - prompts.length;
+        const filler = [
+            "Working focused on a key task in a professional environment",
+            "Collaborating with colleagues in a meeting",
+            "Achieving a successful outcome or milestone"
+        ];
+        prompts = [...prompts, ...filler.slice(0, missingCount)];
+    }
 
     let imageUrls: string[] = [];
 
@@ -149,6 +155,6 @@ export const generateStorySlides = async (career: CareerRecommendation, user?: U
     return prompts.map((text, index) => ({
         id: index,
         text,
-        imageUrl: imageUrls[index]
+        imageUrl: imageUrls[index] || `https://picsum.photos/seed/${career.id}-${index}/1280/720`
     }));
 };

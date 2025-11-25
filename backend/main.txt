@@ -3,6 +3,8 @@ import json
 import uuid
 import logging
 import traceback
+import base64
+import urllib.parse
 from typing import List, Optional, Dict, Any
 
 from fastapi import FastAPI, HTTPException, Depends, Header, Request
@@ -11,6 +13,7 @@ from pydantic import BaseModel, Field, ConfigDict
 from pydantic.alias_generators import to_camel
 import google.generativeai as genai
 from supabase import create_client, Client
+import httpx 
 
 # --- CONFIGURATION ----
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
@@ -18,10 +21,9 @@ SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
 TEXT_MODEL_NAME = "gemini-2.5-flash"
-# UPDATED: Use the specific Image generation model. Flash 2.5 is text/multimodal-in only.
-IMAGE_MODEL_NAME = "imagen-3.0-generate-001" 
+IMAGE_MODEL_NAME = "gemini-2.5-flash-image" 
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.ERROR)
 logger = logging.getLogger(__name__)
 
 app = FastAPI()
@@ -282,53 +284,60 @@ async def generate_career(req: GenerateCareerRequest, user = Depends(verify_toke
 
 @app.post("/api/generate-images")
 async def generate_images(req: GenerateImagesRequest, user = Depends(verify_token)):
-    try:
-        logger.info(f"Starting Image Generation for: {req.career_title}")
-        generated_images = []
-        subject_desc = "a professional"
-        if req.user_context:
-            u = req.user_context
-            age = req.future_age or (u.age + 5)
-            subject_desc = f"a {age} year old {u.gender} {u.residence_country} national"
+    # STRATEGY: Try Gemini -> Fallback to Pollinations -> Fallback to Mock
+    
+    subject_desc = "a professional"
+    if req.user_context:
+        u = req.user_context
+        age = req.future_age or (u.age + 5)
+        subject_desc = f"a {age} year old {u.gender} {u.residence_country} national"
 
-        # Using specific image model now
-        model = genai.GenerativeModel(IMAGE_MODEL_NAME) 
+    import asyncio
+    async def generate_single_image(prompt_text):
+        full_prompt = f"Cinematic shot of {subject_desc} working as a {req.career_title}. Scene: {prompt_text}. Style: Photorealistic, 4k, dramatic lighting."
         
-        import asyncio
-        async def generate_single_image(prompt_text):
-            full_prompt = f"Cinematic shot of {subject_desc} working as a {req.career_title}. Scene: {prompt_text}. Style: Photorealistic, 4k, dramatic lighting."
-            try:
-                # DEBUG: Log before request
-                logger.info(f"Requesting Image Gen with Prompt: {full_prompt}")
-                
-                response = await model.generate_content_async(full_prompt)
-                
-                # Check response validity
-                if response.candidates and response.candidates[0].content.parts:
-                    for part in response.candidates[0].content.parts:
-                        if part.inline_data:
-                            logger.info("Image Generation Successful.")
-                            return f"data:{part.inline_data.mime_type};base64,{part.inline_data.data}"
-                    
-                    logger.warning("Response returned but no inline_data found.")
-                    return f"https://picsum.photos/seed/{uuid.uuid4()}/800/600"
-                else:
-                    logger.warning("Response returned but candidates/parts missing.")
-                    return f"https://picsum.photos/seed/{uuid.uuid4()}/800/600"
-            except Exception as e:
-                # --- DETAILED ERROR LOGGING ---
-                logger.error(f"Image Gen FAILED for prompt: {prompt_text}")
-                logger.error(f"Error Message: {str(e)}")
-                logger.error(f"Traceback: {traceback.format_exc()}")
-                # ------------------------------
-                return f"https://picsum.photos/seed/{uuid.uuid4()}/800/600"
+        # --- 1. ATTEMPT GEMINI (IMAGEN) ---
+        try:
+            model = genai.GenerativeModel(IMAGE_MODEL_NAME)
+            response = await model.generate_content_async(full_prompt)
+            
+            if response.candidates and response.candidates[0].content.parts:
+                for part in response.candidates[0].content.parts:
+                    if part.inline_data:
+                        return f"data:{part.inline_data.mime_type};base64,{part.inline_data.data}"
+        except Exception:
+            # Silently fail Gemini and move to fallback
+            pass
 
-        tasks = [generate_single_image(p) for p in req.prompts]
-        generated_images = await asyncio.gather(*tasks)
-        return {"images": generated_images}
-    except Exception as e:
-        logger.error(f"Image API Global Error: {e}")
-        return {"images": [f"https://picsum.photos/seed/{i}/800/600" for i in range(len(req.prompts))]}
+        # --- 2. FALLBACK: POLLINATIONS.AI ---
+        # Added detailed logging here as requested
+        try:
+            encoded_prompt = urllib.parse.quote(full_prompt)
+            seed = uuid.uuid4().int % 10000
+            image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1280&height=720&model=flux&seed={seed}&nologo=true"
+            
+            # Using custom user-agent to avoid blocks
+            headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
+            
+            async with httpx.AsyncClient(follow_redirects=True, timeout=60.0) as client:
+                resp = await client.get(image_url, headers=headers)
+                
+                if resp.status_code == 200:
+                    b64_img = base64.b64encode(resp.content).decode('utf-8')
+                    # Pollinations returns JPEG or PNG usually
+                    return f"data:image/jpeg;base64,{b64_img}"
+                else:
+                    logger.error(f"Pollinations Error: Status {resp.status_code}, URL: {image_url}")
+        except Exception as e:
+            logger.error(f"Pollinations Exception: {str(e)}")
+
+        # --- 3. FINAL FALLBACK: MOCK ---
+        return f"https://picsum.photos/seed/{uuid.uuid4()}/1280/720"
+
+    tasks = [generate_single_image(p) for p in req.prompts]
+    generated_images = await asyncio.gather(*tasks)
+    
+    return {"images": generated_images}
 
 # --- SAVED CAREER ROUTES ---
 

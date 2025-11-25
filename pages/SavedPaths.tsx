@@ -14,8 +14,8 @@ export const SavedPaths: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 py-8 px-4 sm:px-6 lg:px-8 transition-colors duration-300">
-      {/* UPDATED WIDTH: max-w-7xl to match Dashboard/Results */}
+    // Added pb-32
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 py-8 px-4 sm:px-6 lg:px-8 pb-32 transition-colors duration-300">
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center mb-8">
             <button 

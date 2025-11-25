@@ -16,7 +16,8 @@ export const Results: React.FC = () => {
   const isSaved = (id: string) => savedCareers.some(c => c.id === id);
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 py-8 px-4 sm:px-6 lg:px-8 transition-colors">
+    // Added pb-32
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 py-8 px-4 sm:px-6 lg:px-8 pb-32 transition-colors">
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-8">
             <button 

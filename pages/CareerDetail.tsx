@@ -12,25 +12,22 @@ export const CareerDetail: React.FC = () => {
     return null;
   }
 
-  // UPDATED: Simply use 'USA' if undecided, no extra text
   const targetCountryDisplay = user?.preferredWorkCountry === 'Undecided' ? 'USA' : user?.preferredWorkCountry;
   const isSameLocation = user?.residenceCountry === user?.preferredWorkCountry;
   const isSaved = savedCareers.some(c => c.id === selectedCareer.id);
 
-  // Determine back navigation logic based on recorded origin
   const backTarget = careerOrigin === 'saved' ? AppView.SAVED_PATHS : AppView.RESULTS;
   const backLabel = careerOrigin === 'saved' ? "Back to Saved Paths" : "Back to Results";
 
-  // Check if this is the "Best Match" (Rank 1 in recommendations) AND we are viewing from Results
   const isBestMatch = careerOrigin === 'results' && recommendations.length > 0 && recommendations[0].id === selectedCareer.id;
 
   const handleSave = async () => {
-    // Store handles validation, API calls, and Global Toast
     await toggleSavedCareer(selectedCareer);
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white pb-20 transition-colors">
+    // Added pb-32 for extra bottom padding on mobile
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white pb-32 transition-colors">
       {/* Header */}
       <div className="relative h-64 bg-slate-800 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-blue-900 to-slate-900 opacity-90"></div>
@@ -56,21 +53,32 @@ export const CareerDetail: React.FC = () => {
             </div>
             
             <div className="flex justify-between items-end">
-                <div>
+                <div className="flex-1 min-w-0 mr-4">
                     {isBestMatch && (
                         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-500/20 border border-green-500/40 text-green-300 text-xs font-bold uppercase tracking-wider mb-2 backdrop-blur-md">
                             <Star size={12} fill="currentColor" />
                             Best Match
                         </div>
                     )}
-                    <h1 className="text-4xl md:text-5xl font-bold mb-2 text-white">{selectedCareer.title}</h1>
-                    <div className="flex items-center gap-4 text-slate-300">
-                        <span>{selectedCareer.salaryRange}</span>
-                        <span className="w-1 h-1 bg-slate-500 rounded-full"></span>
-                        <span>{selectedCareer.growth} Growth</span>
+                    
+                    {/* Scrolling Text for Title */}
+                    <div className="overflow-hidden relative w-full">
+                        <h1 className="text-4xl md:text-5xl font-bold mb-2 text-white whitespace-nowrap animate-marquee md:animate-none">
+                            {selectedCareer.title}
+                        </h1>
+                    </div>
+
+                    {/* Scrolling Text for Stats */}
+                    <div className="overflow-hidden relative w-full">
+                        <div className="flex items-center gap-4 text-slate-300 whitespace-nowrap animate-marquee md:animate-none text-sm md:text-base">
+                            <span>{selectedCareer.salaryRange}</span>
+                            <span className="w-1 h-1 bg-slate-500 rounded-full"></span>
+                            <span>{selectedCareer.growth} Growth</span>
+                        </div>
                     </div>
                 </div>
-                <div className="flex gap-3">
+                
+                <div className="flex gap-3 shrink-0">
                      <button 
                         onClick={handleSave}
                         disabled={isSavingCareer}
@@ -112,7 +120,6 @@ export const CareerDetail: React.FC = () => {
                 <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col">
                     <h3 className="text-lg font-bold mb-4 text-slate-800 dark:text-slate-200">Why this fits you</h3>
                     
-                    {/* Moved Tags ABOVE summary as requested */}
                     <div className="mb-4">
                         <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Best suited for profiles with:</p>
                         <div className="flex flex-wrap gap-2">

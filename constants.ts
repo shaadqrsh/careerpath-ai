@@ -3,11 +3,11 @@ import { QuizQuestion } from './types';
 // --- CONFIGURATION ---
 export const APP_NAME = "CareerPath AI";
 
-// Load from Environment Variable (Vite) or fallback to Localhost
 export const API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL; 
 
+export const SLIDESHOW_IMAGE_COUNT = 3;
+
 export const QUESTIONS: QuizQuestion[] = [
-  // --- GENERAL / UNDECIDED (5 Questions) ---
   {
     id: 101,
     text: "When you walk into a bookstore, which section do you visit first?",
@@ -43,8 +43,6 @@ export const QUESTIONS: QuizQuestion[] = [
     category: 'preference',
     domain: 'general'
   },
-
-  // --- SCIENCE & TECH (10 Questions) ---
   {
     id: 201,
     text: "Which sounds more exciting?",
@@ -115,8 +113,6 @@ export const QUESTIONS: QuizQuestion[] = [
     category: 'aptitude',
     domain: 'science'
   },
-
-  // --- COMMERCE & BUSINESS (10 Questions) ---
   {
     id: 301,
     text: "In a team project, you are usually...",
@@ -187,8 +183,6 @@ export const QUESTIONS: QuizQuestion[] = [
     category: 'preference',
     domain: 'commerce'
   },
-
-  // --- ARTS & HUMANITIES (10 Questions) ---
   {
     id: 401,
     text: "How do you express your ideas best?",
@@ -261,7 +255,6 @@ export const QUESTIONS: QuizQuestion[] = [
   }
 ];
 
-// Mock data for fallback (kept the same)
 export const MOCK_CAREERS = [
   {
     id: "c1",

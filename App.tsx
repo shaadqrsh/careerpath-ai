@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAppStore } from './store';
 import { AppView } from './types';
-import { getUserProfile, getSavedCareers, getCurrentUser } from './services/supabaseService';
+import { getUserProfile, getSavedCareers, getCurrentUser, signOut } from './services/supabaseService';
 import { Loader2, AlertTriangle, CheckCircle } from 'lucide-react';
 import { Button } from './components/Button';
 
@@ -19,7 +19,7 @@ import { SavedPaths } from './pages/SavedPaths';
 import { UpdatePassword } from './pages/UpdatePassword';
 
 const App: React.FC = () => {
-  const { currentView, theme, setView, setUser, setSavedCareers, pendingDeleteCareer, confirmDeleteCareer, cancelDeleteCareer, toast } = useAppStore();
+  const { currentView, theme, setView, setUser, setSavedCareers, pendingDeleteCareer, confirmDeleteCareer, cancelDeleteCareer, toast, isDeletingCareer } = useAppStore();
   const [isInitializing, setIsInitializing] = useState(true);
 
   // Handle Dark/Light Mode
@@ -39,19 +39,15 @@ const App: React.FC = () => {
             // 1. Check for Password Reset Hash (Supabase sends #access_token=...&type=recovery)
             const hash = window.location.hash;
             if (hash && (hash.includes('access_token') || hash.includes('type=recovery'))) {
-                // Extract access token
-                const params = new URLSearchParams(hash.substring(1)); // remove #
+                const params = new URLSearchParams(hash.substring(1)); 
                 const accessToken = params.get('access_token');
                 
                 if (accessToken) {
-                    // Manually set token
                     localStorage.setItem('access_token', accessToken);
-                    // Clear hash to clean URL
                     window.history.replaceState(null, '', window.location.pathname);
-                    // Force view to update password
                     setView(AppView.UPDATE_PASSWORD);
                     setIsInitializing(false);
-                    return; // Stop further checks
+                    return; 
                 }
             }
 
@@ -59,16 +55,36 @@ const App: React.FC = () => {
             const authUser = await getCurrentUser();
             
             if (authUser) {
-                const profile = await getUserProfile(authUser.id);
+                // Attempt to fetch profile with a simple retry strategy for robustness
+                let profile = null;
+                try {
+                    profile = await getUserProfile(authUser.id);
+                } catch (e) {
+                    console.warn("Profile fetch failed first attempt, retrying...", e);
+                    // Simple retry logic for transient backend issues
+                    await new Promise(res => setTimeout(res, 1000));
+                    try {
+                        profile = await getUserProfile(authUser.id);
+                    } catch (e2) {
+                        console.error("Profile fetch failed second attempt", e2);
+                        throw e2; // Let the outer catch handle it (Landing)
+                    }
+                }
+
                 if (profile) {
                     setUser(profile);
-                    const saved = await getSavedCareers(authUser.id);
-                    setSavedCareers(saved);
+                    try {
+                        const saved = await getSavedCareers(authUser.id);
+                        setSavedCareers(saved);
+                    } catch (e) {
+                        console.warn("Failed to load saved careers", e);
+                    }
 
                     if (currentView === AppView.LANDING || currentView === AppView.AUTH) {
                         setView(AppView.DASHBOARD);
                     }
                 } else {
+                    // Valid User ID, but No Profile (404) -> Onboarding
                     setUser({ id: authUser.id } as any);
                     setView(AppView.ONBOARDING);
                 }
@@ -79,6 +95,8 @@ const App: React.FC = () => {
             }
         } catch (e) {
             console.error("Auth initialization failed", e);
+            // If auth fails violently (e.g. 500 error from backend), sign out locally to prevent stuck state
+            signOut(); 
             setView(AppView.LANDING);
         } finally {
             setIsInitializing(false);
@@ -131,7 +149,6 @@ const App: React.FC = () => {
     <div className="min-h-screen transition-colors duration-300 bg-slate-50 text-slate-900 dark:bg-slate-900 dark:text-slate-50 relative">
       {renderView()}
 
-      {/* Global Toast Notification */}
       {toast.show && (
         <div className="fixed top-24 left-1/2 -translate-x-1/2 bg-slate-800 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 animate-[fadeIn_0.3s_ease-out] z-[150]">
             <CheckCircle className="text-green-400 shrink-0" />
@@ -141,10 +158,9 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
       {pendingDeleteCareer && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
-            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={cancelDeleteCareer}></div>
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={!isDeletingCareer ? cancelDeleteCareer : undefined}></div>
             <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-md w-full p-6 relative z-10 animate-[scaleIn_0.2s_ease-out] border border-slate-200 dark:border-slate-700">
                 <div className="flex items-center gap-3 mb-4 text-amber-600 dark:text-amber-500">
                     <AlertTriangle size={28} />
@@ -154,12 +170,13 @@ const App: React.FC = () => {
                     Are you sure you want to remove <strong>{pendingDeleteCareer.title}</strong> from your saved paths? This action cannot be undone.
                 </p>
                 <div className="flex gap-3 justify-end">
-                    <Button variant="ghost" onClick={cancelDeleteCareer}>Cancel</Button>
+                    <Button variant="ghost" onClick={cancelDeleteCareer} disabled={isDeletingCareer}>Cancel</Button>
                     <Button 
-                        className="bg-red-600 hover:bg-red-700 text-white border-red-600"
+                        className="bg-red-600 hover:bg-red-700 text-white border-red-600 disabled:opacity-50"
                         onClick={confirmDeleteCareer}
+                        disabled={isDeletingCareer}
                     >
-                        Yes, Remove It
+                        {isDeletingCareer ? "Deleting..." : "Yes, Remove It"}
                     </Button>
                 </div>
             </div>

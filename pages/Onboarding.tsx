@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useAppStore } from '../store';
 import { AppView, UserProfile } from '../types';
 import { Button } from '../components/Button';
-import { Loader2 } from 'lucide-react';
+import { Loader2, LogOut } from 'lucide-react';
 import { FALLBACK_COUNTRIES } from '../constants';
-import { upsertUserProfile, getCurrentUser } from '../services/supabaseService';
+import { upsertUserProfile, getCurrentUser, signOut } from '../services/supabaseService';
 
 export const Onboarding: React.FC = () => {
   const { setView, setUser } = useAppStore();
@@ -92,6 +92,11 @@ export const Onboarding: React.FC = () => {
     }
   };
 
+  const handleLogout = async () => {
+      await signOut();
+      setView(AppView.AUTH);
+  };
+
   const handleChange = (field: keyof UserProfile, value: any) => {
     if (field === 'residenceCountry') {
       const isPreferredSameAsOldResidence = formData.preferredWorkCountry === formData.residenceCountry || formData.preferredWorkCountry === '';
@@ -115,7 +120,16 @@ export const Onboarding: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 px-4 py-6 transition-colors">
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 px-4 py-6 transition-colors relative">
+      
+      {/* Logout Option for "Stuck" Users */}
+      <button 
+        onClick={handleLogout}
+        className="absolute top-6 right-6 text-sm text-slate-500 dark:text-slate-400 hover:text-red-500 flex items-center gap-2 transition-colors"
+      >
+        <LogOut size={16} /> Wrong Account?
+      </button>
+
       <div className="w-full max-w-3xl">
         <div className="mb-8">
             <h2 className="text-3xl font-bold text-slate-900 dark:text-white mt-6">Tell us about yourself</h2>
@@ -193,7 +207,6 @@ export const Onboarding: React.FC = () => {
             <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
                 <h3 className="text-sm font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-4">Current Residence</h3>
                 <div>
-                    {/* LABEL REMOVED AS REQUESTED */}
                     <select 
                             required
                             value={formData.residenceCountry}
@@ -213,7 +226,6 @@ export const Onboarding: React.FC = () => {
                 <h3 className="text-sm font-bold text-green-600 dark:text-green-400 uppercase tracking-wider mb-4">Future Work Preference</h3>
                 
                 <div className="mb-4">
-                    {/* LABEL REMOVED AS REQUESTED */}
                     <select 
                         value={formData.preferredWorkCountry}
                         onChange={(e) => handleChange('preferredWorkCountry', e.target.value)}
