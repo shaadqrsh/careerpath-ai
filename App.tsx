@@ -54,6 +54,10 @@ const App: React.FC = () => {
   }, [theme]);
 
   useEffect(() => {
+    document.title = APP_NAME;
+  }, []);
+
+  useEffect(() => {
     const initAuth = async () => {
         try {
             const hash = window.location.hash;

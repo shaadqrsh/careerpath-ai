@@ -135,7 +135,7 @@ export const Onboarding: React.FC = () => {
 
         <div className="mb-8 animate-fade-in-up opacity-0" style={{ animationDelay: '100ms' }}>
             <h2 className="text-3xl font-bold text-slate-900 dark:text-white mt-2">Tell us about yourself</h2>
-            <p className="text-slate-600 dark:text-slate-400 mt-2">This helps our AI calibrate your recommendations based on location and demographics.</p>
+            <p className="text-slate-600 dark:text-slate-400 mt-2">This helps us calibrate your recommendations based on location and demographics.</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-8 bg-white dark:bg-slate-800/50 p-8 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xl backdrop-blur-sm transition-all animate-fade-in-up opacity-0" style={{ animationDelay: '200ms' }}>

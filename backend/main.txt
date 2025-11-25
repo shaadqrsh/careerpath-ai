@@ -4,6 +4,7 @@ import uuid
 import logging
 import base64
 import urllib.parse
+import re
 from datetime import datetime, timezone
 from typing import List, Optional, Dict, Any
 
@@ -15,9 +16,12 @@ import google.generativeai as genai
 from supabase import create_client, Client
 import httpx 
 
+# --- CONFIGURATION ---
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+
+FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:3000")
 
 DAILY_IMAGE_LIMIT = 3
 DAILY_CAREER_LIMIT = 5
@@ -32,11 +36,17 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
+origins = [
+    "http://localhost:3000",
+    "http://localhost:5173",
+    FRONTEND_URL.rstrip('/')
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
 
@@ -44,7 +54,6 @@ if not SUPABASE_URL or not SUPABASE_KEY:
     logger.warning("Supabase credentials missing. Auth/DB will fail.")
     supabase: Client = None
 else:
-    # This global client is mostly for auth checks or operations that don't need user context if using service role
     supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 if not GEMINI_API_KEY:
@@ -52,7 +61,19 @@ if not GEMINI_API_KEY:
 else:
     genai.configure(api_key=GEMINI_API_KEY)
 
-# Helper to get an authenticated client for RLS operations
+def sanitize_input(text: str) -> str:
+    if not isinstance(text, str):
+        return str(text)
+    return re.sub(r'[^\w\s.,!?-]', '', text).strip()
+
+def sanitize_quiz_answers(answers: List[Dict[str, Any]]) -> str:
+    clean_text = []
+    for a in answers:
+        q_id = a.get("questionId", "Unknown")
+        ans = sanitize_input(str(a.get("answer", "")))
+        clean_text.append(f"Q{q_id}: {ans}")
+    return "; ".join(clean_text)
+
 def get_user_client(token: str) -> Client:
     client = create_client(SUPABASE_URL, SUPABASE_KEY)
     client.postgrest.auth(token)
@@ -145,7 +166,6 @@ async def verify_token(authorization: str = Header(None)):
 
 def check_quota(client: Client, user_id: str, count_col: str, date_col: str, limit: int) -> int:
     try:
-        # Check if profile exists first using the client
         res = client.table("profiles").select(f"{count_col}, {date_col}").eq("id", user_id).single().execute()
         if not res.data: return 0 
         
@@ -155,7 +175,13 @@ def check_quota(client: Client, user_id: str, count_col: str, date_col: str, lim
         
         now = datetime.now(timezone.utc)
         
-        last_date = datetime.fromisoformat(last_date_str.replace('Z', '+00:00')) if last_date_str else now
+        if last_date_str:
+            try:
+                last_date = datetime.fromisoformat(last_date_str.replace('Z', '+00:00'))
+            except ValueError:
+                last_date = now
+        else:
+            last_date = now
         
         if now.date() > last_date.date():
             try:
@@ -214,7 +240,7 @@ async def login(creds: UserLogin):
             "user": res.user
         }
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail="Invalid login credentials")
 
 @app.post("/api/auth/reset-password")
 async def reset_password(req: PasswordResetRequest):
@@ -223,7 +249,7 @@ async def reset_password(req: PasswordResetRequest):
         return {"status": "success", "message": "Password reset email sent"}
     except Exception as e:
         logger.error(f"Reset Password Error: {e}")
-        raise HTTPException(status_code=500, detail="Failed to send reset email")
+        return {"status": "success", "message": "Password reset email sent"}
 
 @app.post("/api/auth/update-password")
 async def update_password(req: UpdatePasswordRequest, user = Depends(verify_token)):
@@ -291,18 +317,17 @@ async def generate_domain(req: GenerateDomainRequest, authorization: str = Heade
     current_count = check_quota(client, user.id, "daily_career_generations_count", "last_career_generation_date", DAILY_CAREER_LIMIT)
     
     try:
-        answers = req.quiz_answers
+        clean_answers = sanitize_quiz_answers(req.quiz_answers)
+
         prompt = f"""
         Analyze these quiz answers from a General Career Assessment.
         Identify the most suitable broad domain for this user.
-        Answers: {json.dumps(answers, indent=2)}
+        Context: {clean_answers}
         Options: 'science', 'commerce', 'arts'.
         Output strictly JSON: {{ "suggested_domain": "science" }}
         """
         model = genai.GenerativeModel(TEXT_MODEL_NAME)
         response = await model.generate_content_async(prompt, generation_config={"response_mime_type": "application/json"})
-        
-        update_quota(client, user.id, "daily_career_generations_count", current_count + 1)
         
         return json.loads(response.text)
     except Exception as e:
@@ -318,43 +343,42 @@ async def generate_career(req: GenerateCareerRequest, authorization: str = Heade
 
     try:
         user_p = req.user_profile
-        answers = req.quiz_answers
+        
+        clean_answers = sanitize_quiz_answers(req.quiz_answers)
+        safe_full_name = sanitize_input(user_p.full_name)
+        safe_specialization = sanitize_input(user_p.specialization)
+
         prompts_list_example = ", ".join([f'"Scene {i+1} description"' for i in range(SLIDESHOW_IMAGE_COUNT)])
         
         prompt = f"""
-        Act as an expert Career Counselor using Global Market Data.
-        Analyze this user profile: {user_p.full_name}, {user_p.age}y/o, {user_p.education_level} in {user_p.specialization}.
+        Act as an expert Career Counselor.
+        Profile: {safe_full_name}, {user_p.age}y/o, {user_p.education_level} in {safe_specialization}.
         Residence: {user_p.residence_country}, Target: {user_p.preferred_work_country}.
-        Quiz Context: {json.dumps(answers, indent=2)}.
+        Traits: {clean_answers}.
         
         Task:
-        1. Identify {CAREERS_PER_GENERATION} personalized career paths based on the profile and quiz.
-        2. STRICT ELIGIBILITY CHECK: If user is Arts, no Science. If Pivot, verify realistic paths.
+        1. Identify {CAREERS_PER_GENERATION} personalized career paths.
+        2. STRICT ELIGIBILITY: If user is Arts, no Science. If Pivot, verify realistic paths.
         3. PIVOT ANALYSIS: Is this a "Natural Progression" or "Major Pivot"?
         4. ROADMAP: Split into 'localPath' ({user_p.residence_country}) and 'targetPath' ({user_p.preferred_work_country}) if different.
-        5. DATA INTEGRITY: Ensure 'salaryRange', 'growth', and 'roadmap' are FILLED for every recommendation. Do not leave null.
-        6. Do not refer to the user by name in the output text. Use 'You' or 'Your'.
-        7. IMPORTANT: Do not mention specific question numbers or quote exact answers. Synthesize the user's responses into general traits (e.g., "Given your interest in visual problem solving...").
-        8. GENERATE {SLIDESHOW_IMAGE_COUNT} DAY IN A LIFE PROMPTS per career.
+        5. DATA INTEGRITY: Ensure 'salaryRange', 'growth', and 'roadmap' are FILLED.
+        6. GENERATE {SLIDESHOW_IMAGE_COUNT} DAY IN A LIFE PROMPTS per career.
         
         OUTPUT FORMAT: STRICT JSON.
-        JSON Structure:
         {{
           "recommendations": [
             {{
               "id": "uuid-placeholder",
               "title": "Job Title",
               "matchScore": 85,
-              "summary": "Full detailed summary...",
+              "summary": "Summary...",
               "salaryRange": "$50k - $80k",
-              "growth": "High (20% by 2030)",
+              "growth": "High",
               "tags": ["Tag1", "Tag2"],
-              "isPivot": boolean,
+              "isPivot": false,
               "pivotAnalysis": "Analysis string...",
               "roadmap": [
-                 {{ "title": "Step 1", "description": "...", "localPath": "...", "targetPath": "...", "duration": "1 Year" }},
-                 {{ "title": "Step 2", "description": "...", "localPath": "...", "targetPath": "...", "duration": "2 Years" }},
-                 {{ "title": "Step 3", "description": "...", "localPath": "...", "targetPath": "...", "duration": "1 Year" }}
+                 {{ "title": "Step 1", "description": "...", "localPath": "...", "targetPath": "...", "duration": "1 Year" }}
               ],
               "dayInLifePrompts": [{prompts_list_example}]
             }}
@@ -383,6 +407,8 @@ async def generate_images(req: GenerateImagesRequest, authorization: str = Heade
     current_count = check_quota(client, user.id, "daily_image_generations_count", "last_image_generation_date", DAILY_IMAGE_LIMIT)
 
     try:
+        safe_career_title = sanitize_input(req.career_title)
+
         subject_desc = "a professional"
         if req.user_context:
             u = req.user_context
@@ -391,7 +417,8 @@ async def generate_images(req: GenerateImagesRequest, authorization: str = Heade
 
         import asyncio
         async def generate_single_image(prompt_text):
-            full_prompt = f"Cinematic shot of {subject_desc} working as a {req.career_title}. Scene: {prompt_text}. Style: Photorealistic, 4k, dramatic lighting."
+            safe_prompt = sanitize_input(prompt_text)
+            full_prompt = f"Cinematic shot of {subject_desc} working as a {safe_career_title}. Scene: {safe_prompt}. Style: Photorealistic, 4k, dramatic lighting."
             
             try:
                 model = genai.GenerativeModel(IMAGE_MODEL_NAME)
@@ -406,8 +433,8 @@ async def generate_images(req: GenerateImagesRequest, authorization: str = Heade
                 pass
 
             try:
-                safe_prompt = full_prompt[:400] 
-                encoded_prompt = urllib.parse.quote(safe_prompt)
+                safe_prompt_encoded = full_prompt[:300] 
+                encoded_prompt = urllib.parse.quote(safe_prompt_encoded)
                 seed = uuid.uuid4().int % 10000
                 image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1280&height=720&seed={seed}&nologo=true"
                 
@@ -502,7 +529,6 @@ async def upload_career_images(req: SaveCareerImageRequest, authorization: str =
             file_data = base64.b64decode(encoded)
             file_path = f"{user.id}/{req.career_uid}/slide_{i}.{ext}"
             
-            # Using authenticated client for storage upload
             client.storage.from_("career_slideshows").upload(file_path, file_data, {"content-type": f"image/{ext}", "upsert": "true"})
             public_url = client.storage.from_("career_slideshows").get_public_url(file_path)
             uploaded_urls.append(public_url)
@@ -511,4 +537,5 @@ async def upload_career_images(req: SaveCareerImageRequest, authorization: str =
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=7860)
+    port = int(os.environ.get("PORT", 7860))
+    uvicorn.run(app, host="0.0.0.0", port=port)

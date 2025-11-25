@@ -36,7 +36,7 @@ export const Landing: React.FC = () => {
         </h1>
 
         <p className="text-xl text-slate-600 dark:text-slate-400 mb-10 max-w-2xl mx-auto leading-relaxed animate-fade-in-up opacity-0" style={{ animationDelay: '300ms' }}>
-          Stop guessing. Let our AI analyze your personality, skills, and global trends to build a personalized career roadmap just for you.
+          Stop guessing. Let us analyze your personality, skills, and global trends to build a personalized career roadmap just for you.
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in-up opacity-0" style={{ animationDelay: '450ms' }}>
