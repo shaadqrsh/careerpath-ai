@@ -1,4 +1,3 @@
-
 import { CareerRecommendation, UserProfile } from '../types';
 import { API_BASE_URL } from '../constants';
 
@@ -109,6 +108,24 @@ export const signUpWithEmail = async (email: string, password: string) => {
         return await response.json();
     } catch (e) {
         console.error("Sign Up Error:", e);
+        throw e;
+    }
+};
+
+export const sendPasswordResetEmail = async (email: string) => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/auth/reset-password`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email })
+        });
+
+        if (!response.ok) {
+             throw new Error("Failed to send reset email");
+        }
+        return true;
+    } catch (e) {
+        console.error("Reset Password Error:", e);
         throw e;
     }
 };
