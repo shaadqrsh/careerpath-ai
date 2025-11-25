@@ -16,8 +16,13 @@ export const Slideshow: React.FC = () => {
   const [quotaError, setQuotaError] = useState(false);
   const [allFailed, setAllFailed] = useState(false);
   
-  // Ref to prevent double-firing in Strict Mode
+  // Refs for safety checks
   const hasStartedRef = useRef(false);
+  const loadingRef = useRef(true); // Track loading state in ref for timeout closure
+
+  useEffect(() => {
+    loadingRef.current = loading;
+  }, [loading]);
 
   useEffect(() => {
     let isMounted = true;
@@ -37,14 +42,9 @@ export const Slideshow: React.FC = () => {
             const imageUrls = generatedSlides.map(s => s.imageUrl || null);
             
             // Check if ALL images failed (are empty strings/nulls)
-            // We define "failed" as having no image URL. 
-            // If the service returns "" for everything, it means total failure or inability to generate.
             const validCount = generatedSlides.filter(s => s.imageUrl && s.imageUrl.length > 5).length;
             
             if (validCount === 0 && generatedSlides.length > 0) {
-                // If we attempted to generate (missing indices existed) but everything came back empty
-                // Then we show "Visualizations not available".
-                // Note: If they were *already* empty cached, generateStorySlides tries to regen.
                 if (isMounted) {
                     setAllFailed(true);
                     setLoading(false);
@@ -55,24 +55,14 @@ export const Slideshow: React.FC = () => {
             // Update Store locally
             updateCareerImages(selectedCareer.id, imageUrls);
             
-            // Persistence Logic:
-            // If the career is already saved, we must persist these new images to the DB
-            // If it's not saved, they just stay in local state until the user hits "Save" on the detail page
             const isSaved = savedCareers.some(c => c.id === selectedCareer.id);
             if (isSaved && user) {
-                 // Upload images first if they are raw base64/pollinations (handled by uploadCareerImages logic)
-                 // Note: uploadCareerImages handles base64 conversion and storage
                  try {
                      const processedUrls = await uploadCareerImages(user.id, selectedCareer.id, imageUrls);
-                     
-                     // Update store with final URLs (e.g. storage bucket URLs)
                      updateCareerImages(selectedCareer.id, processedUrls);
-                     
-                     // Update DB Record to point to these URLs
                      const updatedCareer = { ...selectedCareer, slideImages: processedUrls };
                      await saveCareerToDb(user.id, updatedCareer);
                      
-                     // Update local slides to use processed URLs
                      if (isMounted) {
                         setSlides(generatedSlides.map((s, i) => ({ ...s, imageUrl: processedUrls[i] || "" })));
                      }
@@ -101,9 +91,9 @@ export const Slideshow: React.FC = () => {
       }
     };
 
-    // Safety Timeout
+    // Safety Timeout using Ref to avoid stale closure issues
     const safetyTimeout = setTimeout(() => {
-        if (isMounted && loading && !quotaError) {
+        if (isMounted && loadingRef.current && !quotaError) {
             console.warn("Slideshow generation timed out.");
             setLoading(false);
             setAllFailed(true);
@@ -116,7 +106,7 @@ export const Slideshow: React.FC = () => {
         isMounted = false;
         clearTimeout(safetyTimeout);
     };
-  }, [selectedCareer, user, updateCareerImages, savedCareers]);
+  }, [selectedCareer, user, updateCareerImages, savedCareers, quotaError]);
 
   const handleNext = () => {
     if (currentSlide < slides.length - 1) setCurrentSlide(curr => curr + 1);

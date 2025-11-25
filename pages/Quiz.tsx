@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAppStore } from '../store';
 import { AppView, CareerDomain } from '../types';
@@ -59,12 +60,13 @@ export const Quiz: React.FC = () => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
         if (e.key === 'Enter' && selectedOption) {
+            e.preventDefault(); // Prevent conflicting click on focused option button
             handleNext();
         }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedOption, currentIndex]); // Re-bind when selection changes
+  }, [selectedOption, currentIndex]); 
 
   const handleContinueToDomain = () => {
     if (suggestedDomain) {
