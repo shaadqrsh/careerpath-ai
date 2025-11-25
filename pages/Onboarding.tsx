@@ -116,8 +116,8 @@ export const Onboarding: React.FC = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 px-4 py-6 transition-colors">
-      {/* Widened Layout: max-w-4xl */}
-      <div className="w-full max-w-4xl">
+      {/* UPDATED WIDTH: max-w-3xl to match Profile and Quiz */}
+      <div className="w-full max-w-3xl">
         <div className="mb-8">
             <h2 className="text-3xl font-bold text-slate-900 dark:text-white mt-6">Tell us about yourself</h2>
             <p className="text-slate-600 dark:text-slate-400 mt-2">This helps our AI calibrate your recommendations based on location and demographics.</p>

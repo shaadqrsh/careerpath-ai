@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAppStore } from '../store';
 import { AppView, CareerDomain } from '../types';
@@ -12,18 +11,15 @@ export const Quiz: React.FC = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   
-  // State for the "Intermediate Result" of the General Quiz
   const [showGeneralResult, setShowGeneralResult] = useState(false);
   const [suggestedDomain, setSuggestedDomain] = useState<CareerDomain | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
 
-  // Filter questions based on the selected domain
   const domainQuestions = QUESTIONS.filter(q => q.domain === selectedDomain);
   
   const currentQuestion = domainQuestions[currentIndex];
   const progress = ((currentIndex) / domainQuestions.length) * 100;
 
-  // If no questions found (error state), go back
   useEffect(() => {
     if (domainQuestions.length === 0 && !showGeneralResult) {
         setView(AppView.DASHBOARD);
@@ -32,7 +28,6 @@ export const Quiz: React.FC = () => {
 
   const calculateSuggestion = async () => {
     setIsCalculating(true);
-    // Use AI to analyze answers from 'general' domain
     const domain = await generateDomainSuggestion(quizAnswers);
     setSuggestedDomain(domain);
     setIsCalculating(false);
@@ -51,7 +46,6 @@ export const Quiz: React.FC = () => {
         setCurrentIndex(prev => prev + 1);
         setSelectedOption(null);
       } else {
-        // End of questions
         if (selectedDomain === 'general') {
             calculateSuggestion();
         } else {
@@ -64,10 +58,9 @@ export const Quiz: React.FC = () => {
   const handleContinueToDomain = () => {
     if (suggestedDomain) {
         setDomain(suggestedDomain);
-        setCurrentIndex(0); // Reset index for the new set of questions
+        setCurrentIndex(0); 
         setSelectedOption(null);
         setShowGeneralResult(false);
-        // We DO NOT reset answers, we keep the general ones for context
     }
   };
 
@@ -108,8 +101,8 @@ export const Quiz: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col items-center pt-20 px-4 transition-colors duration-300">
-      {/* Progress Bar */}
-      <div className="w-full max-w-2xl fixed top-0 left-0 right-0 mx-auto pt-8 px-4 z-10 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-sm pb-4 transition-colors">
+      {/* UPDATED WIDTH: max-w-3xl for both bar and content */}
+      <div className="w-full max-w-3xl fixed top-0 left-0 right-0 mx-auto pt-8 px-4 z-10 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-sm pb-4 transition-colors">
         <div className="flex justify-between text-xs font-medium text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-wide">
           <span>{selectedDomain} Assessment</span>
           <span>{currentIndex + 1} / {domainQuestions.length}</span>
@@ -122,7 +115,7 @@ export const Quiz: React.FC = () => {
         </div>
       </div>
 
-      <div className="w-full max-w-2xl mt-8 animate-[fadeIn_0.5s_ease-out]">
+      <div className="w-full max-w-3xl mt-8 animate-[fadeIn_0.5s_ease-out]">
         <span className="text-blue-600 dark:text-indigo-400 text-sm font-semibold tracking-wider uppercase mb-2 block">
           {currentQuestion.category}
         </span>

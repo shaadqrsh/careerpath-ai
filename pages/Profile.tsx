@@ -140,8 +140,8 @@ export const Profile: React.FC = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 px-4 py-12 transition-colors duration-300">
-      {/* Widened Layout: max-w-4xl */}
-      <div className="w-full max-w-4xl">
+      {/* UPDATED WIDTH: max-w-3xl to match Onboarding and Quiz */}
+      <div className="w-full max-w-3xl">
         <div className="mb-6">
             <button 
                 onClick={() => setView(AppView.DASHBOARD)}

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useAppStore } from '../store';
 import { AppView, CareerRecommendation } from '../types';
@@ -10,13 +9,14 @@ export const SavedPaths: React.FC = () => {
 
   const handleSelect = (career: CareerRecommendation) => {
     setSelectedCareer(career);
-    setCareerOrigin('saved'); // Track origin for back button
+    setCareerOrigin('saved'); 
     setView(AppView.CAREER_DETAIL);
   };
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 py-8 px-4 sm:px-6 lg:px-8 transition-colors duration-300">
-      <div className="max-w-5xl mx-auto">
+      {/* UPDATED WIDTH: max-w-7xl to match Dashboard/Results */}
+      <div className="max-w-7xl mx-auto">
         <div className="flex items-center mb-8">
             <button 
                 onClick={() => setView(AppView.DASHBOARD)} 
@@ -39,7 +39,6 @@ export const SavedPaths: React.FC = () => {
         <div className="space-y-6">
             {savedCareers.map((career) => (
                 <div key={career.id} className="flex items-center gap-6 group-outer relative">
-                    {/* Main Career Card - Clickable Area (Matches Top Matches Style) */}
                     <div 
                         onClick={() => handleSelect(career)}
                         className="group flex-1 relative bg-white dark:bg-slate-800 rounded-2xl p-6 md:p-8 border border-slate-200 dark:border-slate-700 transition-all duration-300 flex flex-col md:flex-row gap-6 md:items-center shadow-sm cursor-pointer hover:shadow-xl hover:border-blue-500 dark:hover:border-slate-500 hover:scale-[1.02] dark:hover:bg-slate-750 overflow-hidden"
@@ -67,7 +66,6 @@ export const SavedPaths: React.FC = () => {
                             </div>
                         </div>
 
-                         {/* Explore Path (Bottom Right) */}
                         <div className="flex-shrink-0 self-end relative z-10 mt-4 md:mt-0">
                             <span className="text-slate-500 dark:text-slate-400 font-medium group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300 group-hover:translate-x-2 inline-flex items-center">
                                 View Details <ArrowRight className="ml-1 w-4 h-4" />
@@ -75,11 +73,10 @@ export const SavedPaths: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* Delete Button - Outside Rectangle, Distinct Style */}
                     <button
                         onClick={(e) => {
-                            e.stopPropagation(); // Prevents clicking the card
-                            toggleSavedCareer(career); // Now triggers the global modal via store
+                            e.stopPropagation(); 
+                            toggleSavedCareer(career); 
                         }}
                         title="Remove Saved Career"
                         className="flex-shrink-0 w-12 h-12 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-400 hover:text-pink-500 hover:border-pink-500 dark:hover:border-pink-500 hover:shadow-lg hover:shadow-pink-500/20 flex items-center justify-center transition-all duration-300 hover:scale-110 z-20"

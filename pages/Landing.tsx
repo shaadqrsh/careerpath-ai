@@ -26,10 +26,10 @@ export const Landing: React.FC = () => {
         <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-indigo-500/10 dark:bg-indigo-600/20 blur-[100px]" />
       </div>
 
-      <div className="z-10 text-center max-w-4xl px-6">
+      {/* UPDATED WIDTH: max-w-7xl container to match Dashboard */}
+      <div className="z-10 text-center w-full max-w-7xl px-6">
         <div className="mb-6 flex justify-center">
           <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 shadow-sm">
-            {/* Google Gemini Icon */}
             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" className="text-blue-500">
                 <path d="M12 24C12 24 10 14 0 12C10 10 12 0 12 0C12 0 14 10 24 12C14 14 12 24 12 24Z" />
             </svg>
@@ -61,7 +61,7 @@ export const Landing: React.FC = () => {
           </Button>
         </div>
 
-        <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-6 text-left max-w-3xl mx-auto">
+        <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-6 text-left max-w-5xl mx-auto">
            <div className="p-4 rounded-xl bg-white/50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 backdrop-blur-sm">
               <h3 className="font-bold text-slate-900 dark:text-white mb-1">Holistic Analysis</h3>
               <p className="text-sm text-slate-600 dark:text-slate-400">Deeply connects your personality, aptitude, and interests to real roles.</p>
