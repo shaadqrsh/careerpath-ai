@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useAppStore } from '../store';
 import { AppView } from '../types';
@@ -46,7 +45,7 @@ export const CareerDetail: React.FC = () => {
         <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?auto=format&fit=crop&q=80')] bg-cover bg-center mix-blend-overlay"></div>
         
         <div className="relative max-w-7xl mx-auto px-4 h-full flex flex-col gap-6">
-            <div className="flex justify-between items-center z-10">
+            <div className="flex justify-between items-center z-10 animate-fade-in-up opacity-0" style={{ animationDelay: '0ms' }}>
                 <button 
                     onClick={() => setView(backTarget)}
                     disabled={isSavingCareer}
@@ -56,7 +55,7 @@ export const CareerDetail: React.FC = () => {
                 </button>
             </div>
             
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 md:gap-4 mt-auto">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 md:gap-4 mt-auto animate-fade-in-up opacity-0" style={{ animationDelay: '100ms' }}>
                 <div className="flex-1 min-w-0 pr-4">
                     {isBestMatch && (
                         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-500/20 border border-green-500/40 text-green-300 text-xs font-bold uppercase tracking-wider mb-3 backdrop-blur-md">
@@ -112,7 +111,7 @@ export const CareerDetail: React.FC = () => {
 
       <main className="max-w-5xl mx-auto px-4 mt-8">
         
-        <section className="mb-12">
+        <section className="mb-12 animate-fade-in-up opacity-0" style={{ animationDelay: '200ms' }}>
             <div className="flex items-center gap-3 mb-6 text-slate-800 dark:text-white">
                 <Briefcase className="text-blue-600 dark:text-blue-400" size={28} />
                 <h2 className="text-2xl font-bold">About this Role</h2>
@@ -153,18 +152,18 @@ export const CareerDetail: React.FC = () => {
         </section>
 
         <section className="mb-12">
-            <div className="flex items-center gap-3 mb-6 text-slate-800 dark:text-white">
+            <div className="flex items-center gap-3 mb-6 text-slate-800 dark:text-white animate-fade-in-up opacity-0" style={{ animationDelay: '300ms' }}>
                 <GraduationCap className="text-green-600 dark:text-green-400" size={28} />
                 <h2 className="text-2xl font-bold">Your Education Roadmap</h2>
             </div>
             
             <div className="space-y-8 relative pl-8 border-l-2 border-slate-200 dark:border-slate-800 ml-4">
                 
-                <div className={`mb-6 p-4 rounded-lg border flex gap-4 ${
+                <div className={`mb-6 p-4 rounded-lg border flex gap-4 animate-fade-in-up opacity-0 ${
                     selectedCareer.isPivot 
                     ? 'bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/20 text-amber-900 dark:text-amber-100' 
                     : 'bg-green-50 dark:bg-green-500/10 border-green-200 dark:border-green-500/20 text-green-900 dark:text-green-100'
-                }`}>
+                }`} style={{ animationDelay: '400ms' }}>
                     <div className="shrink-0 mt-1">
                         {selectedCareer.isPivot ? <Shuffle size={20} /> : <ArrowRightCircle size={20} />}
                     </div>
@@ -179,7 +178,7 @@ export const CareerDetail: React.FC = () => {
                 </div>
 
                 {selectedCareer.roadmap.map((step, idx) => (
-                    <div key={idx} className="relative group">
+                    <div key={idx} className="relative group animate-fade-in-up opacity-0" style={{ animationDelay: `${500 + (idx * 150)}ms` }}>
                         <div className="absolute -left-[41px] top-0 w-6 h-6 rounded-full bg-white dark:bg-slate-800 border-2 border-green-500 group-hover:bg-green-500 transition-colors z-10"></div>
                         <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
                             <span className="text-xs font-bold text-green-600 dark:text-green-400 tracking-wider uppercase mb-1 block">{step.duration}</span>

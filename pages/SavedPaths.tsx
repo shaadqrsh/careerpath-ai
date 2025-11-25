@@ -16,7 +16,7 @@ export const SavedPaths: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 py-8 px-4 sm:px-6 lg:px-8 pb-32 transition-colors duration-300">
       <div className="max-w-7xl mx-auto">
-        <div className="flex items-center mb-8">
+        <div className="flex items-center mb-8 animate-fade-in-up opacity-0" style={{ animationDelay: '0ms' }}>
             <button 
                 onClick={() => setView(AppView.DASHBOARD)} 
                 className="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white flex items-center gap-2 transition-colors"
@@ -25,7 +25,7 @@ export const SavedPaths: React.FC = () => {
             </button>
         </div>
 
-        <div className="mb-10">
+        <div className="mb-10 animate-fade-in-up opacity-0" style={{ animationDelay: '100ms' }}>
             <h2 className="text-3xl font-bold text-slate-900 dark:text-white">Saved Paths</h2>
             <p className="text-slate-600 dark:text-slate-400 mt-2">
                 {savedCareers.length === 0 
@@ -36,8 +36,8 @@ export const SavedPaths: React.FC = () => {
         </div>
 
         <div className="space-y-6">
-            {savedCareers.map((career) => (
-                <div key={career.id} className="flex items-center gap-6 group-outer relative">
+            {savedCareers.map((career, index) => (
+                <div key={career.id} style={{ animationDelay: `${200 + (index * 100)}ms` }} className="flex items-center gap-6 group-outer relative animate-fade-in-up opacity-0">
                     <div 
                         onClick={() => handleSelect(career)}
                         className="group flex-1 relative bg-white dark:bg-slate-800 rounded-2xl p-6 md:p-8 border border-slate-200 dark:border-slate-700 transition-all duration-300 flex flex-col md:flex-row gap-6 md:items-center shadow-sm cursor-pointer hover:shadow-xl hover:border-blue-500 dark:hover:border-slate-500 hover:scale-[1.02] dark:hover:bg-slate-750 overflow-hidden"
@@ -87,7 +87,7 @@ export const SavedPaths: React.FC = () => {
         </div>
         
         {savedCareers.length === 0 && (
-             <div className="mt-8 p-8 border-2 border-dashed border-slate-300 dark:border-slate-800 rounded-xl text-center">
+             <div className="mt-8 p-8 border-2 border-dashed border-slate-300 dark:border-slate-800 rounded-xl text-center animate-fade-in-up opacity-0" style={{ animationDelay: '200ms' }}>
                 <p className="text-slate-500 dark:text-slate-400">Go explore some quizzes to find your dream job!</p>
                 <Button 
                     className="mt-4 group transition-transform hover:scale-105" 

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useAppStore } from '../store';
 import { AppView } from '../types';
@@ -18,7 +17,7 @@ export const Landing: React.FC = () => {
       </div>
 
       <div className="z-10 text-center w-full max-w-7xl px-6">
-        <div className="mb-6 flex justify-center">
+        <div className="mb-6 flex justify-center animate-fade-in-up opacity-0" style={{ animationDelay: '0ms' }}>
           <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 shadow-sm">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" className="text-blue-500">
                 <path d="M12 24C12 24 10 14 0 12C10 10 12 0 12 0C12 0 14 10 24 12C14 14 12 24 12 24Z" />
@@ -29,18 +28,18 @@ export const Landing: React.FC = () => {
           </span>
         </div>
 
-        <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight text-slate-900 dark:text-white mb-6">
+        <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight text-slate-900 dark:text-white mb-6 animate-fade-in-up opacity-0" style={{ animationDelay: '150ms' }}>
           Find Your Future with <br />
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400">
             {APP_NAME}
           </span>
         </h1>
 
-        <p className="text-xl text-slate-600 dark:text-slate-400 mb-10 max-w-2xl mx-auto leading-relaxed">
+        <p className="text-xl text-slate-600 dark:text-slate-400 mb-10 max-w-2xl mx-auto leading-relaxed animate-fade-in-up opacity-0" style={{ animationDelay: '300ms' }}>
           Stop guessing. Let our AI analyze your personality, skills, and global trends to build a personalized career roadmap just for you.
         </p>
 
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+        <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in-up opacity-0" style={{ animationDelay: '450ms' }}>
           <Button 
             size="lg" 
             onClick={() => setView(AppView.AUTH)}
@@ -52,15 +51,15 @@ export const Landing: React.FC = () => {
         </div>
 
         <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-6 text-left max-w-5xl mx-auto">
-           <div className="p-4 rounded-xl bg-white/50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 backdrop-blur-sm">
+           <div className="p-4 rounded-xl bg-white/50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 backdrop-blur-sm animate-fade-in-up opacity-0" style={{ animationDelay: '600ms' }}>
               <h3 className="font-bold text-slate-900 dark:text-white mb-1">Holistic Analysis</h3>
               <p className="text-sm text-slate-600 dark:text-slate-400">Deeply connects your personality, aptitude, and interests to real roles.</p>
            </div>
-           <div className="p-4 rounded-xl bg-white/50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 backdrop-blur-sm">
+           <div className="p-4 rounded-xl bg-white/50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 backdrop-blur-sm animate-fade-in-up opacity-0" style={{ animationDelay: '750ms' }}>
               <h3 className="font-bold text-slate-900 dark:text-white mb-1">Visual Pathways</h3>
               <p className="text-sm text-slate-600 dark:text-slate-400">See your future with AI-generated day-in-the-life scenes.</p>
            </div>
-           <div className="p-4 rounded-xl bg-white/50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 backdrop-blur-sm">
+           <div className="p-4 rounded-xl bg-white/50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 backdrop-blur-sm animate-fade-in-up opacity-0" style={{ animationDelay: '900ms' }}>
               <h3 className="font-bold text-slate-900 dark:text-white mb-1">Smart Roadmaps</h3>
               <p className="text-sm text-slate-600 dark:text-slate-400">Step-by-step education plans from where you are now.</p>
            </div>

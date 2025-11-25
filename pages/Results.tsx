@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useAppStore } from '../store';
 import { AppView, CareerRecommendation } from '../types';
@@ -29,7 +28,7 @@ export const Results: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 py-8 px-4 sm:px-6 lg:px-8 pb-32 transition-colors">
       <div className="max-w-7xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-8 animate-fade-in-up opacity-0" style={{ animationDelay: '0ms' }}>
             <button 
                 onClick={() => setView(AppView.DASHBOARD)} 
                 className="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white flex items-center gap-2 transition-colors"
@@ -38,7 +37,7 @@ export const Results: React.FC = () => {
             </button>
         </div>
 
-        <div className="mb-12 text-center">
+        <div className="mb-12 text-center animate-fade-in-up opacity-0" style={{ animationDelay: '100ms' }}>
             <h2 className="text-3xl font-bold text-slate-900 dark:text-white">Your Top Matches</h2>
             <p className="text-slate-600 dark:text-slate-400 mt-2">Based on your unique profile, here are the paths where you'd thrive.</p>
         </div>
@@ -51,7 +50,8 @@ export const Results: React.FC = () => {
                 <div 
                     key={career.id}
                     onClick={() => handleSelect(career)}
-                    className={`group relative bg-white dark:bg-slate-800 rounded-2xl p-6 md:p-8 border transition-all duration-300 flex flex-col md:flex-row gap-6 md:items-center shadow-sm cursor-pointer hover:shadow-xl hover:border-blue-500 dark:hover:border-slate-500 hover:scale-[1.02] dark:hover:bg-slate-750 overflow-hidden ${isBestMatch ? 'border-green-500/50 dark:border-green-500/50 ring-1 ring-green-500/20' : 'border-slate-200 dark:border-slate-700'}`}
+                    style={{ animationDelay: `${200 + (index * 150)}ms` }}
+                    className={`group relative bg-white dark:bg-slate-800 rounded-2xl p-6 md:p-8 border transition-all duration-300 flex flex-col md:flex-row gap-6 md:items-center shadow-sm cursor-pointer hover:shadow-xl hover:border-blue-500 dark:hover:border-slate-500 hover:scale-[1.02] dark:hover:bg-slate-750 overflow-hidden animate-fade-in-up opacity-0 ${isBestMatch ? 'border-green-500/50 dark:border-green-500/50 ring-1 ring-green-500/20' : 'border-slate-200 dark:border-slate-700'}`}
                 >
                     <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-indigo-500 opacity-0 group-hover:opacity-5 transition-opacity duration-300" />
                     

@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect } from 'react';
 import { useAppStore } from '../store';
 import { AppView, UserProfile } from '../types';
@@ -126,7 +124,7 @@ export const Onboarding: React.FC = () => {
     <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 px-4 py-12 transition-colors relative">
       
       <div className="w-full max-w-3xl">
-        <div className="flex justify-end mb-4">
+        <div className="flex justify-end mb-4 animate-fade-in-up opacity-0" style={{ animationDelay: '0ms' }}>
             <button 
                 onClick={handleLogout}
                 className="text-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white flex items-center gap-2 transition-colors font-medium"
@@ -135,14 +133,14 @@ export const Onboarding: React.FC = () => {
             </button>
         </div>
 
-        <div className="mb-8">
+        <div className="mb-8 animate-fade-in-up opacity-0" style={{ animationDelay: '100ms' }}>
             <h2 className="text-3xl font-bold text-slate-900 dark:text-white mt-2">Tell us about yourself</h2>
             <p className="text-slate-600 dark:text-slate-400 mt-2">This helps our AI calibrate your recommendations based on location and demographics.</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-8 bg-white dark:bg-slate-800 p-8 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xl transition-all">
+        <form onSubmit={handleSubmit} className="space-y-8 bg-white dark:bg-slate-800 p-8 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xl transition-all animate-fade-in-up opacity-0" style={{ animationDelay: '200ms' }}>
             
-            <div>
+            <div className="animate-fade-in-up opacity-0" style={{ animationDelay: '300ms' }}>
                 <h3 className="text-sm font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-6 flex items-center gap-2">
                     <User size={18} /> Personal Details
                 </h3>
@@ -206,7 +204,7 @@ export const Onboarding: React.FC = () => {
                 </div>
             </div>
 
-            <div className="border-t border-slate-200 dark:border-slate-700 pt-6">
+            <div className="border-t border-slate-200 dark:border-slate-700 pt-6 animate-fade-in-up opacity-0" style={{ animationDelay: '400ms' }}>
                 <h3 className="text-sm font-bold text-green-600 dark:text-green-400 uppercase tracking-wider mb-6 flex items-center gap-2">
                     <MapPin size={18} /> Location Details
                 </h3>
@@ -239,9 +237,11 @@ export const Onboarding: React.FC = () => {
                 </div>
             </div>
 
-            <Button type="submit" fullWidth size="lg" disabled={saving}>
-                {saving ? "Creating Profile..." : "Continue to Dashboard"}
-            </Button>
+            <div className="animate-fade-in-up opacity-0" style={{ animationDelay: '500ms' }}>
+                <Button type="submit" fullWidth size="lg" disabled={saving}>
+                    {saving ? "Creating Profile..." : "Continue to Dashboard"}
+                </Button>
+            </div>
         </form>
       </div>
     </div>

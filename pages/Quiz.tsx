@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAppStore } from '../store';
 import { AppView, CareerDomain } from '../types';
@@ -102,7 +101,7 @@ export const Quiz: React.FC = () => {
   if (quotaExceeded) {
       return (
         <div className="fixed inset-0 bg-black/95 z-[60] flex flex-col items-center justify-center text-white p-4 text-center animate-in fade-in duration-300">
-            <div className="bg-slate-900 p-8 rounded-2xl border border-red-900/50 max-w-md shadow-2xl">
+            <div className="bg-slate-900 p-8 rounded-2xl border border-red-900/50 max-w-md shadow-2xl animate-fade-in-up">
                 <AlertOctagon className="w-16 h-16 text-red-500 mx-auto mb-6" />
                 <h3 className="text-2xl font-bold mb-3">Daily Limit Reached</h3>
                 <p className="text-slate-400 mb-8 leading-relaxed">
@@ -124,7 +123,7 @@ export const Quiz: React.FC = () => {
       return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col items-center justify-center transition-colors duration-300">
              <Loader2 className="w-10 h-10 animate-spin text-blue-500 mb-4" />
-             <p className="text-slate-600 dark:text-slate-300 text-lg">Analyzing your preferences...</p>
+             <p className="text-slate-600 dark:text-slate-300 text-lg animate-pulse">Analyzing your preferences...</p>
         </div>
       );
   }
@@ -132,7 +131,7 @@ export const Quiz: React.FC = () => {
   if (showGeneralResult && suggestedDomain) {
       return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center px-4 transition-colors duration-300">
-            <div className="max-w-lg w-full bg-white dark:bg-slate-800 rounded-2xl p-8 border border-slate-200 dark:border-slate-700 text-center animate-[fadeIn_0.5s_ease-out] shadow-xl">
+            <div className="max-w-lg w-full bg-white dark:bg-slate-800 rounded-2xl p-8 border border-slate-200 dark:border-slate-700 text-center animate-fade-in-up shadow-xl">
                 <div className="w-16 h-16 rounded-full bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center mx-auto mb-6">
                     <CheckCircle2 size={32} />
                 </div>
@@ -170,11 +169,14 @@ export const Quiz: React.FC = () => {
         </div>
       </div>
 
-      <div className="w-full max-w-3xl mt-8 animate-[fadeIn_0.5s_ease-out]">
-        <span className="text-blue-600 dark:text-indigo-400 text-sm font-semibold tracking-wider uppercase mb-2 block">
+      <div 
+        key={currentQuestion.id} 
+        className="w-full max-w-3xl mt-8"
+      >
+        <span className="text-blue-600 dark:text-indigo-400 text-sm font-semibold tracking-wider uppercase mb-2 block animate-fade-in-up opacity-0" style={{ animationDelay: '0ms' }}>
           {currentQuestion.category}
         </span>
-        <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-10 leading-tight transition-colors">
+        <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-10 leading-tight transition-colors animate-fade-in-up opacity-0" style={{ animationDelay: '100ms' }}>
           {currentQuestion.text}
         </h2>
 
@@ -183,7 +185,8 @@ export const Quiz: React.FC = () => {
             <button
               key={idx}
               onClick={() => setSelectedOption(option)}
-              className={`w-full text-left p-6 rounded-xl border-2 transition-all duration-200 flex items-center justify-between group ${
+              style={{ animationDelay: `${200 + (idx * 100)}ms` }}
+              className={`w-full text-left p-6 rounded-xl border-2 transition-all duration-200 flex items-center justify-between group animate-fade-in-up opacity-0 ${
                 selectedOption === option 
                   ? 'border-blue-500 bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-white shadow-md' 
                   : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800'
@@ -197,7 +200,7 @@ export const Quiz: React.FC = () => {
           ))}
         </div>
 
-        <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-between">
+        <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-between animate-fade-in-up opacity-0" style={{ animationDelay: '600ms' }}>
             <Button 
                 variant="ghost" 
                 onClick={() => setView(AppView.DASHBOARD)}
