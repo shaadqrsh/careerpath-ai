@@ -4,7 +4,7 @@ import { useAppStore } from '../store';
 import { AppView, CareerDomain } from '../types';
 import { QUESTIONS, DAILY_CAREER_LIMIT } from '../constants';
 import { Button } from '../components/Button';
-import { CheckCircle2, ChevronRight, Loader2 } from 'lucide-react';
+import { CheckCircle2, ChevronRight, Loader2, AlertOctagon } from 'lucide-react';
 import { generateDomainSuggestion } from '../services/geminiService';
 
 export const Quiz: React.FC = () => {
@@ -15,6 +15,7 @@ export const Quiz: React.FC = () => {
   const [showGeneralResult, setShowGeneralResult] = useState(false);
   const [suggestedDomain, setSuggestedDomain] = useState<CareerDomain | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
+  const [quotaExceeded, setQuotaExceeded] = useState(false);
 
   const domainQuestions = QUESTIONS.filter(q => q.domain === selectedDomain);
   
@@ -22,20 +23,7 @@ export const Quiz: React.FC = () => {
   const progress = ((currentIndex) / domainQuestions.length) * 100;
 
   useEffect(() => {
-    if (domainQuestions.length === 0 && !showGeneralResult) {
-        setView(AppView.DASHBOARD);
-    }
-  }, [domainQuestions, setView, showGeneralResult]);
-
-  const calculateSuggestion = async () => {
-    setIsCalculating(true);
-    const domain = await generateDomainSuggestion(quizAnswers);
-    setSuggestedDomain(domain);
-    setIsCalculating(false);
-    setShowGeneralResult(true);
-  };
-
-  const checkQuotaAndProceed = () => {
+    // Check quota on mount
     if (user) {
         const lastDateStr = user.lastCareerGenerationDate;
         let remaining = DAILY_CAREER_LIMIT;
@@ -51,12 +39,23 @@ export const Quiz: React.FC = () => {
         }
 
         if (remaining <= 0) {
-            showToast(`Daily limit reached (${DAILY_CAREER_LIMIT} assessments/day). Try again tomorrow.`);
-            setView(AppView.DASHBOARD);
-            return;
+            setQuotaExceeded(true);
         }
     }
-    setView(AppView.ANALYSIS);
+  }, [user]);
+
+  useEffect(() => {
+    if (domainQuestions.length === 0 && !showGeneralResult) {
+        setView(AppView.DASHBOARD);
+    }
+  }, [domainQuestions, setView, showGeneralResult]);
+
+  const calculateSuggestion = async () => {
+    setIsCalculating(true);
+    const domain = await generateDomainSuggestion(quizAnswers);
+    setSuggestedDomain(domain);
+    setIsCalculating(false);
+    setShowGeneralResult(true);
   };
 
   const handleNext = () => {
@@ -74,7 +73,7 @@ export const Quiz: React.FC = () => {
         if (selectedDomain === 'general') {
             calculateSuggestion();
         } else {
-            checkQuotaAndProceed();
+            setView(AppView.ANALYSIS);
         }
       }
     }
@@ -99,6 +98,27 @@ export const Quiz: React.FC = () => {
         setShowGeneralResult(false);
     }
   };
+
+  if (quotaExceeded) {
+      return (
+        <div className="fixed inset-0 bg-black/95 z-[60] flex flex-col items-center justify-center text-white p-4 text-center animate-in fade-in duration-300">
+            <div className="bg-slate-900 p-8 rounded-2xl border border-red-900/50 max-w-md shadow-2xl">
+                <AlertOctagon className="w-16 h-16 text-red-500 mx-auto mb-6" />
+                <h3 className="text-2xl font-bold mb-3">Daily Limit Reached</h3>
+                <p className="text-slate-400 mb-8 leading-relaxed">
+                    You've reached your daily limit of <strong>{DAILY_CAREER_LIMIT}</strong> career assessments.
+                    Please return in 24 hours to explore more paths.
+                </p>
+                <button 
+                    onClick={() => setView(AppView.DASHBOARD)} 
+                    className="px-8 py-3 bg-white text-black hover:bg-slate-200 rounded-xl transition-colors font-bold"
+                >
+                    Return to Dashboard
+                </button>
+            </div>
+        </div>
+      );
+  }
 
   if (isCalculating) {
       return (

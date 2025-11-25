@@ -47,6 +47,20 @@ export const Dashboard: React.FC = () => {
     { id: 'arts', title: 'Arts & Creative', icon: <Palette size={32} />, color: 'from-pink-500 to-rose-600', desc: 'Design, Media, Humanities' },
   ];
 
+  const getQuotaStyles = (current: number) => {
+     if (current === 0) {
+         return "bg-red-50 dark:bg-red-900/20 border-red-100 dark:border-red-800 text-red-700 dark:text-red-400";
+     }
+     return "bg-blue-50 dark:bg-blue-900/20 border-blue-100 dark:border-blue-800 text-blue-700 dark:text-blue-300";
+  };
+  
+  const getImageQuotaStyles = (current: number) => {
+     if (current === 0) {
+         return "bg-red-50 dark:bg-red-900/20 border-red-100 dark:border-red-800 text-red-700 dark:text-red-400";
+     }
+     return "bg-purple-50 dark:bg-purple-900/20 border-purple-100 dark:border-purple-800 text-purple-700 dark:text-purple-300";
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white transition-colors duration-300">
       <nav className="border-b border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md sticky top-0 z-50 transition-colors">
@@ -68,14 +82,16 @@ export const Dashboard: React.FC = () => {
 
             <div className="flex items-center gap-2 sm:gap-4">
               
-              <div className="hidden lg:flex items-center gap-3 mr-2">
-                 <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 text-xs font-medium text-blue-700 dark:text-blue-300" title="Career Assessments">
+              <div className="flex items-center gap-2 mr-2">
+                 <div className={`flex items-center gap-1.5 px-2 py-1 rounded-md border text-xs font-medium ${getQuotaStyles(careerQuota)}`} title="Daily Career Assessments Remaining">
                     <Zap size={14} />
-                    <span>Assessments: {careerQuota}/{DAILY_CAREER_LIMIT}</span>
+                    <span className="hidden sm:inline">Assessments:</span>
+                    <span>{careerQuota}/{DAILY_CAREER_LIMIT}</span>
                  </div>
-                 <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-purple-50 dark:bg-purple-900/20 border border-purple-100 dark:border-purple-800 text-xs font-medium text-purple-700 dark:text-purple-300" title="Career Visualization">
+                 <div className={`flex items-center gap-1.5 px-2 py-1 rounded-md border text-xs font-medium ${getImageQuotaStyles(imageQuota)}`} title="Daily Career Visualization Remaining">
                     <Image size={14} />
-                    <span>Visuals: {imageQuota}/{DAILY_IMAGE_LIMIT}</span>
+                    <span className="hidden sm:inline">Visualizations:</span>
+                    <span>{imageQuota}/{DAILY_IMAGE_LIMIT}</span>
                  </div>
               </div>
 

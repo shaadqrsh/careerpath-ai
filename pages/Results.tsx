@@ -15,6 +15,17 @@ export const Results: React.FC = () => {
 
   const isSaved = (id: string) => savedCareers.some(c => c.id === id);
 
+  const formatGrowth = (growth: string) => {
+    const match = growth.match(/^([^(]+)(\s*\(.*\))?$/);
+    if (match) {
+        const magnitude = match[1].trim();
+        const details = match[2] ? match[2].trim() : '';
+        if (magnitude.toLowerCase().includes('growth')) return growth; 
+        return `${magnitude} Growth ${details}`;
+    }
+    return `${growth} Growth`;
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 py-8 px-4 sm:px-6 lg:px-8 pb-32 transition-colors">
       <div className="max-w-7xl mx-auto">
@@ -95,7 +106,7 @@ export const Results: React.FC = () => {
                             </div>
                             <div className="flex items-center gap-2">
                                 <TrendingUp size={16} className="text-blue-500 dark:text-blue-400" />
-                                {career.growth} Growth
+                                {formatGrowth(career.growth)}
                             </div>
                         </div>
                     </div>
