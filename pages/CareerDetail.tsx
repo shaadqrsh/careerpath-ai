@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useAppStore } from '../store';
 import { AppView } from '../types';
@@ -84,7 +85,7 @@ export const CareerDetail: React.FC = () => {
                         disabled={isSavingCareer}
                         className={`p-3 rounded-full backdrop-blur border transition-all duration-300 group hover:scale-110 active:scale-95 ${
                             isSaved 
-                            ? 'bg-pink-500/20 border-pink-500/50 text-pink-500 hover:bg-red-500/20 hover:border-red-500/50 hover:text-red-500' 
+                            ? 'bg-pink-500/20 border-pink-500/50 text-pink-500' 
                             : 'bg-white/10 dark:bg-slate-800/50 border-white/20 dark:border-slate-600 hover:bg-white/20 dark:hover:bg-slate-700 text-white'
                         }`}
                         title={isSaved ? "Unsave Career" : "Save Career"}
@@ -92,13 +93,16 @@ export const CareerDetail: React.FC = () => {
                         {isSavingCareer ? (
                             <Loader2 className="w-6 h-6 animate-spin" />
                         ) : (
-                            <Heart className={`w-6 h-6 transition-transform duration-300 ${isSaved ? 'scale-110' : ''}`} fill={isSaved ? "currentColor" : "none"} />
+                            <Heart 
+                                className={`w-6 h-6 transition-transform duration-300 ${isSaved ? 'scale-110 fill-current group-hover:fill-none' : 'fill-none'}`} 
+                            />
                         )}
                      </button>
                      <Button 
                         onClick={() => setView(AppView.SLIDESHOW)}
                         disabled={isSavingCareer} 
                         className="shadow-xl shadow-blue-900/50 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                        title="View a day in life visualization"
                      >
                         <PlayCircle className="w-5 h-5 mr-2" />
                         {isSavingCareer ? "Saving..." : "View Day in Life"}
@@ -117,7 +121,7 @@ export const CareerDetail: React.FC = () => {
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col">
+                <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col animate-fade-in-up opacity-0" style={{ animationDelay: '300ms' }}>
                     <h3 className="text-lg font-bold mb-4 text-slate-800 dark:text-slate-200">Why this fits you</h3>
                     
                     <div className="mb-4">
@@ -134,7 +138,7 @@ export const CareerDetail: React.FC = () => {
                     </p>
                 </div>
 
-                <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
+                <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm animate-fade-in-up opacity-0" style={{ animationDelay: '400ms' }}>
                     <h3 className="text-lg font-bold mb-4 text-slate-800 dark:text-slate-200">Key Skills Required</h3>
                     <div className="flex flex-wrap gap-2">
                         {['Strategic Thinking', 'Data Analysis', 'Communication', 'Project Management', 'Technical Proficiency'].map(skill => (
@@ -151,7 +155,7 @@ export const CareerDetail: React.FC = () => {
         </section>
 
         <section className="mb-12">
-            <div className="flex items-center gap-3 mb-6 text-slate-800 dark:text-white animate-fade-in-up opacity-0" style={{ animationDelay: '300ms' }}>
+            <div className="flex items-center gap-3 mb-6 text-slate-800 dark:text-white animate-fade-in-up opacity-0" style={{ animationDelay: '500ms' }}>
                 <GraduationCap className="text-green-600 dark:text-green-400" size={28} />
                 <h2 className="text-2xl font-bold">Your Education Roadmap</h2>
             </div>
@@ -162,7 +166,7 @@ export const CareerDetail: React.FC = () => {
                     selectedCareer.isPivot 
                     ? 'bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/20 text-amber-900 dark:text-amber-100' 
                     : 'bg-green-50 dark:bg-green-500/10 border-green-200 dark:border-green-500/20 text-green-900 dark:text-green-100'
-                }`} style={{ animationDelay: '400ms' }}>
+                }`} style={{ animationDelay: '600ms' }}>
                     <div className="shrink-0 mt-1">
                         {selectedCareer.isPivot ? <Shuffle size={20} /> : <ArrowRightCircle size={20} />}
                     </div>
@@ -177,8 +181,8 @@ export const CareerDetail: React.FC = () => {
                 </div>
 
                 {selectedCareer.roadmap.map((step, idx) => (
-                    <div key={idx} className="relative group animate-fade-in-up opacity-0" style={{ animationDelay: `${500 + (idx * 150)}ms` }}>
-                        <div className="absolute -left-[51px] top-6 w-6 h-6 rounded-full bg-white dark:bg-slate-800 border-2 border-green-500 group-hover:bg-green-500 transition-colors z-10"></div>
+                    <div key={idx} className="relative group animate-fade-in-up opacity-0" style={{ animationDelay: `${700 + (idx * 150)}ms` }}>
+                        <div className="absolute -left-[46px] top-6 w-6 h-6 rounded-full bg-white dark:bg-slate-800 border-2 border-green-500 group-hover:bg-green-500 transition-colors z-10"></div>
                         <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
                             <span className="text-xs font-bold text-green-600 dark:text-green-400 tracking-wider uppercase mb-1 block">{step.duration}</span>
                             <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">{step.title}</h3>

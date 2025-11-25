@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useRef } from 'react';
 import { useAppStore } from '../store';
 import { AppView, Slide } from '../types';
@@ -178,7 +179,7 @@ export const Slideshow: React.FC = () => {
 
   if (quotaError) {
       return (
-        <div className="fixed inset-0 bg-black/95 z-[60] flex flex-col items-center justify-center text-white p-4 text-center">
+        <div className="fixed inset-0 bg-black/95 z-[60] flex flex-col items-center justify-center text-white p-4 text-center animate-fade-in">
             <div className="bg-slate-900 p-8 rounded-2xl border border-red-900/50 max-w-md shadow-2xl animate-fade-in-up">
                 <AlertOctagon className="w-16 h-16 text-red-500 mx-auto mb-6" />
                 <h3 className="text-2xl font-bold mb-3">Daily Limit Reached</h3>
@@ -199,7 +200,7 @@ export const Slideshow: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="fixed inset-0 bg-black/95 z-[60] flex flex-col items-center justify-center">
+      <div className="fixed inset-0 bg-black/95 z-[60] flex flex-col items-center justify-center animate-fade-in">
         <div className="relative animate-fade-in-up opacity-0" style={{ animationDelay: '0ms' }}>
             <div className="absolute inset-0 bg-blue-500 blur-xl opacity-20 animate-pulse"></div>
             <Loader2 className="w-12 h-12 text-blue-500 animate-spin relative z-10" />
@@ -223,7 +224,7 @@ export const Slideshow: React.FC = () => {
 
   if (allFailed || slides.length === 0) {
       return (
-        <div className="fixed inset-0 bg-black/95 z-[60] flex flex-col items-center justify-center text-white p-4 text-center">
+        <div className="fixed inset-0 bg-black/95 z-[60] flex flex-col items-center justify-center text-white p-4 text-center animate-fade-in">
             <div className="bg-slate-900 p-8 rounded-2xl border border-slate-800 max-w-md shadow-2xl animate-fade-in-up">
                 <ImageOff className="w-12 h-12 text-slate-600 mx-auto mb-6" />
                 <h3 className="text-xl font-bold mb-3">Visualizations are not available</h3>
@@ -245,7 +246,7 @@ export const Slideshow: React.FC = () => {
   const hasImage = slide.imageUrl && slide.imageUrl.length > 5;
 
   return (
-    <div className="fixed inset-0 bg-black z-[60] flex items-center justify-center overflow-hidden animate-fade-in-up px-0 md:px-4 md:py-8">
+    <div className="fixed inset-0 bg-black z-[60] flex items-center justify-center overflow-hidden animate-fade-in px-0 md:px-4 md:py-8">
       
       {/* Tap zones for mobile */}
       <div className="absolute inset-y-0 left-0 w-1/4 z-20 md:hidden" onClick={handlePrev} />
@@ -268,16 +269,15 @@ export const Slideshow: React.FC = () => {
 
       <div className="relative z-10 w-full h-full max-w-md md:max-w-6xl flex flex-col md:flex-row bg-slate-900/80 backdrop-blur-md rounded-2xl md:rounded-3xl overflow-hidden border border-white/10 shadow-2xl m-4 md:m-8 max-h-[90vh] md:h-[85vh]">
         
-        <div className="h-[50%] md:h-full md:w-[70%] relative bg-black flex items-center justify-center overflow-hidden group">
+        <div key={`img-${currentSlide}`} className="h-[50%] md:h-full md:w-[70%] relative bg-black flex items-center justify-center overflow-hidden group">
             {hasImage ? (
                 <img 
-                    key={currentSlide}
                     src={slide.imageUrl} 
                     alt="Day in life" 
                     className="w-full h-full object-cover animate-fade-in"
                 />
             ) : (
-                <div key={currentSlide} className="flex flex-col items-center justify-center text-slate-500 p-8 text-center bg-slate-900/50 w-full h-full animate-fade-in">
+                <div className="flex flex-col items-center justify-center text-slate-500 p-8 text-center bg-slate-900/50 w-full h-full animate-fade-in">
                     <ImageOff size={64} className="mb-4 opacity-40" />
                     <p className="text-lg font-medium text-slate-400">Image not available</p>
                     <p className="text-sm opacity-60 mt-2">We couldn't generate this specific scene.</p>

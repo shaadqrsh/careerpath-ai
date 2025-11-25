@@ -1,7 +1,8 @@
+
 import React, { useEffect, useState } from 'react';
 import { useAppStore } from '../store';
 import { AppView, CareerDomain } from '../types';
-import { Beaker, Briefcase, Palette, LogOut, User, Heart, HelpCircle, ArrowRight, Zap, Image } from 'lucide-react';
+import { Beaker, Briefcase, Palette, LogOut, User, Heart, HelpCircle, ArrowRight, Zap, Image, Menu, X } from 'lucide-react';
 import { APP_NAME, DAILY_CAREER_LIMIT, DAILY_IMAGE_LIMIT } from '../constants';
 import { signOut } from '../services/supabaseService';
 
@@ -10,6 +11,7 @@ export const Dashboard: React.FC = () => {
   
   const [careerQuota, setCareerQuota] = useState(0);
   const [imageQuota, setImageQuota] = useState(0);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -79,8 +81,8 @@ export const Dashboard: React.FC = () => {
                 </div>
             </div>
 
-            <div className="flex items-center gap-2 sm:gap-4">
-              
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex items-center gap-4">
               <div className="flex items-center gap-2 mr-2">
                  <div className={`flex items-center gap-1.5 px-2 py-1 rounded-md border text-xs font-medium ${getQuotaStyles(careerQuota)}`} title="Daily Career Assessments Remaining">
                     <Zap size={14} />
@@ -93,6 +95,8 @@ export const Dashboard: React.FC = () => {
                     <span>{imageQuota}/{DAILY_IMAGE_LIMIT}</span>
                  </div>
               </div>
+
+              <div className="h-6 w-px bg-slate-200 dark:bg-slate-700 mx-1"></div>
 
               <button 
                 onClick={() => setView(AppView.SAVED_PATHS)}
@@ -111,7 +115,6 @@ export const Dashboard: React.FC = () => {
               >
                 <User size={20} />
               </button>
-              <div className="h-6 w-px bg-slate-200 dark:bg-slate-700 mx-1 hidden sm:block"></div>
               <button 
                 onClick={handleLogout} 
                 className="p-2 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"
@@ -120,9 +123,84 @@ export const Dashboard: React.FC = () => {
                 <LogOut size={20} />
               </button>
             </div>
+
+            {/* Mobile Navigation Toggle */}
+            <div className="md:hidden flex items-center">
+                 <button 
+                    onClick={() => setIsMobileMenuOpen(true)}
+                    className="p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"
+                 >
+                    <Menu size={24} />
+                 </button>
+            </div>
           </div>
         </div>
       </nav>
+
+      {/* Mobile Menu Overlay */}
+      {isMobileMenuOpen && (
+        <div className="fixed inset-0 z-[100] bg-white dark:bg-slate-900 animate-fade-in flex flex-col">
+            <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
+                 <h2 className="text-lg font-bold">Menu</h2>
+                 <button 
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="p-2 text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                 >
+                    <X size={24} />
+                 </button>
+            </div>
+            <div className="p-6 flex flex-col gap-6">
+                <div className="flex flex-col gap-4">
+                     <button 
+                        onClick={() => { setView(AppView.SAVED_PATHS); setIsMobileMenuOpen(false); }}
+                        className="flex items-center gap-4 text-lg font-medium text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400"
+                    >
+                        <div className="relative">
+                            <Heart size={24} />
+                            {savedCareers.length > 0 && !hasViewedSavedPaths && (
+                                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-pink-500 rounded-full animate-pulse"></span>
+                            )}
+                        </div>
+                        Saved Paths
+                    </button>
+                    <button 
+                        onClick={() => { setView(AppView.PROFILE); setIsMobileMenuOpen(false); }}
+                        className="flex items-center gap-4 text-lg font-medium text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400"
+                    >
+                        <User size={24} />
+                        Profile Settings
+                    </button>
+                    <button 
+                        onClick={() => { handleLogout(); setIsMobileMenuOpen(false); }}
+                        className="flex items-center gap-4 text-lg font-medium text-slate-700 dark:text-slate-200 hover:text-red-600 dark:hover:text-red-400"
+                    >
+                        <LogOut size={24} />
+                        Logout
+                    </button>
+                </div>
+
+                <div className="h-px bg-slate-200 dark:bg-slate-800"></div>
+
+                <div className="space-y-4">
+                    <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">Usage Quotas</h3>
+                    <div className={`flex items-center justify-between p-3 rounded-xl border ${getQuotaStyles(careerQuota)}`}>
+                        <div className="flex items-center gap-3">
+                            <Zap size={20} />
+                            <span className="font-medium">Assessments</span>
+                        </div>
+                        <span className="font-bold">{careerQuota}/{DAILY_CAREER_LIMIT}</span>
+                    </div>
+                    <div className={`flex items-center justify-between p-3 rounded-xl border ${getImageQuotaStyles(imageQuota)}`}>
+                         <div className="flex items-center gap-3">
+                            <Image size={20} />
+                            <span className="font-medium">Visualizations</span>
+                        </div>
+                        <span className="font-bold">{imageQuota}/{DAILY_IMAGE_LIMIT}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+      )}
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="text-center mb-12 animate-fade-in-up opacity-0" style={{ animationDelay: '0ms' }}>
@@ -196,9 +274,13 @@ export const Dashboard: React.FC = () => {
                         <p className="text-sm md:text-base text-slate-600 dark:text-slate-400">Take our General Personality Quiz to find your direction.</p>
                     </div>
                 </div>
-                <span className="text-blue-600 dark:text-blue-400 font-medium group-hover:translate-x-2 transition-transform inline-flex items-center relative z-10 whitespace-nowrap self-start md:self-center pl-18 md:pl-0 mt-2 md:mt-0">
-                    Start General Quiz <ArrowRight className="ml-1 w-4 h-4" />
-                </span>
+                
+                <div className="flex flex-col items-start md:items-center mt-2 md:mt-0">
+                    <span className="text-blue-600 dark:text-blue-400 font-medium group-hover:translate-x-2 transition-transform inline-flex items-center relative z-10 whitespace-nowrap pl-18 md:pl-0">
+                        Start General Quiz <ArrowRight className="ml-1 w-4 h-4" />
+                    </span>
+                    <span className="text-xs text-slate-400 mt-1 md:ml-2">Get AI suggested domain</span>
+                </div>
             </div>
         </div>
       </main>

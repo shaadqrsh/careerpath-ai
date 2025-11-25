@@ -25,6 +25,7 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const root = window.document.documentElement;
+    const body = window.document.body;
     
     const applyTheme = () => {
         let effectiveTheme = theme;
@@ -34,8 +35,12 @@ const App: React.FC = () => {
 
         if (effectiveTheme === 'dark') {
             root.classList.add('dark');
+            body.classList.remove('bg-slate-50');
+            body.classList.add('bg-slate-900');
         } else {
             root.classList.remove('dark');
+            body.classList.remove('bg-slate-900');
+            body.classList.add('bg-slate-50');
         }
     };
 
