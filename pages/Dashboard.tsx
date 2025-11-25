@@ -217,7 +217,7 @@ export const Dashboard: React.FC = () => {
 
         {careerQuota === 0 && (
             <div 
-                className="mb-8 p-4 rounded-xl border border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800 text-red-700 dark:text-red-400 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-fade-in-up opacity-0"
+                className="mb-8 p-4 rounded-xl border border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800 text-red-700 dark:text-red-400 flex flex-col items-start gap-3 animate-fade-in-up opacity-0"
                 style={{ animationDelay: '100ms' }}
             >
                 <div className="flex items-center gap-3">
@@ -282,8 +282,8 @@ export const Dashboard: React.FC = () => {
                     </div>
                 </div>
                 
-                <div className="flex flex-col items-start md:items-center mt-2 md:mt-0">
-                    <span className="text-blue-600 dark:text-blue-400 font-medium group-hover:translate-x-2 transition-transform inline-flex items-center relative z-10 whitespace-nowrap pl-18 md:pl-0">
+                <div className="flex flex-col items-start md:items-center mt-2 md:mt-0 w-full md:w-auto">
+                    <span className="text-blue-600 dark:text-blue-400 font-medium group-hover:translate-x-2 transition-transform inline-flex items-center relative z-10 whitespace-nowrap text-sm md:text-base">
                         Start General Quiz <ArrowRight className="ml-1 w-4 h-4" />
                     </span>
                 </div>

@@ -220,13 +220,11 @@ export const Slideshow: React.FC = () => {
   };
 
   const handleContainerClick = (e: React.MouseEvent) => {
-    // Only trigger if it's not a swipe
     if (touchStartX.current) return;
 
     const width = e.currentTarget.clientWidth;
     const x = e.clientX;
     
-    // Tap navigation logic
     if (x < width * 0.35) {
         handlePrev();
     } else if (x > width * 0.65) {
@@ -310,7 +308,6 @@ export const Slideshow: React.FC = () => {
         onClick={handleContainerClick}
     >
       
-      {/* Background Blur Effect - using current slide */}
       <div 
          key={`bg-${currentSlide}`}
          className="absolute inset-0 bg-cover bg-center blur-3xl opacity-30 scale-110 transition-all duration-1000"
@@ -324,25 +321,23 @@ export const Slideshow: React.FC = () => {
         <X size={24} />
       </button>
 
-      {/* Mobile Tap/Swipe Indicators Overlay */}
-      <div className="md:hidden absolute inset-x-0 bottom-[45%] flex justify-between px-4 pointer-events-none z-50 opacity-0 animate-[fadeInOut_3s_ease-in-out_2s_infinite]">
+      <div className="md:hidden absolute inset-x-0 bottom-[45%] flex justify-between px-4 pointer-events-none z-50">
          {currentSlide > 0 && (
-             <div className="bg-black/40 p-2 rounded-full backdrop-blur-sm">
-                 <ArrowLeft className="w-6 h-6 text-white/70" />
+             <div className="bg-black/40 p-3 rounded-full backdrop-blur-sm animate-pulse">
+                 <ArrowLeft className="w-8 h-8 text-white" />
              </div>
          )}
          <div className="flex-1"></div>
          {currentSlide < slides.length - 1 && (
-             <div className="bg-black/40 p-2 rounded-full backdrop-blur-sm">
-                 <ArrowRight className="w-6 h-6 text-white/70" />
+             <div className="bg-black/40 p-3 rounded-full backdrop-blur-sm animate-pulse">
+                 <ArrowRight className="w-8 h-8 text-white" />
              </div>
          )}
       </div>
 
       <div className="relative z-10 w-full h-full max-w-md md:max-w-6xl flex flex-col md:flex-row bg-slate-900/80 backdrop-blur-md rounded-2xl md:rounded-3xl overflow-hidden border border-white/10 shadow-2xl m-4 md:m-8 max-h-[90vh] md:h-[85vh] group" onClick={(e) => e.stopPropagation()}>
         
-        {/* Image Container - Preloads all images but shows one */}
-        <div className="h-[50%] md:h-full md:w-[70%] relative bg-black flex items-center justify-center overflow-hidden">
+        <div className="h-[50%] md:h-full md:w-[70%] relative bg-black flex items-center justify-center overflow-hidden" onClick={handleContainerClick}>
              {slides.map((s, idx) => {
                  const isLoaded = loadedIndices.has(idx);
                  return (
@@ -373,7 +368,6 @@ export const Slideshow: React.FC = () => {
                  );
              })}
 
-             {/* Mobile Position Indicators */}
              <div className="absolute top-0 left-0 right-0 p-4 flex gap-1.5 md:hidden z-20 bg-gradient-to-b from-black/60 to-transparent">
                 {slides.map((_, idx) => (
                     <div 
@@ -384,7 +378,7 @@ export const Slideshow: React.FC = () => {
             </div>
         </div>
 
-        <div className="h-[50%] md:h-full md:w-[30%] p-6 md:p-10 flex flex-col bg-slate-950 border-t md:border-t-0 md:border-l border-white/10 relative animate-fade-in">
+        <div className="h-[50%] md:h-full md:w-[30%] p-6 md:p-10 flex flex-col bg-slate-950 border-t md:border-t-0 md:border-l border-white/10 relative animate-fade-in" onClick={handleContainerClick}>
             
             <div className="mb-4 pt-2 shrink-0">
                 <div className="flex items-center gap-2 mb-4">
@@ -407,7 +401,7 @@ export const Slideshow: React.FC = () => {
 
             <div className="mt-4 pt-4 hidden md:flex justify-between items-center shrink-0 border-t border-slate-800">
                 <button 
-                    onClick={handlePrev}
+                    onClick={(e) => { e.stopPropagation(); handlePrev(); }}
                     disabled={currentSlide === 0}
                     className="p-4 rounded-full border border-slate-700 text-white disabled:opacity-30 hover:bg-white/10 hover:border-white/50 transition-all active:scale-95"
                 >
@@ -419,7 +413,7 @@ export const Slideshow: React.FC = () => {
                 </span>
 
                 <button 
-                    onClick={handleNext}
+                    onClick={(e) => { e.stopPropagation(); handleNext(); }}
                     disabled={currentSlide === slides.length - 1}
                     className="p-4 rounded-full border border-slate-700 text-white disabled:opacity-30 hover:bg-white/10 hover:border-white/50 transition-all active:scale-95"
                 >
