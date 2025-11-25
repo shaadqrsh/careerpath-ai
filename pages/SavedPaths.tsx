@@ -106,7 +106,7 @@ export const SavedPaths: React.FC = () => {
                             toggleSavedCareer(career); 
                         }}
                         title="Remove Saved Career"
-                        className="flex-shrink-0 w-12 h-12 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-400 hover:text-pink-500 hover:border-pink-500 dark:hover:border-pink-500 hover:shadow-lg hover:shadow-pink-500/20 flex items-center justify-center transition-all duration-300 hover:scale-110 z-20"
+                        className="hidden md:flex flex-shrink-0 w-12 h-12 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-400 hover:text-pink-500 hover:border-pink-500 dark:hover:border-pink-500 hover:shadow-lg hover:shadow-pink-500/20 items-center justify-center transition-all duration-300 hover:scale-110 z-20"
                     >
                         <Trash2 size={20} />
                     </button>

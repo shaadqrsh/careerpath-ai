@@ -245,12 +245,16 @@ export const Slideshow: React.FC = () => {
   const hasImage = slide.imageUrl && slide.imageUrl.length > 5;
 
   return (
-    <div className="fixed inset-0 bg-black z-[60] flex items-center justify-center overflow-hidden animate-in fade-in duration-500 px-4 py-8">
+    <div className="fixed inset-0 bg-black z-[60] flex items-center justify-center overflow-hidden animate-fade-in-up px-0 md:px-4 md:py-8">
       
+      {/* Tap zones for mobile */}
+      <div className="absolute inset-y-0 left-0 w-1/4 z-20 md:hidden" onClick={handlePrev} />
+      <div className="absolute inset-y-0 right-0 w-1/4 z-20 md:hidden" onClick={handleNext} />
+
       {hasImage && (
           <div 
             key={currentSlide}
-            className="absolute inset-0 bg-cover bg-center blur-3xl opacity-30 scale-110 transition-all duration-1000 animate-in fade-in"
+            className="absolute inset-0 bg-cover bg-center blur-3xl opacity-30 scale-110 transition-all duration-1000 animate-fade-in"
             style={{ backgroundImage: `url(${slide.imageUrl})` }}
           />
       )}
@@ -262,7 +266,7 @@ export const Slideshow: React.FC = () => {
         <X size={24} />
       </button>
 
-      <div className="relative z-10 w-full h-full max-w-md md:max-w-6xl flex flex-col md:flex-row bg-slate-900/80 backdrop-blur-md md:rounded-3xl overflow-hidden border border-white/10 shadow-2xl m-0 md:m-8 max-h-[90vh] md:h-[85vh]">
+      <div className="relative z-10 w-full h-full max-w-md md:max-w-6xl flex flex-col md:flex-row bg-slate-900/80 backdrop-blur-md rounded-2xl md:rounded-3xl overflow-hidden border border-white/10 shadow-2xl m-4 md:m-8 max-h-[90vh] md:h-[85vh]">
         
         <div className="h-[50%] md:h-full md:w-[70%] relative bg-black flex items-center justify-center overflow-hidden group">
             {hasImage ? (
@@ -270,10 +274,10 @@ export const Slideshow: React.FC = () => {
                     key={currentSlide}
                     src={slide.imageUrl} 
                     alt="Day in life" 
-                    className="w-full h-full object-cover animate-in fade-in duration-700"
+                    className="w-full h-full object-cover animate-fade-in"
                 />
             ) : (
-                <div key={currentSlide} className="flex flex-col items-center justify-center text-slate-500 p-8 text-center bg-slate-900/50 w-full h-full animate-in fade-in">
+                <div key={currentSlide} className="flex flex-col items-center justify-center text-slate-500 p-8 text-center bg-slate-900/50 w-full h-full animate-fade-in">
                     <ImageOff size={64} className="mb-4 opacity-40" />
                     <p className="text-lg font-medium text-slate-400">Image not available</p>
                     <p className="text-sm opacity-60 mt-2">We couldn't generate this specific scene.</p>
@@ -290,7 +294,7 @@ export const Slideshow: React.FC = () => {
             </div>
         </div>
 
-        <div key={`text-${currentSlide}`} className="h-[50%] md:h-full md:w-[30%] p-6 md:p-10 flex flex-col bg-slate-950 border-t md:border-t-0 md:border-l border-white/10 relative animate-in slide-in-from-right-4 duration-500">
+        <div key={`text-${currentSlide}`} className="h-[50%] md:h-full md:w-[30%] p-6 md:p-10 flex flex-col bg-slate-950 border-t md:border-t-0 md:border-l border-white/10 relative animate-fade-in">
             
             <div className="mb-4 pt-2 shrink-0">
                 <div className="flex items-center gap-2 mb-4">
@@ -306,12 +310,12 @@ export const Slideshow: React.FC = () => {
             </div>
 
             <div className="overflow-y-auto pr-2 custom-scrollbar flex-grow">
-                 <p className="text-slate-300 text-lg md:text-xl leading-relaxed font-light italic relative z-10">
+                 <p className="text-slate-300 text-lg md:text-xl leading-relaxed font-light italic relative z-10 whitespace-normal break-words">
                     "{slide.text}"
                 </p>
             </div>
 
-            <div className="mt-4 pt-4 flex justify-between items-center shrink-0 border-t border-slate-800">
+            <div className="mt-4 pt-4 hidden md:flex justify-between items-center shrink-0 border-t border-slate-800">
                 <button 
                     onClick={handlePrev}
                     disabled={currentSlide === 0}

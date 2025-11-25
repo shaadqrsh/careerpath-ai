@@ -127,7 +127,7 @@ export const Dashboard: React.FC = () => {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="text-center mb-12 animate-fade-in-up opacity-0" style={{ animationDelay: '0ms' }}>
           <h2 className="text-3xl md:text-4xl font-bold mb-4 text-slate-900 dark:text-white">Start Your Discovery</h2>
-          <p className="text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">Select a domain to begin a specialized career assessment, or use our General Assessment if you are unsure.</p>
+          <p className="text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">Select a domain to begin a specialized assessment, or use our General Assessment if you are unsure.</p>
         </div>
 
         {careerQuota === 0 && (
@@ -150,19 +150,25 @@ export const Dashboard: React.FC = () => {
             <div 
                 key={cat.id}
                 style={{ animationDelay: `${200 + (index * 100)}ms` }}
-                className="animate-fade-in-up opacity-0"
+                className="animate-fade-in-up opacity-0 h-full"
             >
                 <div 
-                  className="group relative bg-white dark:bg-slate-800 rounded-2xl p-6 md:p-8 hover:shadow-xl dark:hover:bg-slate-750 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] cursor-pointer border border-slate-200 dark:border-slate-700 hover:border-blue-500 dark:hover:border-slate-500 shadow-sm flex flex-row md:flex-col items-center md:items-start gap-4 md:gap-0 h-full"
+                  className="group relative bg-white dark:bg-slate-800 rounded-2xl p-6 md:p-8 hover:shadow-xl dark:hover:bg-slate-750 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] cursor-pointer border border-slate-200 dark:border-slate-700 hover:border-blue-500 dark:hover:border-slate-500 shadow-sm flex flex-col h-full"
                   onClick={() => handleStartQuiz(cat.id)}
                 >
                   <div className={`absolute inset-0 bg-gradient-to-br ${cat.color} opacity-0 group-hover:opacity-5 rounded-2xl transition-opacity`} />
-                  <div className={`w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-gradient-to-br ${cat.color} flex items-center justify-center mb-0 md:mb-6 text-white shadow-lg shrink-0`}>
-                    {cat.icon}
+                  
+                  <div className="flex flex-row md:flex-col items-center md:items-start gap-4 flex-1">
+                      <div className={`w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-gradient-to-br ${cat.color} flex items-center justify-center mb-0 md:mb-6 text-white shadow-lg shrink-0`}>
+                        {cat.icon}
+                      </div>
+                      <div className="flex-1">
+                          <h3 className="text-xl md:text-2xl font-bold mb-1 md:mb-2 text-slate-900 dark:text-white">{cat.title}</h3>
+                          <p className="text-sm md:text-base text-slate-600 dark:text-slate-400 mb-0">{cat.desc}</p>
+                      </div>
                   </div>
-                  <div className="flex-1">
-                      <h3 className="text-xl md:text-2xl font-bold mb-1 md:mb-2 text-slate-900 dark:text-white">{cat.title}</h3>
-                      <p className="text-sm md:text-base text-slate-600 dark:text-slate-400 mb-2 md:mb-6">{cat.desc}</p>
+
+                  <div className="mt-4 md:mt-6">
                       <span className="text-blue-600 dark:text-blue-400 font-medium group-hover:translate-x-2 transition-transform inline-flex items-center text-sm md:text-base">
                         Start {cat.title.split(' ')[0]} Quiz <ArrowRight className="ml-1 w-4 h-4" />
                       </span>
