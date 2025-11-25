@@ -129,18 +129,19 @@ export const generateStorySlides = async (career: CareerRecommendation, user?: U
     }
 
     // 2. Identify Missing Images
+    // Treat null, undefined, or empty string as "missing" so they can be retried.
     const currentImages = career.slideImages || [];
     const missingIndices: number[] = [];
     const promptsToGenerate: string[] = [];
 
     for (let i = 0; i < SLIDESHOW_IMAGE_COUNT; i++) {
-        if (!currentImages[i]) {
+        if (!currentImages[i] || currentImages[i] === "") { 
             missingIndices.push(i);
             promptsToGenerate.push(prompts[i]);
         }
     }
 
-    // 3. If everything exists, just return mapped slides
+    // 3. If everything exists (no indices missing), just return mapped slides
     if (missingIndices.length === 0) {
         return prompts.map((text, index) => ({
             id: index,
@@ -158,19 +159,22 @@ export const generateStorySlides = async (career: CareerRecommendation, user?: U
         const generatedResults = await generateCareerImages(career.title, promptsToGenerate, user, futureAge);
         
         // 5. Merge Results
+        // Start with a copy of current images (filling with nulls if shorter than required)
         const finalImages = [...currentImages];
-        // Ensure finalImages has correct length if it was undefined/empty
         while(finalImages.length < SLIDESHOW_IMAGE_COUNT) finalImages.push(null);
 
+        // Fill in the generated slots
         missingIndices.forEach((targetIndex, i) => {
             finalImages[targetIndex] = generatedResults[i];
         });
 
-        // 6. Return mapped slides (some might still be null if generation failed completely for that item)
+        // 6. Return mapped slides
+        // generatedResults[i] might be null if generation failed. We map null to "" for UI.
+        // This ensures the UI sees it as "unavailable" but next time we try to generate it again.
         return prompts.map((text, index) => ({
             id: index,
             text,
-            imageUrl: finalImages[index] || "" // Empty string signifies "Not Available" to the UI
+            imageUrl: finalImages[index] || "" 
         }));
 
     } catch (e: any) {

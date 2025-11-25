@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAppStore } from '../store';
 import { AppView, UserProfile } from '../types';
 import { Button } from '../components/Button';
-import { ArrowLeft, Loader2, Shield, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Loader2, Shield, AlertTriangle, User, MapPin } from 'lucide-react';
 import { FALLBACK_COUNTRIES } from '../constants';
 import { upsertUserProfile, getUserProfile, getCurrentUser, sendPasswordResetEmail } from '../services/supabaseService';
 
@@ -170,121 +171,133 @@ export const Profile: React.FC = () => {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6 bg-white dark:bg-slate-800 p-8 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xl transition-all">
-             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Full Name</label>
-                    <input 
-                        type="text"
-                        required
-                        value={formData.fullName}
-                        onChange={(e) => handleChange('fullName', e.target.value)}
-                        className="w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-600 rounded-xl py-3 px-4 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors"
-                    />
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Gender</label>
-                    <select 
-                        value={formData.gender}
-                        onChange={(e) => handleChange('gender', e.target.value)}
-                        className="w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-600 rounded-xl py-3 px-4 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors"
-                    >
-                        <option>Male</option>
-                        <option>Female</option>
-                        <option>Non-binary</option>
-                    </select>
-                </div>
-            </div>
+             
+             {/* Personal Details Section */}
+             <div>
+                <h3 className="text-sm font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                    <User size={18} /> Personal Details
+                </h3>
+                <div className="space-y-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Full Name</label>
+                            <input 
+                                type="text"
+                                required
+                                value={formData.fullName}
+                                onChange={(e) => handleChange('fullName', e.target.value)}
+                                className="w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-600 rounded-xl py-3 px-4 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Gender</label>
+                            <select 
+                                value={formData.gender}
+                                onChange={(e) => handleChange('gender', e.target.value)}
+                                className="w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-600 rounded-xl py-3 px-4 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors"
+                            >
+                                <option>Male</option>
+                                <option>Female</option>
+                                <option>Non-binary</option>
+                            </select>
+                        </div>
+                    </div>
 
-            <div className="grid grid-cols-2 gap-6">
-                <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Age</label>
-                    <input 
-                        type="number"
-                        required
-                        min={14}
-                        max={80}
-                        value={formData.age}
-                        onChange={(e) => handleChange('age', parseInt(e.target.value))}
-                        className="w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-600 rounded-xl py-3 px-4 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors"
-                    />
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Level</label>
-                    <select 
-                        value={formData.educationLevel}
-                        onChange={(e) => handleChange('educationLevel', e.target.value)}
-                        className="w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-600 rounded-xl py-3 px-4 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors"
-                    >
-                        <option>High School</option>
-                        <option>Undergraduate</option>
-                        <option>Graduate</option>
-                        <option>PhD</option>
-                        <option>Bootcamp/Self-taught</option>
-                    </select>
-                </div>
-            </div>
+                    <div className="grid grid-cols-2 gap-6">
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Age</label>
+                            <input 
+                                type="number"
+                                required
+                                min={14}
+                                max={80}
+                                value={formData.age}
+                                onChange={(e) => handleChange('age', parseInt(e.target.value))}
+                                className="w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-600 rounded-xl py-3 px-4 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Level</label>
+                            <select 
+                                value={formData.educationLevel}
+                                onChange={(e) => handleChange('educationLevel', e.target.value)}
+                                className="w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-600 rounded-xl py-3 px-4 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors"
+                            >
+                                <option>High School</option>
+                                <option>Undergraduate</option>
+                                <option>Graduate</option>
+                                <option>PhD</option>
+                                <option>Bootcamp/Self-taught</option>
+                            </select>
+                        </div>
+                    </div>
 
-            <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Major / Specialization</label>
-                <input 
-                    type="text"
-                    required
-                    value={formData.specialization}
-                    onChange={(e) => handleChange('specialization', e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-600 rounded-xl py-3 px-4 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors"
-                    placeholder="e.g. Commerce, Computer Science, Biology"
-                />
-            </div>
-
-            <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
-                <h3 className="text-sm font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-4">Current Residence</h3>
-                <div>
-                    <select 
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Major / Specialization</label>
+                        <input 
+                            type="text"
                             required
-                            value={formData.residenceCountry}
-                            onChange={(e) => handleChange('residenceCountry', e.target.value)}
-                            disabled={isLoadingCountries}
-                            className="w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-600 rounded-xl py-3 px-4 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors disabled:opacity-50"
-                    >
-                        <option value="">{isLoadingCountries ? "Loading..." : "Select Country"}</option>
-                        {countries.map(c => (
-                            <option key={c} value={c}>{c}</option>
-                        ))}
-                    </select>
+                            value={formData.specialization}
+                            onChange={(e) => handleChange('specialization', e.target.value)}
+                            className="w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-600 rounded-xl py-3 px-4 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors"
+                            placeholder="e.g. Commerce, Computer Science, Biology"
+                        />
+                    </div>
                 </div>
             </div>
 
-            <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
-                <h3 className="text-sm font-bold text-green-600 dark:text-green-400 uppercase tracking-wider mb-4">Future Work Preference</h3>
+            <div className="border-t border-slate-200 dark:border-slate-700 pt-6">
+                <h3 className="text-sm font-bold text-green-600 dark:text-green-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                    <MapPin size={18} /> Location Details
+                </h3>
                 
-                <div className="mb-4">
-                    <select 
-                        value={formData.preferredWorkCountry}
-                        onChange={(e) => handleChange('preferredWorkCountry', e.target.value)}
-                        className="w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-600 rounded-xl py-3 px-4 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors"
-                    >
-                         {formData.residenceCountry && <option value={formData.residenceCountry}>{formData.residenceCountry} (Current)</option>}
-                        <option value="USA">USA</option>
-                        <option value="United Kingdom">United Kingdom</option>
-                        <option value="Canada">Canada</option>
-                        <option value="Germany">Germany</option>
-                        <option value="Australia">Australia</option>
-                        <option value="Singapore">Singapore</option>
-                        <option value="India">India</option>
-                        <option value="Undecided">Undecided</option>
-                        <option value="Remote (Global)">Remote (Global)</option>
-                    </select>
+                <div className="space-y-6">
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Current Residence</label>
+                        <select 
+                                required
+                                value={formData.residenceCountry}
+                                onChange={(e) => handleChange('residenceCountry', e.target.value)}
+                                disabled={isLoadingCountries}
+                                className="w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-600 rounded-xl py-3 px-4 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors disabled:opacity-50"
+                        >
+                            <option value="">{isLoadingCountries ? "Loading..." : "Select Country"}</option>
+                            {countries.map(c => (
+                                <option key={c} value={c}>{c}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Future Work Preference</label>
+                        <select 
+                            value={formData.preferredWorkCountry}
+                            onChange={(e) => handleChange('preferredWorkCountry', e.target.value)}
+                            className="w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-600 rounded-xl py-3 px-4 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors"
+                        >
+                            {formData.residenceCountry && <option value={formData.residenceCountry}>{formData.residenceCountry} (Current)</option>}
+                            <option value="USA">USA</option>
+                            <option value="United Kingdom">United Kingdom</option>
+                            <option value="Canada">Canada</option>
+                            <option value="Germany">Germany</option>
+                            <option value="Australia">Australia</option>
+                            <option value="Singapore">Singapore</option>
+                            <option value="India">India</option>
+                            <option value="Undecided">Undecided</option>
+                            <option value="Remote (Global)">Remote (Global)</option>
+                        </select>
+                    </div>
                 </div>
             </div>
             
-            {/* SAVE CHANGES - MOVED UP */}
+            {/* SAVE CHANGES */}
             <div className="border-t border-slate-200 dark:border-slate-700 pt-6">
                 <Button type="submit" fullWidth size="lg" disabled={isSaving}>
                     {isSaving ? "Saving Changes..." : "Save Changes"}
                 </Button>
             </div>
 
-            {/* SECURITY - MOVED DOWN */}
+            {/* SECURITY */}
             <div className="border-t border-slate-200 dark:border-slate-700 pt-6">
                  <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-2">
                     <Shield size={16} /> Security

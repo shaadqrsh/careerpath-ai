@@ -1,9 +1,11 @@
+
 import React from 'react';
 import { useAppStore } from '../store';
 import { AppView, CareerDomain } from '../types';
 import { Button } from '../components/Button';
 import { Beaker, Briefcase, Palette, LogOut, User, Heart, HelpCircle, ArrowRight, Sun, Moon } from 'lucide-react';
 import { APP_NAME } from '../constants';
+import { signOut } from '../services/supabaseService';
 
 export const Dashboard: React.FC = () => {
   const { user, setView, setDomain, savedCareers, theme, toggleTheme, hasViewedSavedPaths } = useAppStore();
@@ -11,6 +13,11 @@ export const Dashboard: React.FC = () => {
   const handleStartQuiz = (domain: CareerDomain) => {
     setDomain(domain);
     setView(AppView.QUIZ);
+  };
+
+  const handleLogout = async () => {
+      await signOut();
+      setView(AppView.LANDING);
   };
 
   const categories: {id: CareerDomain, title: string, icon: React.ReactNode, color: string, desc: string}[] = [
@@ -68,7 +75,7 @@ export const Dashboard: React.FC = () => {
                 <User size={20} />
               </button>
               <div className="h-6 w-px bg-slate-200 dark:bg-slate-700 mx-1 hidden sm:block"></div>
-              <button onClick={() => setView(AppView.LANDING)} className="p-2 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors rounded-full hover:bg-slate-100 dark:hover:bg-slate-800">
+              <button onClick={handleLogout} className="p-2 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors rounded-full hover:bg-slate-100 dark:hover:bg-slate-800">
                 <LogOut size={20} />
               </button>
             </div>

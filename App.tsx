@@ -1,8 +1,9 @@
+
 import React, { useEffect, useState } from 'react';
 import { useAppStore } from './store';
 import { AppView } from './types';
 import { getUserProfile, getSavedCareers, getCurrentUser, signOut } from './services/supabaseService';
-import { Loader2, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Loader2, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
 import { Button } from './components/Button';
 
 import { Landing } from './pages/Landing';
@@ -19,7 +20,7 @@ import { SavedPaths } from './pages/SavedPaths';
 import { UpdatePassword } from './pages/UpdatePassword';
 
 const App: React.FC = () => {
-  const { currentView, theme, setView, setUser, setSavedCareers, pendingDeleteCareer, confirmDeleteCareer, cancelDeleteCareer, toast, isDeletingCareer } = useAppStore();
+  const { currentView, theme, setView, setUser, setSavedCareers, pendingDeleteCareer, confirmDeleteCareer, cancelDeleteCareer, toast, isDeletingCareer, showToast } = useAppStore();
   const [isInitializing, setIsInitializing] = useState(true);
 
   // Handle Dark/Light Mode
@@ -36,18 +37,41 @@ const App: React.FC = () => {
   useEffect(() => {
     const initAuth = async () => {
         try {
-            // 1. Check for Password Reset Hash (Supabase sends #access_token=...&type=recovery)
             const hash = window.location.hash;
-            if (hash && (hash.includes('access_token') || hash.includes('type=recovery'))) {
+            
+            // 0. Check for Supabase Errors in URL (e.g. Link Expired)
+            if (hash && hash.includes('error_description')) {
+                const params = new URLSearchParams(hash.substring(1));
+                const errorDesc = params.get('error_description');
+                if (errorDesc) {
+                    // Clear hash and show error
+                    window.history.replaceState(null, '', window.location.pathname);
+                    showToast(errorDesc.replace(/\+/g, ' '));
+                    setView(AppView.AUTH);
+                    setIsInitializing(false);
+                    return;
+                }
+            }
+
+            // 1. Check for Password Reset or Signup Confirmation Hashes (Success case)
+            if (hash && hash.includes('access_token')) {
                 const params = new URLSearchParams(hash.substring(1)); 
                 const accessToken = params.get('access_token');
+                const type = params.get('type');
                 
                 if (accessToken) {
                     localStorage.setItem('access_token', accessToken);
                     window.history.replaceState(null, '', window.location.pathname);
-                    setView(AppView.UPDATE_PASSWORD);
-                    setIsInitializing(false);
-                    return; 
+                    
+                    // Specific check: Only redirect to password update if it is a recovery flow
+                    if (type === 'recovery') {
+                        setView(AppView.UPDATE_PASSWORD);
+                        setIsInitializing(false);
+                        return; 
+                    }
+                    
+                    // For type='signup', 'invite', or 'magiclink', we proceed to the user check below
+                    // which will route them to dashboard or onboarding appropriately.
                 }
             }
 
@@ -67,7 +91,7 @@ const App: React.FC = () => {
                         profile = await getUserProfile(authUser.id);
                     } catch (e2) {
                         console.error("Profile fetch failed second attempt", e2);
-                        throw e2; // Let the outer catch handle it (Landing)
+                        // Do not throw here, let profile be null so we can check if it's a 404 case handled by service
                     }
                 }
 
@@ -104,7 +128,7 @@ const App: React.FC = () => {
     };
     
     initAuth();
-  }, [setUser, setView, setSavedCareers]);
+  }, [setUser, setView, setSavedCareers, showToast]);
 
   const renderView = () => {
     switch (currentView) {
@@ -151,7 +175,11 @@ const App: React.FC = () => {
 
       {toast.show && (
         <div className="fixed top-24 left-1/2 -translate-x-1/2 bg-slate-800 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 animate-[fadeIn_0.3s_ease-out] z-[150]">
-            <CheckCircle className="text-green-400 shrink-0" />
+            {toast.message.toLowerCase().includes('failed') || toast.message.toLowerCase().includes('error') || toast.message.toLowerCase().includes('expired') ? (
+               <XCircle className="text-red-400 shrink-0" />
+            ) : (
+               <CheckCircle className="text-green-400 shrink-0" />
+            )}
             <div>
                 <p className="font-bold">{toast.message}</p>
             </div>

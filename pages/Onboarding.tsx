@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAppStore } from '../store';
 import { AppView, UserProfile } from '../types';
@@ -122,10 +123,10 @@ export const Onboarding: React.FC = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 px-4 py-6 transition-colors relative">
       
-      {/* Logout Option for "Stuck" Users */}
+      {/* Logout Option for "Stuck" Users - Updated Styling */}
       <button 
         onClick={handleLogout}
-        className="absolute top-6 right-6 text-sm text-slate-500 dark:text-slate-400 hover:text-red-500 flex items-center gap-2 transition-colors"
+        className="absolute top-6 right-6 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white flex items-center gap-2 transition-colors"
       >
         <LogOut size={16} /> Wrong Account?
       </button>

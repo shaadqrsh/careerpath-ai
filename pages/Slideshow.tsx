@@ -33,10 +33,18 @@ export const Slideshow: React.FC = () => {
             // It throws "QUOTA_EXCEEDED" if backend rejects the request
             const generatedSlides = await generateStorySlides(selectedCareer, user);
             
+            // Extract URLs (some might be empty strings if failed)
+            const imageUrls = generatedSlides.map(s => s.imageUrl || null);
+            
             // Check if ALL images failed (are empty strings/nulls)
+            // We define "failed" as having no image URL. 
+            // If the service returns "" for everything, it means total failure or inability to generate.
             const validCount = generatedSlides.filter(s => s.imageUrl && s.imageUrl.length > 5).length;
             
-            if (validCount === 0) {
+            if (validCount === 0 && generatedSlides.length > 0) {
+                // If we attempted to generate (missing indices existed) but everything came back empty
+                // Then we show "Visualizations not available".
+                // Note: If they were *already* empty cached, generateStorySlides tries to regen.
                 if (isMounted) {
                     setAllFailed(true);
                     setLoading(false);
@@ -44,9 +52,6 @@ export const Slideshow: React.FC = () => {
                 return;
             }
 
-            // Extract URLs (some might be empty strings if failed)
-            const imageUrls = generatedSlides.map(s => s.imageUrl || null);
-            
             // Update Store locally
             updateCareerImages(selectedCareer.id, imageUrls);
             
@@ -162,7 +167,7 @@ export const Slideshow: React.FC = () => {
         <div className="fixed inset-0 bg-black/95 z-[60] flex flex-col items-center justify-center text-white p-4 text-center animate-in fade-in duration-300">
             <div className="bg-slate-900 p-8 rounded-2xl border border-slate-800 max-w-md shadow-2xl">
                 <ImageOff className="w-12 h-12 text-slate-600 mx-auto mb-6" />
-                <h3 className="text-xl font-bold mb-3">Visualization Unavailable</h3>
+                <h3 className="text-xl font-bold mb-3">Visualizations are not available</h3>
                 <p className="text-slate-400 mb-8">
                     We couldn't generate the scenes for this career right now. Please try again later.
                 </p>

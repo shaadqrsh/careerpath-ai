@@ -70,7 +70,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   recommendations: [],
   selectedCareer: null,
   savedCareers: [], 
-  hasViewedSavedPaths: false,
+  hasViewedSavedPaths: localStorage.getItem('hasViewedSavedPaths') === 'true',
   
   isLoading: false,
   isSavingCareer: false,
@@ -85,6 +85,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     window.scrollTo(0, 0);
     if (view === AppView.SAVED_PATHS) {
         set({ hasViewedSavedPaths: true });
+        localStorage.setItem('hasViewedSavedPaths', 'true');
     }
     set((state) => ({ 
       previousView: state.currentView, 
@@ -222,6 +223,7 @@ export const useAppStore = create<AppState>((set, get) => ({
 
         set((s) => {
             const isCurrentlySelected = s.selectedCareer?.id === currentVersion.id;
+            localStorage.setItem('hasViewedSavedPaths', 'false'); // Reset on new save
             return { 
                 savedCareers: [...s.savedCareers, currentVersion],
                 selectedCareer: isCurrentlySelected ? currentVersion : s.selectedCareer,
