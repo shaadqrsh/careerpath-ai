@@ -23,7 +23,9 @@ SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
 # Constants
-DAILY_GENERATION_LIMIT = 3
+DAILY_IMAGE_LIMIT = 3
+DAILY_CAREER_LIMIT = 5
+
 TEXT_MODEL_NAME = "gemini-2.5-flash"
 IMAGE_MODEL_NAME = "gemini-2.5-flash-image" 
 
@@ -140,6 +142,48 @@ async def verify_token(authorization: str = Header(None)):
         logger.error(f"Auth error: {e}")
         raise HTTPException(status_code=401, detail="Authentication failed")
 
+# --- HELPERS ---
+
+def check_quota(user_id: str, count_col: str, date_col: str, limit: int) -> int:
+    """Checks usage quota, resets if new day. Returns current count."""
+    try:
+        res = supabase.table("profiles").select(f"{count_col}, {date_col}").eq("id", user_id).single().execute()
+        if not res.data: return 0 
+        
+        data = res.data
+        count = data.get(count_col, 0)
+        last_date_str = data.get(date_col)
+        
+        now = datetime.now(timezone.utc)
+        last_date = datetime.fromisoformat(last_date_str.replace('Z', '+00:00')) if last_date_str else now
+        
+        # Reset if it's a new day
+        if (now - last_date).days >= 1 or now.date() > last_date.date():
+            count = 0
+        
+        if count >= limit:
+             raise HTTPException(status_code=429, detail=f"Daily limit reached ({limit}). Please try again tomorrow.")
+        
+        return count
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        logger.error(f"Quota check error: {e}")
+        # Default to blocking if check fails for safety
+        raise HTTPException(status_code=500, detail="Could not verify quota.")
+
+def update_quota(user_id: str, count_col: str, new_count: int):
+    try:
+        supabase.table("profiles").update({
+            count_col: new_count,
+            # We assume date_col is paired with count_col in naming convention for simplicity, 
+            # but usually we just update the specific date col.
+            # Here we hardcode mapping based on column name for simplicity.
+            "last_image_generation_date" if "image" in count_col else "last_career_generation_date": datetime.now(timezone.utc).isoformat()
+        }).eq("id", user_id).execute()
+    except Exception as e:
+        logger.error(f"Failed to update quota: {e}")
+
 # --- AUTH ROUTES ---
 
 @app.post("/api/auth/signup")
@@ -222,8 +266,13 @@ async def upsert_profile(profile: UserProfile, user = Depends(verify_token)):
     try:
         data = profile.model_dump(by_alias=False)
         # Exclude quota fields from direct update
-        if 'daily_generations_count' in data: del data['daily_generations_count']
-        if 'last_generation_date' in data: del data['last_generation_date']
+        keys_to_remove = [
+            'daily_generations_count', 'last_generation_date', 
+            'daily_image_generations_count', 'last_image_generation_date',
+            'daily_career_generations_count', 'last_career_generation_date'
+        ]
+        for k in keys_to_remove:
+            if k in data: del data[k]
         
         res = supabase.table("profiles").upsert(data).execute()
         return {"status": "success"}
@@ -253,6 +302,9 @@ async def generate_domain(req: GenerateDomainRequest, user = Depends(verify_toke
 
 @app.post("/api/generate-career")
 async def generate_career(req: GenerateCareerRequest, user = Depends(verify_token)):
+    # 1. QUOTA CHECK
+    current_count = check_quota(user.id, "daily_career_generations_count", "last_career_generation_date", DAILY_CAREER_LIMIT)
+
     try:
         user_p = req.user_profile
         answers = req.quiz_answers
@@ -296,8 +348,13 @@ async def generate_career(req: GenerateCareerRequest, user = Depends(verify_toke
         model = genai.GenerativeModel(TEXT_MODEL_NAME)
         response = await model.generate_content_async(prompt, generation_config={"response_mime_type": "application/json"})
         result_json = json.loads(response.text)
+        
         for rec in result_json.get("recommendations", []):
             if not rec.get("id"): rec["id"] = str(uuid.uuid4())
+            
+        # Update Quota after success
+        update_quota(user.id, "daily_career_generations_count", current_count + 1)
+        
         return result_json
     except Exception as e:
         logger.error(f"Career Gen Error: {e}")
@@ -306,31 +363,7 @@ async def generate_career(req: GenerateCareerRequest, user = Depends(verify_toke
 @app.post("/api/generate-images")
 async def generate_images(req: GenerateImagesRequest, user = Depends(verify_token)):
     # 1. QUOTA CHECK
-    current_count = 0
-    try:
-        profile_res = supabase.table("profiles").select("daily_generations_count, last_generation_date").eq("id", user.id).single().execute()
-        if profile_res.data:
-            profile_data = profile_res.data
-            last_date_str = profile_data.get('last_generation_date')
-            count = profile_data.get('daily_generations_count', 0)
-            
-            now = datetime.now(timezone.utc)
-            last_date = datetime.fromisoformat(last_date_str.replace('Z', '+00:00')) if last_date_str else now
-            
-            # Reset if it's a new day
-            if (now - last_date).days >= 1 or now.date() > last_date.date():
-                count = 0
-            
-            if count >= DAILY_GENERATION_LIMIT:
-                raise HTTPException(status_code=429, detail=f"Daily visualization limit reached ({DAILY_GENERATION_LIMIT}/day). Please try again tomorrow.")
-            
-            current_count = count
-    except HTTPException as he:
-        raise he
-    except Exception as e:
-        logger.error(f"Quota check failed: {e}")
-        # Fail safe: if we can't check quota, we block to prevent abuse, or you could allow. Blocking for safety.
-        raise HTTPException(status_code=500, detail="Unable to verify generation quota.")
+    current_count = check_quota(user.id, "daily_image_generations_count", "last_image_generation_date", DAILY_IMAGE_LIMIT)
 
     # 2. GENERATION
     try:
@@ -391,13 +424,7 @@ async def generate_images(req: GenerateImagesRequest, user = Depends(verify_toke
         
         # 3. UPDATE QUOTA (Only if at least one image generated)
         if any(img is not None for img in generated_images):
-            try:
-                supabase.table("profiles").update({
-                    "daily_generations_count": current_count + 1,
-                    "last_generation_date": datetime.now(timezone.utc).isoformat()
-                }).eq("id", user.id).execute()
-            except Exception as e:
-                logger.error(f"Failed to update quota: {e}")
+            update_quota(user.id, "daily_image_generations_count", current_count + 1)
 
         return {"images": generated_images}
         

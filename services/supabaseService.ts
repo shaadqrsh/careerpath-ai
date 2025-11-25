@@ -1,3 +1,5 @@
+
+
 import { CareerRecommendation, UserProfile } from '../types';
 import { API_BASE_URL } from '../constants';
 
@@ -24,7 +26,12 @@ const fromDbProfile = (d: any): UserProfile => ({
     educationLevel: d.education_level,
     specialization: d.specialization,
     residenceCountry: d.residence_country,
-    preferredWorkCountry: d.preferred_work_country
+    preferredWorkCountry: d.preferred_work_country,
+    // Map Quota Fields
+    dailyImageGenerationsCount: d.daily_image_generations_count,
+    lastImageGenerationDate: d.last_image_generation_date,
+    dailyCareerGenerationsCount: d.daily_career_generations_count,
+    lastCareerGenerationDate: d.last_career_generation_date
 });
 
 const toDbCareer = (c: CareerRecommendation) => ({

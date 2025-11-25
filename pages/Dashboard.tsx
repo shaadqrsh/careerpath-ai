@@ -1,13 +1,42 @@
 
-import React from 'react';
+
+import React, { useEffect, useState } from 'react';
 import { useAppStore } from '../store';
 import { AppView, CareerDomain } from '../types';
-import { Beaker, Briefcase, Palette, LogOut, User, Heart, HelpCircle, ArrowRight } from 'lucide-react';
-import { APP_NAME } from '../constants';
+import { Beaker, Briefcase, Palette, LogOut, User, Heart, HelpCircle, ArrowRight, Zap, Image } from 'lucide-react';
+import { APP_NAME, DAILY_CAREER_LIMIT, DAILY_IMAGE_LIMIT } from '../constants';
 import { signOut } from '../services/supabaseService';
 
 export const Dashboard: React.FC = () => {
-  const { setView, setDomain, savedCareers, hasViewedSavedPaths } = useAppStore();
+  const { setView, setDomain, savedCareers, hasViewedSavedPaths, user } = useAppStore();
+  
+  // Local state for counters to ensure they update immediately
+  const [careerQuota, setCareerQuota] = useState(0);
+  const [imageQuota, setImageQuota] = useState(0);
+
+  useEffect(() => {
+    if (user) {
+        // Simple logic: if date is different from today, count is 0. Else use count.
+        // NOTE: The backend handles the exact logic, but for UI display we approximate to avoid stale data
+        const getRemaining = (count: number | undefined, lastDateStr: string | undefined, limit: number) => {
+            if (!lastDateStr) return limit;
+            
+            const lastDate = new Date(lastDateStr);
+            const now = new Date();
+            
+            // If different day (UTC based on backend, but local check is usually fine for display)
+            // Backend uses UTC. Let's strictly check day difference to be safe
+            // Actually, backend resets if now.date() > last_date.date().
+            const isSameDay = lastDate.toISOString().split('T')[0] === now.toISOString().split('T')[0];
+            
+            if (!isSameDay) return limit;
+            return Math.max(0, limit - (count || 0));
+        };
+
+        setCareerQuota(getRemaining(user.dailyCareerGenerationsCount, user.lastCareerGenerationDate, DAILY_CAREER_LIMIT));
+        setImageQuota(getRemaining(user.dailyImageGenerationsCount, user.lastImageGenerationDate, DAILY_IMAGE_LIMIT));
+    }
+  }, [user]);
 
   const handleStartQuiz = (domain: CareerDomain) => {
     setDomain(domain);
@@ -46,6 +75,18 @@ export const Dashboard: React.FC = () => {
 
             <div className="flex items-center gap-2 sm:gap-4">
               
+              {/* Quota Counters (Hidden on very small screens) */}
+              <div className="hidden lg:flex items-center gap-3 mr-2">
+                 <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 text-xs font-medium text-blue-700 dark:text-blue-300" title="Daily Career Generations Remaining">
+                    <Zap size={14} />
+                    <span>Paths: {careerQuota}/{DAILY_CAREER_LIMIT}</span>
+                 </div>
+                 <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-purple-50 dark:bg-purple-900/20 border border-purple-100 dark:border-purple-800 text-xs font-medium text-purple-700 dark:text-purple-300" title="Daily Visualizations Remaining">
+                    <Image size={14} />
+                    <span>Visuals: {imageQuota}/{DAILY_IMAGE_LIMIT}</span>
+                 </div>
+              </div>
+
               <button 
                 onClick={() => setView(AppView.SAVED_PATHS)}
                 className="p-2 text-slate-500 dark:text-slate-400 hover:text-pink-600 dark:hover:text-pink-500 transition-colors relative rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"
@@ -65,7 +106,11 @@ export const Dashboard: React.FC = () => {
                 <User size={20} />
               </button>
               <div className="h-6 w-px bg-slate-200 dark:bg-slate-700 mx-1 hidden sm:block"></div>
-              <button onClick={handleLogout} className="p-2 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors rounded-full hover:bg-slate-100 dark:hover:bg-slate-800">
+              <button 
+                onClick={handleLogout} 
+                className="p-2 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"
+                title="Logout"
+              >
                 <LogOut size={20} />
               </button>
             </div>

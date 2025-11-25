@@ -1,6 +1,7 @@
 
+
 import { UserProfile, QuizAnswer, CareerRecommendation, Slide, CareerRoadmapStep, CareerDomain } from "../types";
-import { MOCK_CAREERS, API_BASE_URL, SLIDESHOW_IMAGE_COUNT } from "../constants";
+import { MOCK_CAREERS, API_BASE_URL, SLIDESHOW_IMAGE_COUNT, DAILY_CAREER_LIMIT, DAILY_IMAGE_LIMIT } from "../constants";
 
 // Helper to calculate estimated roadmap duration in years
 export const calculateRoadmapDurationYears = (roadmap: CareerRoadmapStep[]): number => {
@@ -68,6 +69,10 @@ export const generateCareerRecommendations = async (
         })
     });
 
+    if (response.status === 429) {
+        throw new Error("QUOTA_EXCEEDED");
+    }
+
     if (!response.ok) {
         throw new Error("Backend API Failed");
     }
@@ -75,7 +80,10 @@ export const generateCareerRecommendations = async (
     const data = await response.json();
     return data.recommendations;
 
-  } catch (error) {
+  } catch (error: any) {
+    // If it's a quota error, we rethrow so the UI can handle it specifically
+    if (error.message === "QUOTA_EXCEEDED") throw error;
+    
     console.error("Career Generation Error:", error);
     return MOCK_CAREERS;
   }

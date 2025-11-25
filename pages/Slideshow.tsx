@@ -1,14 +1,15 @@
 
+
 import React, { useEffect, useState, useRef } from 'react';
 import { useAppStore } from '../store';
 import { AppView, Slide } from '../types';
 import { generateStorySlides } from '../services/geminiService';
-import { uploadCareerImages, saveCareerToDb } from '../services/supabaseService';
+import { uploadCareerImages, saveCareerToDb, getUserProfile } from '../services/supabaseService';
 import { X, ChevronLeft, ChevronRight, Loader2, ImageOff, AlertOctagon } from 'lucide-react';
-import { DAILY_GENERATION_LIMIT } from '../constants';
+import { DAILY_IMAGE_LIMIT } from '../constants';
 
 export const Slideshow: React.FC = () => {
-  const { selectedCareer, setView, user, updateCareerImages, savedCareers } = useAppStore();
+  const { selectedCareer, setView, user, setUser, updateCareerImages, savedCareers } = useAppStore();
   const [slides, setSlides] = useState<Slide[]>([]);
   const [currentSlide, setCurrentSlide] = useState(0);
   
@@ -53,6 +54,13 @@ export const Slideshow: React.FC = () => {
                 setSlides(generatedSlides);
             }
             
+            // Refetch user profile to update quota in dashboard
+            if (user) {
+                getUserProfile(user.id).then(u => {
+                    if (u) setUser(u);
+                });
+            }
+
             // If saved, upload to bucket and save to DB in background
             const isSaved = savedCareers.some(c => c.id === selectedCareer.id);
             if (isSaved && user) {
@@ -93,7 +101,7 @@ export const Slideshow: React.FC = () => {
     return () => {
         isMounted = false;
     };
-  }, [selectedCareer, user, updateCareerImages, savedCareers]);
+  }, [selectedCareer, user, updateCareerImages, savedCareers, setUser]);
 
   const handleNext = () => {
     if (currentSlide < slides.length - 1) setCurrentSlide(curr => curr + 1);
@@ -112,7 +120,7 @@ export const Slideshow: React.FC = () => {
                 <AlertOctagon className="w-16 h-16 text-red-500 mx-auto mb-6" />
                 <h3 className="text-2xl font-bold mb-3">Daily Limit Reached</h3>
                 <p className="text-slate-400 mb-8 leading-relaxed">
-                    You've used all <strong>{DAILY_GENERATION_LIMIT}</strong> free visualizations for today. 
+                    You've used all <strong>{DAILY_IMAGE_LIMIT}</strong> free visualizations for today. 
                     Please return in 24 hours to generate more career scenes.
                 </p>
                 <button 

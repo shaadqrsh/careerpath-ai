@@ -9,8 +9,12 @@ CREATE TABLE public.profiles (
   specialization TEXT,
   residence_country TEXT,
   preferred_work_country TEXT,
-  daily_generations_count INTEGER DEFAULT 0,
-  last_generation_date TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
+  -- Image Generation Quota
+  daily_image_generations_count INTEGER DEFAULT 0,
+  last_image_generation_date TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
+  -- Career Generation Quota
+  daily_career_generations_count INTEGER DEFAULT 0,
+  last_career_generation_date TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 

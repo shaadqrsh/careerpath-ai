@@ -1,8 +1,12 @@
+
+
 import React, { useEffect, useState, useRef } from 'react';
 import { useAppStore } from '../store';
 import { AppView } from '../types';
 import { generateCareerRecommendations } from '../services/geminiService';
+import { getUserProfile } from '../services/supabaseService';
 import { Loader2 } from 'lucide-react';
+import { DAILY_CAREER_LIMIT } from '../constants';
 
 const generateUUID = () => {
     if (typeof crypto !== 'undefined' && crypto.randomUUID) {
@@ -15,7 +19,7 @@ const generateUUID = () => {
 };
 
 export const Analysis: React.FC = () => {
-  const { user, quizAnswers, setRecommendations, setView, savedCareers } = useAppStore();
+  const { user, setUser, quizAnswers, setRecommendations, setView, savedCareers, showToast } = useAppStore();
   const [loadingText, setLoadingText] = useState("Initializing neural networks...");
   
   const [displayLog, setDisplayLog] = useState<string[]>([]);
@@ -98,10 +102,24 @@ export const Analysis: React.FC = () => {
 
             const sortedResults = [...mergedResults].sort((a, b) => b.matchScore - a.matchScore);
             setRecommendations(sortedResults);
+            
+            // Refresh user profile to update quota
+            try {
+                const updatedProfile = await getUserProfile(user.id);
+                if (updatedProfile) setUser(updatedProfile);
+            } catch (err) {
+                console.warn("Failed to refresh quota", err);
+            }
+
             setTimeout(() => setView(AppView.RESULTS), 2000);
-        } catch (e) {
-            console.error("Failed to generate", e);
-            setView(AppView.RESULTS);
+        } catch (e: any) {
+            if (e.message === "QUOTA_EXCEEDED") {
+                showToast(`Daily limit reached (${DAILY_CAREER_LIMIT} paths/day). Try again tomorrow.`);
+                setView(AppView.DASHBOARD);
+            } else {
+                console.error("Failed to generate", e);
+                setView(AppView.RESULTS);
+            }
         }
       }
     };
@@ -114,7 +132,7 @@ export const Analysis: React.FC = () => {
         clearInterval(interval);
         clearTimeout(startDelay);
     };
-  }, [user, quizAnswers, setRecommendations, setView, savedCareers]);
+  }, [user, quizAnswers, setRecommendations, setView, savedCareers, showToast, setUser]);
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col items-center justify-center p-4 transition-colors duration-300">
