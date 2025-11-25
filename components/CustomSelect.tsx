@@ -1,5 +1,3 @@
-
-
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronDown, Check } from 'lucide-react';
 
@@ -130,7 +128,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
       </button>
 
       {isOpen && (
-        <div className="absolute z-50 mt-2 w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl max-h-60 overflow-auto focus:outline-none animate-in fade-in zoom-in-95 duration-100 origin-top">
+        <div className="absolute z-[100] mt-2 w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl max-h-60 overflow-y-auto focus:outline-none animate-in fade-in zoom-in-95 duration-100 origin-top touch-pan-y">
           <ul className="py-1" ref={listRef}>
             {normalizedOptions.map((option, index) => (
               <li

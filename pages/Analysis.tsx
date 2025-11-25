@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useRef } from 'react';
 import { useAppStore } from '../store';
 import { AppView } from '../types';
@@ -46,7 +45,6 @@ export const Analysis: React.FC = () => {
     ];
   }, [user]);
 
-  // Start typing after initial animation
   useEffect(() => {
       const timer = setTimeout(() => {
           setCanStartTyping(true);

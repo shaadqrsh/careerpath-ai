@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useRef } from 'react';
 import { useAppStore } from '../store';
 import { AppView, Slide } from '../types';
@@ -44,7 +43,6 @@ export const Slideshow: React.FC = () => {
 
   const hasStartedRef = useRef(false);
 
-  // Cycling text effect for loading
   useEffect(() => {
     const texts = [
         "Dreaming up possibilities...",
@@ -66,12 +64,10 @@ export const Slideshow: React.FC = () => {
     const loadSlides = async () => {
       if (selectedCareer && !hasStartedRef.current) {
         
-        // Determine if we actually need to generate new images
         const existingImages = selectedCareer.slideImages || [];
         const validCount = existingImages.filter(img => img && img.length > 5).length;
         const needsGeneration = validCount < SLIDESHOW_IMAGE_COUNT;
 
-        // Only check quota if we intend to generate
         if (needsGeneration && user) {
             const lastDateStr = user.lastImageGenerationDate;
             let remaining = DAILY_IMAGE_LIMIT;
@@ -99,7 +95,6 @@ export const Slideshow: React.FC = () => {
         try {
             console.log("Loading slides for:", selectedCareer.title);
             
-            // This service handles partial generation (only generates what is missing)
             const generatedSlides = await generateStorySlides(selectedCareer, user);
             
             const imageUrls = generatedSlides.map(s => s.imageUrl || null);
@@ -118,7 +113,6 @@ export const Slideshow: React.FC = () => {
                 setSlides(generatedSlides);
             }
             
-            // Only update user stats if we actually generated something
             if (user) {
                 getUserProfile(user.id).then(u => {
                     if (u) setUser(u);
@@ -155,8 +149,6 @@ export const Slideshow: React.FC = () => {
             }
         }
       } else if (hasStartedRef.current && !loading && slides.length === 0) {
-          // Case where we re-enter or update but have no slides loaded in local state yet
-          // We can try to recover from selectedCareer if available
            const existingImages = selectedCareer?.slideImages || [];
            if (existingImages.length > 0) {
               const simpleSlides = existingImages.map((img, i) => ({

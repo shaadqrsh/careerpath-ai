@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { AppView, UserProfile, QuizAnswer, CareerRecommendation, CareerDomain } from './types';
 import { saveCareerToDb, deleteCareerFromDb } from './services/supabaseService';

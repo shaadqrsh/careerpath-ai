@@ -146,13 +146,11 @@ def check_quota(user_id: str, count_col: str, date_col: str, limit: int) -> int:
         last_date_str = data.get(date_col)
         
         now = datetime.now(timezone.utc)
-        # Parse Supabase timestamptz
+        
         last_date = datetime.fromisoformat(last_date_str.replace('Z', '+00:00')) if last_date_str else now
         
-        # Reset if different day
         if now.date() > last_date.date():
             try:
-                # Reset in DB immediately
                 supabase.table("profiles").update({
                     count_col: 0,
                     date_col: now.isoformat()
@@ -291,8 +289,6 @@ async def generate_domain(req: GenerateDomainRequest, user = Depends(verify_toke
         return json.loads(response.text)
     except Exception as e:
         logger.error(f"Domain Gen Error: {e}")
-        # Even if error, if quota was checked we might not increment or handle gracefully
-        # For now, return default
         return {"suggested_domain": "general"}
 
 @app.post("/api/generate-career")
@@ -380,9 +376,6 @@ async def generate_images(req: GenerateImagesRequest, user = Depends(verify_toke
                             b64_data = base64.b64encode(part.inline_data.data).decode('utf-8')
                             return f"data:{part.inline_data.mime_type};base64,{b64_data}"
             except Exception as e:
-                print("--- GEMINI GENERATION ERROR ---")
-                print(f"Prompt: {full_prompt}")
-                traceback.print_exc()
                 logger.warning(f"Gemini Image Gen Failed: {e}")
 
             try:
@@ -397,11 +390,7 @@ async def generate_images(req: GenerateImagesRequest, user = Depends(verify_toke
                     if resp.status_code == 200:
                         b64_img = base64.b64encode(resp.content).decode('utf-8')
                         return f"data:image/jpeg;base64,{b64_img}"
-                    else:
-                         print(f"Pollinations Error Status: {resp.status_code}")
             except Exception as e:
-                print("--- POLLINATIONS ERROR ---")
-                traceback.print_exc()
                 logger.error(f"Pollinations Exception: {str(e)}")
 
             return None

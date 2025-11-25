@@ -150,7 +150,7 @@ export const Dashboard: React.FC = () => {
             <div 
               key={cat.id}
               style={{ animationDelay: `${200 + (index * 100)}ms` }}
-              className="group relative bg-white dark:bg-slate-800 rounded-2xl p-6 md:p-8 hover:shadow-xl dark:hover:bg-slate-750 transition-all duration-300 hover:scale-[1.02] cursor-pointer border border-slate-200 dark:border-slate-700 hover:border-blue-500 dark:hover:border-slate-500 shadow-sm animate-fade-in-up opacity-0 flex flex-row md:flex-col items-center md:items-start gap-4 md:gap-0"
+              className="group relative bg-white dark:bg-slate-800 rounded-2xl p-6 md:p-8 hover:shadow-xl dark:hover:bg-slate-750 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] cursor-pointer border border-slate-200 dark:border-slate-700 hover:border-blue-500 dark:hover:border-slate-500 shadow-sm animate-fade-in-up opacity-0 flex flex-row md:flex-col items-center md:items-start gap-4 md:gap-0"
               onClick={() => handleStartQuiz(cat.id)}
             >
               <div className={`absolute inset-0 bg-gradient-to-br ${cat.color} opacity-0 group-hover:opacity-5 rounded-2xl transition-opacity`} />
@@ -171,7 +171,7 @@ export const Dashboard: React.FC = () => {
         <div 
             style={{ animationDelay: '500ms' }}
             onClick={() => handleStartQuiz('general')}
-            className="group relative w-full bg-white dark:bg-slate-800 rounded-2xl p-6 md:p-8 border border-slate-200 dark:border-slate-700 hover:shadow-xl dark:hover:bg-slate-750 transition-all duration-300 hover:scale-[1.02] cursor-pointer hover:border-blue-500 dark:hover:border-slate-500 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6 animate-fade-in-up opacity-0"
+            className="group relative w-full bg-white dark:bg-slate-800 rounded-2xl p-6 md:p-8 border border-slate-200 dark:border-slate-700 hover:shadow-xl dark:hover:bg-slate-750 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] cursor-pointer hover:border-blue-500 dark:hover:border-slate-500 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6 animate-fade-in-up opacity-0"
         >
             <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-indigo-500 opacity-0 group-hover:opacity-5 rounded-2xl transition-opacity" />
             <div className="flex items-center gap-4 md:gap-6 relative z-10 w-full md:w-auto">
