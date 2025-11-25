@@ -1,6 +1,6 @@
 # CareerPath AI
 
-A personalized career guidance platform powered by **Gemini 2.5 Pro** (Reasoning) and **Gemini 2.5 Flash** (Visualization).
+A personalized career guidance platform powered by **Gemini 2.5 Flash** (Reasoning) and **Gemini 2.5 Flash** (Visualization).
 
 ## Architecture
 
