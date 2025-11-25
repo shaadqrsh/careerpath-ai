@@ -1,4 +1,3 @@
-
 import os
 import json
 import uuid
@@ -19,9 +18,7 @@ SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
 # Hardcoded AI Models
-# Using 1.5 Pro for text as it is stable and smart
-TEXT_MODEL_NAME = "gemini-2.5-flash"
-# Using 2.0 Flash for images as it supports free image generation
+TEXT_MODEL_NAME = "gemini-1.5-pro"
 IMAGE_MODEL_NAME = "gemini-2.0-flash" 
 
 # Logging
@@ -31,7 +28,7 @@ logger = logging.getLogger(__name__)
 # Initialize FastAPI
 app = FastAPI()
 
-# CORS (Allow all for simplicity, restrict in production if needed)
+# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -70,6 +67,9 @@ class BaseSchema(BaseModel):
 class UserLogin(BaseSchema):
     email: str
     password: str
+
+class PasswordResetRequest(BaseSchema):
+    email: str
 
 # Profile Schemas
 class UserProfile(BaseSchema):
@@ -150,7 +150,6 @@ async def signup(creds: UserLogin):
             "password": creds.password,
         })
         
-        # Check if user already exists but Supabase returned 200 (User Enumeration Protection)
         if res.user and (res.user.identities is not None) and len(res.user.identities) == 0:
             raise Exception("User already registered")
 
@@ -175,6 +174,16 @@ async def login(creds: UserLogin):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+@app.post("/api/auth/reset-password")
+async def reset_password(req: PasswordResetRequest):
+    try:
+        # Uses the configured email templates in Supabase Settings
+        supabase.auth.reset_password_email(req.email)
+        return {"status": "success", "message": "Password reset email sent"}
+    except Exception as e:
+        logger.error(f"Reset Password Error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to send reset email")
+
 @app.get("/api/auth/me")
 async def get_current_user(user = Depends(verify_token)):
     return {"id": user.id, "email": user.email}
@@ -185,12 +194,10 @@ async def get_current_user(user = Depends(verify_token)):
 async def get_profile(user = Depends(verify_token)):
     try:
         res = supabase.table("profiles").select("*").eq("id", user.id).single().execute()
-        # Fallback for empty profile
         if not res.data:
              raise HTTPException(status_code=404, detail="Profile not found")
         return res.data
     except Exception as e:
-        # Check if it's just 'row not found'
         if "JSON object requested, multiple (or no) rows returned" in str(e):
              raise HTTPException(status_code=404, detail="Profile not found")
         logger.error(f"Get Profile Error: {e}")
@@ -202,9 +209,6 @@ async def upsert_profile(profile: UserProfile, user = Depends(verify_token)):
         raise HTTPException(status_code=403, detail="Cannot update other users")
     
     try:
-        # Convert Pydantic model to Dict (snake_case)
-        # CRITICAL FIX: by_alias=False ensures we get 'education_level' (Python name) 
-        # instead of 'educationLevel' (JSON alias), matching the DB schema.
         data = profile.model_dump(by_alias=False)
         res = supabase.table("profiles").upsert(data).execute()
         return {"status": "success"}
@@ -241,7 +245,6 @@ async def generate_domain(req: GenerateDomainRequest, user = Depends(verify_toke
         return json.loads(response.text)
     except Exception as e:
         logger.error(f"Domain Gen Error: {e}")
-        # Fallback
         return {"suggested_domain": "general"}
 
 @app.post("/api/generate-career")
@@ -250,7 +253,6 @@ async def generate_career(req: GenerateCareerRequest, user = Depends(verify_toke
         user_p = req.user_profile
         answers = req.quiz_answers
         
-        # Construct Prompt
         prompt = f"""
         Act as an expert Career Counselor using Global Market Data.
         Analyze this user profile:
@@ -297,16 +299,13 @@ async def generate_career(req: GenerateCareerRequest, user = Depends(verify_toke
         """
 
         model = genai.GenerativeModel(TEXT_MODEL_NAME)
-        # Using JSON mode if supported, or just requesting JSON text
         response = await model.generate_content_async(
             prompt,
             generation_config={"response_mime_type": "application/json"}
         )
         
-        # Parse JSON
         result_json = json.loads(response.text)
         
-        # Post-process: Add UUIDs if missing
         for rec in result_json.get("recommendations", []):
             if not rec.get("id"):
                 rec["id"] = str(uuid.uuid4())
@@ -321,8 +320,6 @@ async def generate_career(req: GenerateCareerRequest, user = Depends(verify_toke
 async def generate_images(req: GenerateImagesRequest, user = Depends(verify_token)):
     try:
         generated_images = []
-        
-        # Personalization
         subject_desc = "a professional"
         if req.user_context:
             u = req.user_context
@@ -331,11 +328,9 @@ async def generate_images(req: GenerateImagesRequest, user = Depends(verify_toke
 
         model = genai.GenerativeModel(IMAGE_MODEL_NAME)
         
-        # Use asyncio gather if possible, but basic loop for now
         import asyncio
         
         async def generate_single_image(prompt_text):
-            # Enhanced Cinematic Prompt with 4:3 Ratio instruction and "Glorified" keywords
             full_prompt = (
                 f"Generate an image showing this career in the most glorified, epic, and inspiring way possible. "
                 f"Cinematic shot of {subject_desc} working as a {req.career_title}. "
@@ -343,10 +338,8 @@ async def generate_images(req: GenerateImagesRequest, user = Depends(verify_toke
                 f"Style: Photorealistic, 4k, dramatic lighting, award-winning photography, glorious, visionary, highly detailed, aspect ratio 4:3."
             )
             try:
-                # Generate Image
                 response = await model.generate_content_async(full_prompt)
                 
-                # Extract Base64 from inline data
                 if response.candidates and response.candidates[0].content.parts:
                     for part in response.candidates[0].content.parts:
                         if part.inline_data:
@@ -360,7 +353,6 @@ async def generate_images(req: GenerateImagesRequest, user = Depends(verify_toke
                 logger.error(f"Individual Image Gen Error: {inner_e}")
                 return f"https://picsum.photos/seed/{uuid.uuid4()}/800/600"
 
-        # Run concurrently
         tasks = [generate_single_image(p) for p in req.prompts]
         generated_images = await asyncio.gather(*tasks)
 
@@ -368,7 +360,6 @@ async def generate_images(req: GenerateImagesRequest, user = Depends(verify_toke
 
     except Exception as e:
         logger.error(f"Image API Error: {e}")
-        # Return fallbacks on crash
         return {"images": [f"https://picsum.photos/seed/{i}/800/600" for i in range(len(req.prompts))]}
 
 # --- SAVED CAREER ROUTES ---
@@ -385,16 +376,12 @@ async def get_saved_careers(user = Depends(verify_token)):
 @app.post("/api/saved-careers")
 async def save_career(career: CareerRecommendation, user = Depends(verify_token)):
     try:
-        # Map frontend model to DB columns (snake_case)
-        # FIX: by_alias=False to use snake_case
         data = career.model_dump(by_alias=False)
-        
-        # Explicitly set identifiers
         data['user_id'] = user.id
-        data['career_uid'] = career.id # Critical for uniqueness
+        data['career_uid'] = career.id
         
         if 'id' in data:
-            del data['id'] # Let DB handle the Primary Key UUID
+            del data['id']
 
         res = supabase.table("saved_careers").upsert(
             data, 
@@ -409,7 +396,6 @@ async def save_career(career: CareerRecommendation, user = Depends(verify_token)
 @app.delete("/api/saved-careers/{career_uid}")
 async def delete_career(career_uid: str, user = Depends(verify_token)):
     try:
-        # 1. Delete Images from Storage (Optional/Best Effort)
         try:
              files = supabase.storage.from_("career_slideshows").list(f"{user.id}/{career_uid}")
              if files:
@@ -418,7 +404,6 @@ async def delete_career(career_uid: str, user = Depends(verify_token)):
         except Exception as storage_e:
             logger.warning(f"Storage cleanup failed (non-critical): {storage_e}")
 
-        # 2. Delete Record
         res = supabase.table("saved_careers").delete().eq("user_id", user.id).eq("career_uid", career_uid).execute()
         return {"status": "success"}
     except Exception as e:
@@ -433,14 +418,11 @@ async def upload_career_images(req: SaveCareerImageRequest, user = Depends(verif
     uploaded_urls = []
     
     for i, img_str in enumerate(req.images):
-        # Skip if already a URL
         if img_str.startswith("http"):
             uploaded_urls.append(img_str)
             continue
             
         try:
-            # Assume base64
-            # Strip header "data:image/png;base64,"
             if "," in img_str:
                 header, encoded = img_str.split(",", 1)
                 ext = header.split(";")[0].split("/")[1]
@@ -450,23 +432,20 @@ async def upload_career_images(req: SaveCareerImageRequest, user = Depends(verif
             
             import base64
             file_data = base64.b64decode(encoded)
-            
             file_path = f"{user.id}/{req.career_uid}/slide_{i}.{ext}"
             
-            # Supabase Storage Upload
             supabase.storage.from_("career_slideshows").upload(
                 file_path,
                 file_data,
                 {"content-type": f"image/{ext}", "upsert": "true"}
             )
             
-            # Get Public URL
             public_url = supabase.storage.from_("career_slideshows").get_public_url(file_path)
             uploaded_urls.append(public_url)
             
         except Exception as e:
             logger.error(f"Image Upload Failed: {e}")
-            uploaded_urls.append(img_str) # Keep original if fail
+            uploaded_urls.append(img_str)
             
     return {"image_urls": uploaded_urls}
 

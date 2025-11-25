@@ -1,0 +1,29 @@
+# Vercel Deployment Instructions (Frontend)
+
+Since the Backend uses long-running AI processes (Gemini) that exceed Vercel's Serverless timeout limits, we recommend keeping the Backend on Hugging Face (Docker) and deploying only the Frontend to Vercel.
+
+## 1. Prepare for Deployment
+1. Ensure your code is pushed to a Git repository (GitHub, GitLab, or Bitbucket).
+2. Ensure you have the `vercel.json` file in your root directory (content provided below).
+
+## 2. Deploy to Vercel
+1. Log in to Vercel.
+2. Click "Add New..." -> "Project".
+3. Import your Git repository.
+4. In "Build & Development Settings":
+   - Framework Preset: Vite
+   - Build Command: `npm run build`
+   - Output Directory: `dist`
+5. In "Environment Variables":
+   - Key: `VITE_API_BASE_URL`
+   - Value: `https://[YOUR-HUGGINGFACE-SPACE-NAME].hf.space` (e.g., https://my-career-app.hf.space)
+   *Important: Do not add a trailing slash.*
+
+6. Click "Deploy".
+
+## 3. Verify Connection
+Once deployed, open your Vercel URL. The app should load. When you log in or run a quiz, it will make requests to your Hugging Face backend.
+
+## Troubleshooting
+- If you see 404 errors on refresh: Ensure `vercel.json` is present.
+- If you see CORS errors: Check the `CORSMiddleware` settings in `backend/main.py`. It is currently set to allow all origins (`*`), which is compatible with Vercel.

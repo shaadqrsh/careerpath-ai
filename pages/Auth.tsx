@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useAppStore } from '../store';
 import { AppView } from '../types';
@@ -14,6 +13,13 @@ export const Auth: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  const toggleMode = () => {
+      setIsLogin(!isLogin);
+      setError(null);
+      setSuccessMessage(null);
+      setPassword(''); // Clear password when switching modes
+  };
 
   const handlePostLogin = async () => {
     try {
@@ -50,6 +56,7 @@ export const Auth: React.FC = () => {
             await signUpWithEmail(email, password);
             setSuccessMessage("Account created! Please check your email to verify your account before logging in.");
             setIsLogin(true); // Switch to login after signup
+            setPassword(''); // Clear password
             setLoading(false); 
         }
     } catch (err: any) {
@@ -116,7 +123,7 @@ export const Auth: React.FC = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-600 rounded-xl py-3 pl-10 pr-4 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-                placeholder="you@example.com"
+                placeholder={isLogin ? "you@example.com" : "Enter new email"}
               />
             </div>
           </div>
@@ -131,7 +138,7 @@ export const Auth: React.FC = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-600 rounded-xl py-3 pl-10 pr-4 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-                placeholder="••••••••"
+                placeholder={isLogin ? "••••••••" : "Create new password"}
               />
             </div>
           </div>
@@ -143,7 +150,7 @@ export const Auth: React.FC = () => {
           <div className="text-center mt-4">
              <button 
                 type="button"
-                onClick={() => { setIsLogin(!isLogin); setError(null); setSuccessMessage(null); }}
+                onClick={toggleMode}
                 className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
              >
                 {isLogin ? "Don't have an account? Sign Up" : "Already have an account? Sign In"}

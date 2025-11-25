@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAppStore } from '../store';
 import { AppView, UserProfile } from '../types';
 import { Button } from '../components/Button';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { ArrowLeft, Loader2, Shield } from 'lucide-react';
 import { FALLBACK_COUNTRIES } from '../constants';
-import { upsertUserProfile, getUserProfile, getCurrentUser } from '../services/supabaseService';
+import { upsertUserProfile, getUserProfile, getCurrentUser, sendPasswordResetEmail } from '../services/supabaseService';
 
 export const Profile: React.FC = () => {
   const { user, setView, setUser } = useAppStore();
@@ -55,7 +54,6 @@ export const Profile: React.FC = () => {
     let isMounted = true;
 
     const initData = async () => {
-      // Timeout Promise
       const timeout = new Promise((_, reject) => 
         setTimeout(() => reject(new Error("Profile load timeout")), 5000)
       );
@@ -70,12 +68,10 @@ export const Profile: React.FC = () => {
       };
 
       try {
-        // Race the fetch against the 5s timeout
         const profile = await Promise.race([fetchProfile(), timeout]) as UserProfile | null;
 
         if (profile && isMounted) {
             setFormData(profile);
-            // Also sync store just in case
             setUser(profile);
         }
       } catch (err) {
@@ -95,7 +91,6 @@ export const Profile: React.FC = () => {
     setIsSaving(true);
     
     try {
-        // Fetch the REAL authenticated user ID directly from Backend
         const authUser = await getCurrentUser();
         
         if (!authUser) {
@@ -108,13 +103,9 @@ export const Profile: React.FC = () => {
             preferredWorkCountry: formData.preferredWorkCountry || formData.residenceCountry || 'USA',
         } as UserProfile;
 
-        // 1. Save to Supabase (Via Backend)
         await upsertUserProfile(updatedProfile);
-
-        // 2. Update Local State
         setUser(updatedProfile);
         
-        // 3. Navigate
         alert("Profile updated successfully!");
         setView(AppView.DASHBOARD);
     } catch (error: any) {
@@ -125,8 +116,26 @@ export const Profile: React.FC = () => {
     }
   };
 
+  const handlePasswordReset = async () => {
+      if (!window.confirm("Send a password reset link to your email?")) return;
+      
+      try {
+          // We assume we have the email in the auth session on the backend
+          // But to keep it simple, we ask for it or use the context if we had it.
+          // Since our UserProfile doesn't strictly store Email, we fetch current auth user to get it.
+          const authUser = await getCurrentUser();
+          if (authUser && authUser.email) {
+              await sendPasswordResetEmail(authUser.email);
+              alert(`Password reset link sent to ${authUser.email}`);
+          } else {
+              alert("Could not determine your email address.");
+          }
+      } catch (e) {
+          alert("Failed to send reset email.");
+      }
+  };
+
   const handleChange = (field: keyof UserProfile, value: any) => {
-    // If changing country, update target if it matched previous residence
     if (field === 'residenceCountry') {
       const isPreferredSameAsOldResidence = formData.preferredWorkCountry === formData.residenceCountry || formData.preferredWorkCountry === '';
 
@@ -159,7 +168,6 @@ export const Profile: React.FC = () => {
                 <ArrowLeft size={20} /> Back to Dashboard
             </button>
             <h2 className="text-3xl font-bold text-slate-900 dark:text-white">Edit Profile</h2>
-            <p className="text-slate-600 dark:text-slate-400 mt-2">Update your demographics and location preferences.</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6 bg-white dark:bg-slate-800 p-8 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xl transition-all">
@@ -277,6 +285,16 @@ export const Profile: React.FC = () => {
                         <option value="Remote (Global)">Remote (Global)</option>
                     </select>
                 </div>
+            </div>
+            
+            {/* Account Security Section */}
+            <div className="border-t border-slate-200 dark:border-slate-700 pt-6">
+                 <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-2">
+                    <Shield size={16} /> Security
+                 </h3>
+                 <Button type="button" variant="outline" fullWidth onClick={handlePasswordReset}>
+                    Send Password Reset Email
+                 </Button>
             </div>
 
             <Button type="submit" fullWidth size="lg" disabled={isSaving}>
