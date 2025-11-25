@@ -1,7 +1,7 @@
+
 import { create } from 'zustand';
 import { AppView, UserProfile, QuizAnswer, CareerRecommendation, CareerDomain } from './types';
-import { generateCareerImages, calculateRoadmapDurationYears } from './services/geminiService';
-import { uploadCareerImages, saveCareerToDb, deleteCareerFromDb } from './services/supabaseService';
+import { saveCareerToDb, deleteCareerFromDb } from './services/supabaseService';
 
 interface AppState {
   currentView: AppView;
@@ -42,7 +42,7 @@ interface AppState {
   setRecommendations: (recs: CareerRecommendation[]) => void;
   setSelectedCareer: (career: CareerRecommendation) => void;
   setSavedCareers: (careers: CareerRecommendation[]) => void;
-  updateCareerImages: (careerId: string, images: string[]) => void;
+  updateCareerImages: (careerId: string, images: (string | null)[]) => void;
   
   toggleSavedCareer: (career: CareerRecommendation) => Promise<void>;
   confirmDeleteCareer: () => Promise<void>; 
@@ -113,6 +113,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   setSavedCareers: (careers) => set({ savedCareers: careers }),
   
   updateCareerImages: (careerId, images) => set((state) => {
+    // Only update if images actually changed
     const newSelected = state.selectedCareer?.id === careerId 
         ? { ...state.selectedCareer, slideImages: images } 
         : state.selectedCareer;
@@ -120,8 +121,17 @@ export const useAppStore = create<AppState>((set, get) => ({
     const newRecommendations = state.recommendations.map(c => 
         c.id === careerId ? { ...c, slideImages: images } : c
     );
+    
+    // Also update saved careers if exists there
+    const newSaved = state.savedCareers.map(c => 
+        c.id === careerId ? { ...c, slideImages: images } : c
+    );
 
-    return { selectedCareer: newSelected, recommendations: newRecommendations };
+    return { 
+        selectedCareer: newSelected, 
+        recommendations: newRecommendations,
+        savedCareers: newSaved
+    };
   }),
   
   cancelDeleteCareer: () => set({ pendingDeleteCareer: null }),
@@ -147,13 +157,33 @@ export const useAppStore = create<AppState>((set, get) => ({
       try {
         await deleteCareerFromDb(state.user.id, career.id);
         
+        // Remove from local saved list
+        const newSaved = state.savedCareers.filter(c => c.id !== career.id);
+        
+        // If the selected career is the one being deleted, we need to update its state to reflect it's not saved anymore
+        // BUT we also need to clear its images as per requirements
+        const cleanedCareer = { ...career, slideImages: [] };
+        
+        let newSelected = state.selectedCareer;
+        if (state.selectedCareer?.id === career.id) {
+             newSelected = cleanedCareer;
+        }
+
+        // Also clean it in recommendations
+        const newRecommendations = state.recommendations.map(c => 
+             c.id === career.id ? cleanedCareer : c
+        );
+
         set({ 
-            savedCareers: state.savedCareers.filter(c => c.id !== career.id),
+            savedCareers: newSaved,
+            selectedCareer: newSelected,
+            recommendations: newRecommendations,
             pendingDeleteCareer: null 
         });
 
         state.showToast("Career deleted successfully");
 
+        // Navigate back if on detail view derived from saved paths
         if (state.currentView === AppView.CAREER_DETAIL && state.selectedCareer?.id === career.id) {
             if (state.careerOrigin === 'saved') {
                  set({ currentView: AppView.SAVED_PATHS });
@@ -180,57 +210,21 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({ isSavingCareer: true });
     
     try {
-        let careerToSave = { ...career };
+        // Just save whatever we have. If images exist, they get saved. If not, they don't.
+        // We do NOT trigger generation here anymore.
         
-        if (state.selectedCareer?.id === career.id && state.selectedCareer.slideImages?.length) {
-            careerToSave.slideImages = state.selectedCareer.slideImages;
-        }
-
-        try {
-            let imagesToProcess: string[] = [];
-
-            if (careerToSave.slideImages && careerToSave.slideImages.length > 0) {
-                imagesToProcess = careerToSave.slideImages;
-            } else {
-                const prompts = careerToSave.dayInLifePrompts || ["Working at desk", "Meeting colleagues", "Achieving success"];
-                const durationYears = calculateRoadmapDurationYears(careerToSave.roadmap);
-                const futureAge = state.user ? state.user.age + durationYears : 25;
-
-                if (state.debugImageGenerationEnabled) {
-                    const generatedImages = await generateCareerImages(careerToSave.title, prompts, state.user, futureAge);
-                    imagesToProcess = generatedImages;
-                } else {
-                    imagesToProcess = prompts.map((_, i) => `https://picsum.photos/seed/${career.id}${i}/1280/720`);
-                }
-            }
-            
-            let finalImageUrls = imagesToProcess;
-            if (state.user && imagesToProcess.length > 0) {
-                finalImageUrls = await uploadCareerImages(state.user.id, careerToSave.id, imagesToProcess);
-            }
-
-            careerToSave.slideImages = finalImageUrls;
-
-        } catch (imgError) {
-            console.warn("Image processing failed during save, falling back to mock images:", imgError);
-            if (!careerToSave.slideImages || careerToSave.slideImages.length === 0) {
-                 careerToSave.slideImages = [
-                    `https://picsum.photos/seed/${career.id}-1/1280/720`,
-                    `https://picsum.photos/seed/${career.id}-2/1280/720`,
-                    `https://picsum.photos/seed/${career.id}-3/1280/720`
-                 ];
-            }
-        }
+        // Ensure we are saving the version from store which might have images if generated in detail view
+        const currentVersion = state.selectedCareer?.id === career.id ? state.selectedCareer : career;
 
         if (state.user) {
-            await saveCareerToDb(state.user.id, careerToSave);
+            await saveCareerToDb(state.user.id, currentVersion);
         }
 
         set((s) => {
-            const isCurrentlySelected = s.selectedCareer?.id === careerToSave.id;
+            const isCurrentlySelected = s.selectedCareer?.id === currentVersion.id;
             return { 
-                savedCareers: [...s.savedCareers, careerToSave],
-                selectedCareer: isCurrentlySelected ? careerToSave : s.selectedCareer,
+                savedCareers: [...s.savedCareers, currentVersion],
+                selectedCareer: isCurrentlySelected ? currentVersion : s.selectedCareer,
                 hasViewedSavedPaths: false 
             };
         });

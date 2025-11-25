@@ -1,3 +1,4 @@
+
 import os
 import json
 import uuid
@@ -5,6 +6,7 @@ import logging
 import traceback
 import base64
 import urllib.parse
+from datetime import datetime, timezone
 from typing import List, Optional, Dict, Any
 
 from fastapi import FastAPI, HTTPException, Depends, Header, Request
@@ -20,6 +22,8 @@ SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
+# Constants
+DAILY_GENERATION_LIMIT = 3
 TEXT_MODEL_NAME = "gemini-2.5-flash"
 IMAGE_MODEL_NAME = "imagen-3.0-generate-001" 
 
@@ -99,7 +103,7 @@ class CareerRecommendation(BaseSchema):
     pivot_analysis: Optional[str] = None
     roadmap: List[CareerRoadmapStep]
     day_in_life_prompts: Optional[List[str]] = []
-    slide_images: Optional[List[str]] = []
+    slide_images: Optional[List[Optional[str]]] = []
 
 class GenerateCareerRequest(BaseSchema):
     user_profile: UserProfile
@@ -114,7 +118,7 @@ class GenerateImagesRequest(BaseSchema):
 class SaveCareerImageRequest(BaseSchema):
     user_id: str
     career_uid: str
-    images: List[str]
+    images: List[Optional[str]]
 
 class GenerateDomainRequest(BaseSchema):
     quiz_answers: List[Dict[str, Any]]
@@ -211,6 +215,10 @@ async def upsert_profile(profile: UserProfile, user = Depends(verify_token)):
         raise HTTPException(status_code=403, detail="Cannot update other users")
     try:
         data = profile.model_dump(by_alias=False)
+        # Exclude quota fields from direct update
+        if 'daily_generations_count' in data: del data['daily_generations_count']
+        if 'last_generation_date' in data: del data['last_generation_date']
+        
         res = supabase.table("profiles").upsert(data).execute()
         return {"status": "success"}
     except Exception as e:
@@ -284,6 +292,34 @@ async def generate_career(req: GenerateCareerRequest, user = Depends(verify_toke
 
 @app.post("/api/generate-images")
 async def generate_images(req: GenerateImagesRequest, user = Depends(verify_token)):
+    # 1. QUOTA CHECK
+    try:
+        profile_res = supabase.table("profiles").select("daily_generations_count, last_generation_date").eq("id", user.id).single().execute()
+        if profile_res.data:
+            profile_data = profile_res.data
+            last_date_str = profile_data.get('last_generation_date')
+            count = profile_data.get('daily_generations_count', 0)
+            
+            now = datetime.now(timezone.utc)
+            last_date = datetime.fromisoformat(last_date_str.replace('Z', '+00:00')) if last_date_str else now
+            
+            # Reset if 24 hours have passed or it's a new day
+            if (now - last_date).days >= 1 or now.date() > last_date.date():
+                count = 0
+            
+            if count >= DAILY_GENERATION_LIMIT:
+                raise HTTPException(status_code=429, detail=f"Daily visualization limit reached ({DAILY_GENERATION_LIMIT}/day). Please try again tomorrow.")
+            
+            # Update local var for incrementing later
+            current_count = count
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        logger.error(f"Quota check failed: {e}")
+        # Fail safe? Or allow? Let's fail safe to protect API costs
+        raise HTTPException(status_code=500, detail="Unable to verify generation quota.")
+
+    # 2. GENERATION
     try:
         subject_desc = "a professional"
         if req.user_context:
@@ -293,7 +329,6 @@ async def generate_images(req: GenerateImagesRequest, user = Depends(verify_toke
 
         import asyncio
         async def generate_single_image(prompt_text):
-            # Simplified prompt for stability
             full_prompt = f"Cinematic shot of {subject_desc} working as a {req.career_title}. Scene: {prompt_text}. Style: Photorealistic, 4k, dramatic lighting."
             
             # --- 1. ATTEMPT GEMINI (IMAGEN) ---
@@ -304,16 +339,14 @@ async def generate_images(req: GenerateImagesRequest, user = Depends(verify_toke
                     for part in response.candidates[0].content.parts:
                         if part.inline_data:
                             return f"data:{part.inline_data.mime_type};base64,{part.inline_data.data}"
-            except Exception:
-                pass # Fallback
+            except Exception as e:
+                logger.warning(f"Gemini Image Gen Failed: {e}")
 
             # --- 2. FALLBACK: POLLINATIONS.AI ---
             try:
-                # Truncate prompt to avoid 500/URI Too Long errors
                 safe_prompt = full_prompt[:400] 
                 encoded_prompt = urllib.parse.quote(safe_prompt)
                 seed = uuid.uuid4().int % 10000
-                # Removed 'model=flux' to let Pollinations pick best available or turbo for stability
                 image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1280&height=720&seed={seed}&nologo=true"
                 
                 headers = {'User-Agent': 'Mozilla/5.0'}
@@ -322,20 +355,31 @@ async def generate_images(req: GenerateImagesRequest, user = Depends(verify_toke
                     if resp.status_code == 200:
                         b64_img = base64.b64encode(resp.content).decode('utf-8')
                         return f"data:image/jpeg;base64,{b64_img}"
-                    else:
-                        logger.error(f"Pollinations Error: {resp.status_code} for {image_url}")
             except Exception as e:
                 logger.error(f"Pollinations Exception: {str(e)}")
 
-            # --- 3. FINAL FALLBACK: MOCK ---
-            return f"https://picsum.photos/seed/{uuid.uuid4()}/1280/720"
+            # --- 3. FAIL (NO PICSUM) ---
+            return None
 
         tasks = [generate_single_image(p) for p in req.prompts]
         generated_images = await asyncio.gather(*tasks)
+        
+        # 3. UPDATE QUOTA (Only if at least one image generated)
+        if any(img is not None for img in generated_images):
+            try:
+                supabase.table("profiles").update({
+                    "daily_generations_count": current_count + 1,
+                    "last_generation_date": datetime.now(timezone.utc).isoformat()
+                }).eq("id", user.id).execute()
+            except Exception as e:
+                logger.error(f"Failed to update quota: {e}")
+
         return {"images": generated_images}
+        
     except Exception as e:
         logger.error(f"Image API Global Error: {e}")
-        return {"images": [f"https://picsum.photos/seed/{i}/800/600" for i in range(len(req.prompts))]}
+        # Return all Nones to signify failure
+        return {"images": [None for _ in req.prompts]}
 
 # --- SAVED CAREER ROUTES ---
 
@@ -360,7 +404,24 @@ async def save_career(career: CareerRecommendation, user = Depends(verify_token)
 @app.delete("/api/saved-careers/{career_uid}")
 async def delete_career(career_uid: str, user = Depends(verify_token)):
     try:
+        # 1. Delete DB Record
         supabase.table("saved_careers").delete().eq("user_id", user.id).eq("career_uid", career_uid).execute()
+        
+        # 2. Cleanup Storage
+        try:
+            # List files in the folder (This is tricky without list API wrapper in python client sometimes, 
+            # assuming standard structure 0.png, 1.png, 2.png, slide_0.png etc)
+            # A common pattern is to just try deleting expected filenames.
+            files_to_remove = []
+            for i in range(10): # Cleanup up to 10 slides just in case
+                files_to_remove.append(f"{user.id}/{career_uid}/slide_{i}.png")
+                files_to_remove.append(f"{user.id}/{career_uid}/slide_{i}.jpeg")
+                files_to_remove.append(f"{user.id}/{career_uid}/slide_{i}.jpg")
+            
+            supabase.storage.from_("career_slideshows").remove(files_to_remove)
+        except Exception as storage_e:
+            logger.warning(f"Storage cleanup failed (non-critical): {storage_e}")
+
         return {"status": "success"}
     except Exception as e: raise HTTPException(status_code=500, detail=str(e))
 
@@ -369,9 +430,14 @@ async def upload_career_images(req: SaveCareerImageRequest, user = Depends(verif
     if req.user_id != user.id: raise HTTPException(status_code=403)
     uploaded_urls = []
     for i, img_str in enumerate(req.images):
+        if not img_str: # Handle None/Empty
+            uploaded_urls.append(None)
+            continue
+            
         if img_str.startswith("http"):
             uploaded_urls.append(img_str)
             continue
+            
         try:
             if "," in img_str: header, encoded = img_str.split(",", 1); ext = header.split(";")[0].split("/")[1]
             else: encoded = img_str; ext = "png"

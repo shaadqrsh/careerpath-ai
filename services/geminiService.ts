@@ -1,3 +1,4 @@
+
 import { UserProfile, QuizAnswer, CareerRecommendation, Slide, CareerRoadmapStep, CareerDomain } from "../types";
 import { MOCK_CAREERS, API_BASE_URL, SLIDESHOW_IMAGE_COUNT } from "../constants";
 
@@ -84,50 +85,39 @@ export const generateCareerImages = async (
     careerTitle: string, 
     prompts: string[], 
     user?: UserProfile | null, 
-    futureAge?: number,
-    imageGenerationEnabled: boolean = true
-): Promise<string[]> => {
+    futureAge?: number
+): Promise<(string | null)[]> => {
     
-    // We respect the flag, but now the backend actually handles the generation
-    if (!imageGenerationEnabled) {
-        console.warn("Image generation disabled (client-side flag). Using Mock images.");
-        return prompts.map((_, i) => `https://picsum.photos/seed/${careerTitle.replace(/\s/g,'')}${i}/1280/720`);
+    const token = localStorage.getItem('access_token');
+    if (!token) throw new Error("Not authenticated");
+
+    const response = await fetch(`${API_BASE_URL}/api/generate-images`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+            career_title: careerTitle,
+            prompts: prompts,
+            user_context: user,
+            future_age: futureAge
+        })
+    });
+
+    if (response.status === 429) {
+        throw new Error("QUOTA_EXCEEDED");
     }
 
-    try {
-        const token = localStorage.getItem('access_token');
+    if (!response.ok) throw new Error("Backend Image Gen Failed");
 
-        if (!token) return prompts.map((_, i) => `https://picsum.photos/seed/${careerTitle}${i}/1280/720`);
-
-        const response = await fetch(`${API_BASE_URL}/api/generate-images`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({
-                career_title: careerTitle,
-                prompts: prompts,
-                user_context: user,
-                future_age: futureAge
-            })
-        });
-
-        if (!response.ok) throw new Error("Backend Image Gen Failed");
-
-        const data = await response.json();
-        return data.images;
-
-    } catch (error) {
-        console.warn("Image Gen Failed (Using Fallback):", error);
-        return prompts.map((_, i) => `https://picsum.photos/seed/${careerTitle.replace(/\s/g,'')}-${i}/1280/720`);
-    }
+    const data = await response.json();
+    return data.images; 
 }
 
-export const generateStorySlides = async (career: CareerRecommendation, user?: UserProfile | null, imageGenerationEnabled: boolean = true): Promise<Slide[]> => {
-    // USE CONSTANT HERE: If prompts are missing or fewer than needed, fill them up
+export const generateStorySlides = async (career: CareerRecommendation, user?: UserProfile | null): Promise<Slide[]> => {
+    // 1. Prepare Prompts
     let prompts = career.dayInLifePrompts || [];
-    
     if (prompts.length < SLIDESHOW_IMAGE_COUNT) {
         const missingCount = SLIDESHOW_IMAGE_COUNT - prompts.length;
         const filler = [
@@ -138,23 +128,63 @@ export const generateStorySlides = async (career: CareerRecommendation, user?: U
         prompts = [...prompts, ...filler.slice(0, missingCount)];
     }
 
-    let imageUrls: string[] = [];
+    // 2. Identify Missing Images
+    const currentImages = career.slideImages || [];
+    const missingIndices: number[] = [];
+    const promptsToGenerate: string[] = [];
 
-    // If career already has persistent images, use them
-    if (career.slideImages && career.slideImages.length > 0) {
-        imageUrls = career.slideImages;
-    } else {
-        // Calculate age at the 'end' of the roadmap for realism
-        const durationYears = calculateRoadmapDurationYears(career.roadmap);
-        const futureAge = user ? user.age + durationYears : 25;
-
-        // Generate images using Backend
-        imageUrls = await generateCareerImages(career.title, prompts, user, futureAge, imageGenerationEnabled);
+    for (let i = 0; i < SLIDESHOW_IMAGE_COUNT; i++) {
+        if (!currentImages[i]) {
+            missingIndices.push(i);
+            promptsToGenerate.push(prompts[i]);
+        }
     }
 
-    return prompts.map((text, index) => ({
-        id: index,
-        text,
-        imageUrl: imageUrls[index] || `https://picsum.photos/seed/${career.id}-${index}/1280/720`
-    }));
+    // 3. If everything exists, just return mapped slides
+    if (missingIndices.length === 0) {
+        return prompts.map((text, index) => ({
+            id: index,
+            text,
+            imageUrl: currentImages[index] || ""
+        }));
+    }
+
+    // 4. Generate Missing
+    // Calculate age at the 'end' of the roadmap for realism
+    const durationYears = calculateRoadmapDurationYears(career.roadmap);
+    const futureAge = user ? user.age + durationYears : 25;
+
+    try {
+        const generatedResults = await generateCareerImages(career.title, promptsToGenerate, user, futureAge);
+        
+        // 5. Merge Results
+        const finalImages = [...currentImages];
+        // Ensure finalImages has correct length if it was undefined/empty
+        while(finalImages.length < SLIDESHOW_IMAGE_COUNT) finalImages.push(null);
+
+        missingIndices.forEach((targetIndex, i) => {
+            finalImages[targetIndex] = generatedResults[i];
+        });
+
+        // 6. Return mapped slides (some might still be null if generation failed completely for that item)
+        return prompts.map((text, index) => ({
+            id: index,
+            text,
+            imageUrl: finalImages[index] || "" // Empty string signifies "Not Available" to the UI
+        }));
+
+    } catch (e: any) {
+        if (e.message === "QUOTA_EXCEEDED") throw e;
+        
+        console.error("Partial generation failed:", e);
+        // Return whatever we have, failed ones as empty strings
+        const finalImages = [...currentImages];
+        while(finalImages.length < SLIDESHOW_IMAGE_COUNT) finalImages.push(null);
+        
+        return prompts.map((text, index) => ({
+            id: index,
+            text,
+            imageUrl: finalImages[index] || ""
+        }));
+    }
 };
