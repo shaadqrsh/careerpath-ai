@@ -3,12 +3,12 @@ import React, { useState, useEffect } from 'react';
 import { useAppStore } from '../store';
 import { AppView, UserProfile } from '../types';
 import { Button } from '../components/Button';
-import { ArrowLeft, Loader2, Shield, AlertTriangle, User, MapPin } from 'lucide-react';
+import { ArrowLeft, Loader2, Shield, AlertTriangle, User, MapPin, ChevronDown, Sun, Moon } from 'lucide-react';
 import { FALLBACK_COUNTRIES } from '../constants';
 import { upsertUserProfile, getUserProfile, getCurrentUser, sendPasswordResetEmail } from '../services/supabaseService';
 
 export const Profile: React.FC = () => {
-  const { user, setView, setUser, showPasswordResetModal, setShowPasswordResetModal, showToast } = useAppStore();
+  const { user, setView, setUser, showPasswordResetModal, setShowPasswordResetModal, showToast, theme, toggleTheme } = useAppStore();
   
   const [countries, setCountries] = useState<string[]>([]);
   const [isLoadingCountries, setIsLoadingCountries] = useState(true);
@@ -157,7 +157,18 @@ export const Profile: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 px-4 py-12 transition-colors duration-300">
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 px-4 py-12 transition-colors duration-300 relative">
+      
+      {/* Theme Toggle */}
+      <div className="absolute top-6 right-6">
+        <button
+          onClick={toggleTheme}
+          className="p-3 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors rounded-full hover:bg-slate-200 dark:hover:bg-slate-800"
+        >
+            {theme === 'dark' ? <Sun size={24} /> : <Moon size={24} />}
+        </button>
+      </div>
+
       <div className="w-full max-w-3xl">
         <div className="mb-6">
             <button 
@@ -170,11 +181,11 @@ export const Profile: React.FC = () => {
             <h2 className="text-3xl font-bold text-slate-900 dark:text-white">Edit Profile</h2>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6 bg-white dark:bg-slate-800 p-8 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xl transition-all">
+        <form onSubmit={handleSubmit} className="space-y-8 bg-white dark:bg-slate-800 p-8 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xl transition-all">
              
              {/* Personal Details Section */}
              <div>
-                <h3 className="text-sm font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                <h3 className="text-sm font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-6 flex items-center gap-2">
                     <User size={18} /> Personal Details
                 </h3>
                 <div className="space-y-6">
@@ -191,15 +202,18 @@ export const Profile: React.FC = () => {
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Gender</label>
-                            <select 
-                                value={formData.gender}
-                                onChange={(e) => handleChange('gender', e.target.value)}
-                                className="w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-600 rounded-xl py-3 px-4 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors"
-                            >
-                                <option>Male</option>
-                                <option>Female</option>
-                                <option>Non-binary</option>
-                            </select>
+                            <div className="relative">
+                                <select 
+                                    value={formData.gender}
+                                    onChange={(e) => handleChange('gender', e.target.value)}
+                                    className="appearance-none w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-600 rounded-xl py-3 pl-4 pr-10 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors cursor-pointer"
+                                >
+                                    <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">Male</option>
+                                    <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">Female</option>
+                                    <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">Non-binary</option>
+                                </select>
+                                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" size={18} />
+                            </div>
                         </div>
                     </div>
 
@@ -218,17 +232,20 @@ export const Profile: React.FC = () => {
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Level</label>
-                            <select 
-                                value={formData.educationLevel}
-                                onChange={(e) => handleChange('educationLevel', e.target.value)}
-                                className="w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-600 rounded-xl py-3 px-4 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors"
-                            >
-                                <option>High School</option>
-                                <option>Undergraduate</option>
-                                <option>Graduate</option>
-                                <option>PhD</option>
-                                <option>Bootcamp/Self-taught</option>
-                            </select>
+                            <div className="relative">
+                                <select 
+                                    value={formData.educationLevel}
+                                    onChange={(e) => handleChange('educationLevel', e.target.value)}
+                                    className="appearance-none w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-600 rounded-xl py-3 pl-4 pr-10 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors cursor-pointer"
+                                >
+                                    <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">High School</option>
+                                    <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">Undergraduate</option>
+                                    <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">Graduate</option>
+                                    <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">PhD</option>
+                                    <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">Bootcamp/Self-taught</option>
+                                </select>
+                                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" size={18} />
+                            </div>
                         </div>
                     </div>
 
@@ -247,54 +264,53 @@ export const Profile: React.FC = () => {
             </div>
 
             <div className="border-t border-slate-200 dark:border-slate-700 pt-6">
-                <h3 className="text-sm font-bold text-green-600 dark:text-green-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                <h3 className="text-sm font-bold text-green-600 dark:text-green-400 uppercase tracking-wider mb-6 flex items-center gap-2">
                     <MapPin size={18} /> Location Details
                 </h3>
                 
                 <div className="space-y-6">
                     <div>
                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Current Residence</label>
-                        <select 
-                                required
-                                value={formData.residenceCountry}
-                                onChange={(e) => handleChange('residenceCountry', e.target.value)}
-                                disabled={isLoadingCountries}
-                                className="w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-600 rounded-xl py-3 px-4 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors disabled:opacity-50"
-                        >
-                            <option value="">{isLoadingCountries ? "Loading..." : "Select Country"}</option>
-                            {countries.map(c => (
-                                <option key={c} value={c}>{c}</option>
-                            ))}
-                        </select>
+                        <div className="relative">
+                            <select 
+                                    required
+                                    value={formData.residenceCountry}
+                                    onChange={(e) => handleChange('residenceCountry', e.target.value)}
+                                    disabled={isLoadingCountries}
+                                    className="appearance-none w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-600 rounded-xl py-3 pl-4 pr-10 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors disabled:opacity-50 cursor-pointer"
+                            >
+                                <option value="" className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">{isLoadingCountries ? "Loading..." : "Select Country"}</option>
+                                {countries.map(c => (
+                                    <option key={c} value={c} className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">{c}</option>
+                                ))}
+                            </select>
+                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" size={18} />
+                        </div>
                     </div>
 
                     <div>
                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Future Work Preference</label>
-                        <select 
-                            value={formData.preferredWorkCountry}
-                            onChange={(e) => handleChange('preferredWorkCountry', e.target.value)}
-                            className="w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-600 rounded-xl py-3 px-4 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors"
-                        >
-                            {formData.residenceCountry && <option value={formData.residenceCountry}>{formData.residenceCountry} (Current)</option>}
-                            <option value="USA">USA</option>
-                            <option value="United Kingdom">United Kingdom</option>
-                            <option value="Canada">Canada</option>
-                            <option value="Germany">Germany</option>
-                            <option value="Australia">Australia</option>
-                            <option value="Singapore">Singapore</option>
-                            <option value="India">India</option>
-                            <option value="Undecided">Undecided</option>
-                            <option value="Remote (Global)">Remote (Global)</option>
-                        </select>
+                        <div className="relative">
+                            <select 
+                                value={formData.preferredWorkCountry}
+                                onChange={(e) => handleChange('preferredWorkCountry', e.target.value)}
+                                className="appearance-none w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-600 rounded-xl py-3 pl-4 pr-10 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors cursor-pointer"
+                            >
+                                {formData.residenceCountry && <option value={formData.residenceCountry} className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">{formData.residenceCountry} (Current)</option>}
+                                <option value="USA" className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">USA</option>
+                                <option value="United Kingdom" className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">United Kingdom</option>
+                                <option value="Canada" className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">Canada</option>
+                                <option value="Germany" className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">Germany</option>
+                                <option value="Australia" className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">Australia</option>
+                                <option value="Singapore" className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">Singapore</option>
+                                <option value="India" className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">India</option>
+                                <option value="Undecided" className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">Undecided</option>
+                                <option value="Remote (Global)" className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">Remote (Global)</option>
+                            </select>
+                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" size={18} />
+                        </div>
                     </div>
                 </div>
-            </div>
-            
-            {/* SAVE CHANGES */}
-            <div className="border-t border-slate-200 dark:border-slate-700 pt-6">
-                <Button type="submit" fullWidth size="lg" disabled={isSaving}>
-                    {isSaving ? "Saving Changes..." : "Save Changes"}
-                </Button>
             </div>
 
             {/* SECURITY */}
@@ -305,6 +321,13 @@ export const Profile: React.FC = () => {
                  <Button type="button" variant="outline" fullWidth onClick={() => setShowPasswordResetModal(true)}>
                     Send Password Reset Email
                  </Button>
+            </div>
+            
+            {/* SAVE CHANGES */}
+            <div className="border-t border-slate-200 dark:border-slate-700 pt-6">
+                <Button type="submit" fullWidth size="lg" disabled={isSaving}>
+                    {isSaving ? "Saving Changes..." : "Save Changes"}
+                </Button>
             </div>
         </form>
       </div>
