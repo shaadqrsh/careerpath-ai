@@ -7,7 +7,6 @@ export interface UserProfile {
   specialization: string;
   residenceCountry: string;
   preferredWorkCountry: string;
-  // Quota Fields
   dailyImageGenerationsCount?: number;
   lastImageGenerationDate?: string;
   dailyCareerGenerationsCount?: number;

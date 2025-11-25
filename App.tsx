@@ -23,7 +23,6 @@ const App: React.FC = () => {
   const { currentView, theme, setView, setUser, setSavedCareers, pendingDeleteCareer, confirmDeleteCareer, cancelDeleteCareer, toast, isDeletingCareer, showToast } = useAppStore();
   const [isInitializing, setIsInitializing] = useState(true);
 
-  // Handle Theme (System/Dark/Light)
   useEffect(() => {
     const root = window.document.documentElement;
     
@@ -42,7 +41,6 @@ const App: React.FC = () => {
 
     applyTheme();
 
-    // Listen for system changes if theme is system
     if (theme === 'system') {
         const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
         const handler = () => applyTheme();
@@ -51,18 +49,15 @@ const App: React.FC = () => {
     }
   }, [theme]);
 
-  // Auth Initialization & Deep Link Detection
   useEffect(() => {
     const initAuth = async () => {
         try {
             const hash = window.location.hash;
             
-            // 0. Check for Supabase Errors in URL (e.g. Link Expired)
             if (hash && hash.includes('error_description')) {
                 const params = new URLSearchParams(hash.substring(1));
                 const errorDesc = params.get('error_description');
                 if (errorDesc) {
-                    // Clear hash and show error
                     window.history.replaceState(null, '', window.location.pathname);
                     showToast(errorDesc.replace(/\+/g, ' '));
                     setView(AppView.AUTH);
@@ -71,7 +66,6 @@ const App: React.FC = () => {
                 }
             }
 
-            // 1. Check for Password Reset or Signup Confirmation Hashes (Success case)
             if (hash && hash.includes('access_token')) {
                 const params = new URLSearchParams(hash.substring(1)); 
                 const accessToken = params.get('access_token');
@@ -81,35 +75,27 @@ const App: React.FC = () => {
                     localStorage.setItem('access_token', accessToken);
                     window.history.replaceState(null, '', window.location.pathname);
                     
-                    // Specific check: Only redirect to password update if it is a recovery flow
                     if (type === 'recovery') {
                         setView(AppView.UPDATE_PASSWORD);
                         setIsInitializing(false);
                         return; 
                     }
-                    
-                    // For type='signup', 'invite', or 'magiclink', we proceed to the user check below
-                    // which will route them to dashboard or onboarding appropriately.
                 }
             }
 
-            // 2. Normal Session Check
             const authUser = await getCurrentUser();
             
             if (authUser) {
-                // Attempt to fetch profile with a simple retry strategy for robustness
                 let profile = null;
                 try {
                     profile = await getUserProfile(authUser.id);
                 } catch (e) {
                     console.warn("Profile fetch failed first attempt, retrying...", e);
-                    // Simple retry logic for transient backend issues
                     await new Promise(res => setTimeout(res, 1000));
                     try {
                         profile = await getUserProfile(authUser.id);
                     } catch (e2) {
                         console.error("Profile fetch failed second attempt", e2);
-                        // Do not throw here, let profile be null so we can check if it's a 404 case handled by service
                     }
                 }
 
@@ -126,7 +112,6 @@ const App: React.FC = () => {
                         setView(AppView.DASHBOARD);
                     }
                 } else {
-                    // Valid User ID, but No Profile (404) -> Onboarding
                     setUser({ id: authUser.id } as any);
                     setView(AppView.ONBOARDING);
                 }
@@ -137,7 +122,6 @@ const App: React.FC = () => {
             }
         } catch (e) {
             console.error("Auth initialization failed", e);
-            // If auth fails violently (e.g. 500 error from backend), sign out locally to prevent stuck state
             signOut(); 
             setView(AppView.LANDING);
         } finally {

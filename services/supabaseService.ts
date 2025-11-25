@@ -1,5 +1,4 @@
 
-
 import { CareerRecommendation, UserProfile } from '../types';
 import { API_BASE_URL } from '../constants';
 
@@ -27,7 +26,6 @@ const fromDbProfile = (d: any): UserProfile => ({
     specialization: d.specialization,
     residenceCountry: d.residence_country,
     preferredWorkCountry: d.preferred_work_country,
-    // Map Quota Fields
     dailyImageGenerationsCount: d.daily_image_generations_count,
     lastImageGenerationDate: d.last_image_generation_date,
     dailyCareerGenerationsCount: d.daily_career_generations_count,
@@ -190,7 +188,6 @@ export const getUserProfile = async (userId: string): Promise<UserProfile | null
         const headers = getAuthHeaders();
         const response = await fetch(`${API_BASE_URL}/api/profile`, { headers });
         
-        // FIX: Only return null for 404s. Throw for everything else so App.tsx knows it failed.
         if (response.status === 404) return null;
         if (!response.ok) throw new Error(`Profile fetch failed: ${response.status}`);
 
@@ -198,7 +195,7 @@ export const getUserProfile = async (userId: string): Promise<UserProfile | null
         return fromDbProfile(data);
     } catch (e) {
         console.error("Error fetching profile:", e);
-        throw e; // Propagate error so app knows it's a failure, not a missing profile
+        throw e;
     }
 };
 

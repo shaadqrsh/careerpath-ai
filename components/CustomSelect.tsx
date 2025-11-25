@@ -50,7 +50,6 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
 
   useEffect(() => {
     if (isOpen && listRef.current) {
-        // Scroll to highlighted or selected option
         const selectedIndex = normalizedOptions.findIndex(o => o.value === value);
         const targetIndex = highlightedIndex >= 0 ? highlightedIndex : (selectedIndex >= 0 ? selectedIndex : 0);
         setHighlightedIndex(targetIndex);
@@ -96,7 +95,6 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
           scrollHighlightedIntoView(highlightedIndex - 1);
       }
     } else if (e.key.length === 1) {
-      // Type to select
       if (!isOpen) setIsOpen(true);
       const char = e.key.toLowerCase();
       const index = normalizedOptions.findIndex(opt => opt.label.toLowerCase().startsWith(char));
@@ -154,7 +152,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
           </ul>
         </div>
       )}
-      {/* Hidden input for HTML5 form validation if needed */}
+
       {required && (
         <input 
             type="text" 

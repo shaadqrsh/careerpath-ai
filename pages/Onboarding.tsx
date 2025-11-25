@@ -126,7 +126,6 @@ export const Onboarding: React.FC = () => {
     <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 px-4 py-12 transition-colors relative">
       
       <div className="w-full max-w-3xl">
-        {/* Controls moved inside container for alignment */}
         <div className="flex justify-end mb-4">
             <button 
                 onClick={handleLogout}
@@ -143,7 +142,6 @@ export const Onboarding: React.FC = () => {
 
         <form onSubmit={handleSubmit} className="space-y-8 bg-white dark:bg-slate-800 p-8 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xl transition-all">
             
-            {/* Personal Details Section */}
             <div>
                 <h3 className="text-sm font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-6 flex items-center gap-2">
                     <User size={18} /> Personal Details
@@ -208,7 +206,6 @@ export const Onboarding: React.FC = () => {
                 </div>
             </div>
 
-            {/* Location Details Section */}
             <div className="border-t border-slate-200 dark:border-slate-700 pt-6">
                 <h3 className="text-sm font-bold text-green-600 dark:text-green-400 uppercase tracking-wider mb-6 flex items-center gap-2">
                     <MapPin size={18} /> Location Details

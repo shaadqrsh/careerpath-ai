@@ -13,7 +13,7 @@ export const Auth: React.FC = () => {
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false); // State for password visibility
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -109,7 +109,6 @@ export const Auth: React.FC = () => {
           </p>
         </div>
 
-        {/* Success Toast */}
         {successMessage && (
             <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 rounded-xl text-sm flex items-start gap-3 animate-[fadeIn_0.3s_ease-out]">
                 <CheckCircle size={18} className="mt-0.5 shrink-0" />
@@ -117,7 +116,6 @@ export const Auth: React.FC = () => {
             </div>
         )}
 
-        {/* Error Toast */}
         {error && (
             <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 rounded-lg text-sm flex items-center gap-2 animate-[fadeIn_0.3s_ease-out]">
                 <AlertCircle size={16} className="shrink-0" />

@@ -17,7 +17,6 @@ export const Slideshow: React.FC = () => {
   const [quotaError, setQuotaError] = useState(false);
   const [allFailed, setAllFailed] = useState(false);
   
-  // Refs for safety checks
   const hasStartedRef = useRef(false);
 
   useEffect(() => {
@@ -30,15 +29,10 @@ export const Slideshow: React.FC = () => {
         try {
             console.log("Loading slides for:", selectedCareer.title);
             
-            // This service method now handles checking for existing images and only generating missing ones
-            // It throws "QUOTA_EXCEEDED" if backend rejects the request
-            // If images exist in selectedCareer.slideImages, it returns them immediately.
             const generatedSlides = await generateStorySlides(selectedCareer, user);
             
-            // Extract URLs
             const imageUrls = generatedSlides.map(s => s.imageUrl || null);
             
-            // Check if ALL images failed (are empty strings/nulls)
             const validCount = generatedSlides.filter(s => s.imageUrl && s.imageUrl.length > 5).length;
             
             if (validCount === 0 && generatedSlides.length > 0) {
@@ -48,29 +42,24 @@ export const Slideshow: React.FC = () => {
                 return;
             }
 
-            // Update Store locally so user sees them immediately
             updateCareerImages(selectedCareer.id, imageUrls);
             if (isMounted) {
                 setSlides(generatedSlides);
             }
             
-            // Refetch user profile to update quota in dashboard
             if (user) {
                 getUserProfile(user.id).then(u => {
                     if (u) setUser(u);
                 });
             }
 
-            // If saved, upload to bucket and save to DB in background
             const isSaved = savedCareers.some(c => c.id === selectedCareer.id);
             if (isSaved && user) {
-                 // Non-blocking upload logic
                  uploadCareerImages(user.id, selectedCareer.id, imageUrls).then(async (processedUrls) => {
                      updateCareerImages(selectedCareer.id, processedUrls);
                      const updatedCareer = { ...selectedCareer, slideImages: processedUrls };
                      await saveCareerToDb(user.id, updatedCareer);
                      
-                     // Update local slides state with permalinks if still mounted
                      if (isMounted) {
                         setSlides(generatedSlides.map((s, i) => ({ ...s, imageUrl: processedUrls[i] || "" })));
                      }
@@ -110,8 +99,6 @@ export const Slideshow: React.FC = () => {
   const handlePrev = () => {
     if (currentSlide > 0) setCurrentSlide(curr => curr - 1);
   };
-
-  // --- ERROR STATES ---
 
   if (quotaError) {
       return (
@@ -167,15 +154,12 @@ export const Slideshow: React.FC = () => {
       );
   }
 
-  // --- MAIN SLIDESHOW UI ---
-
   const slide = slides[currentSlide];
   const hasImage = slide.imageUrl && slide.imageUrl.length > 5;
 
   return (
     <div className="fixed inset-0 bg-black z-[60] flex items-center justify-center overflow-hidden animate-in fade-in duration-500">
       
-      {/* Background Blur Effect */}
       {hasImage && (
           <div 
             className="absolute inset-0 bg-cover bg-center blur-3xl opacity-30 scale-110 transition-all duration-1000"
@@ -183,7 +167,6 @@ export const Slideshow: React.FC = () => {
           />
       )}
       
-      {/* Close Button */}
       <button 
         onClick={() => setView(AppView.CAREER_DETAIL)}
         className="absolute top-6 right-6 z-[70] text-white/70 hover:text-white bg-black/40 hover:bg-black/60 p-2 rounded-full backdrop-blur-md transition-all border border-white/10"
@@ -193,7 +176,6 @@ export const Slideshow: React.FC = () => {
 
       <div className="relative z-10 w-full h-full max-w-md md:max-w-6xl flex flex-col md:flex-row bg-slate-900/80 backdrop-blur-md md:rounded-3xl overflow-hidden border border-white/10 shadow-2xl m-0 md:m-8 md:h-[85vh]">
         
-        {/* Image Section */}
         <div className="h-[60%] md:h-full md:w-[70%] relative bg-black flex items-center justify-center overflow-hidden group">
             {hasImage ? (
                 <img 
@@ -209,7 +191,6 @@ export const Slideshow: React.FC = () => {
                 </div>
             )}
 
-             {/* Mobile Progress Bar */}
              <div className="absolute top-0 left-0 right-0 p-2 flex gap-1 md:hidden z-20 bg-gradient-to-b from-black/80 to-transparent">
                 {slides.map((_, idx) => (
                     <div 
@@ -220,7 +201,6 @@ export const Slideshow: React.FC = () => {
             </div>
         </div>
 
-        {/* Content Section */}
         <div className="h-[40%] md:h-full md:w-[30%] p-6 md:p-10 flex flex-col justify-center bg-slate-950 border-t md:border-t-0 md:border-l border-white/10 relative">
             
             <div className="mb-auto pt-2">

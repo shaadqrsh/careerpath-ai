@@ -1,9 +1,7 @@
 
-
 import { UserProfile, QuizAnswer, CareerRecommendation, Slide, CareerRoadmapStep, CareerDomain } from "../types";
 import { MOCK_CAREERS, API_BASE_URL, SLIDESHOW_IMAGE_COUNT, DAILY_CAREER_LIMIT, DAILY_IMAGE_LIMIT } from "../constants";
 
-// Helper to calculate estimated roadmap duration in years
 export const calculateRoadmapDurationYears = (roadmap: CareerRoadmapStep[]): number => {
     let totalYears = 0;
     roadmap.forEach(step => {
@@ -16,10 +14,8 @@ export const calculateRoadmapDurationYears = (roadmap: CareerRoadmapStep[]): num
             if (match) totalYears += parseInt(match[0]) / 12;
         }
     });
-    return Math.round(totalYears) || 3; // Default to 3 years if parsing fails
+    return Math.round(totalYears) || 3; 
 };
-
-// --- BACKEND API INTEGRATION ---
 
 export const generateDomainSuggestion = async (answers: QuizAnswer[]): Promise<CareerDomain> => {
     try {
@@ -81,7 +77,6 @@ export const generateCareerRecommendations = async (
     return data.recommendations;
 
   } catch (error: any) {
-    // If it's a quota error, we rethrow so the UI can handle it specifically
     if (error.message === "QUOTA_EXCEEDED") throw error;
     
     console.error("Career Generation Error:", error);
@@ -124,7 +119,6 @@ export const generateCareerImages = async (
 }
 
 export const generateStorySlides = async (career: CareerRecommendation, user?: UserProfile | null): Promise<Slide[]> => {
-    // 1. Prepare Prompts
     let prompts = career.dayInLifePrompts || [];
     if (prompts.length < SLIDESHOW_IMAGE_COUNT) {
         const missingCount = SLIDESHOW_IMAGE_COUNT - prompts.length;
@@ -136,8 +130,6 @@ export const generateStorySlides = async (career: CareerRecommendation, user?: U
         prompts = [...prompts, ...filler.slice(0, missingCount)];
     }
 
-    // 2. Identify Missing Images
-    // Treat null, undefined, or empty string as "missing" so they can be retried.
     const currentImages = career.slideImages || [];
     const missingIndices: number[] = [];
     const promptsToGenerate: string[] = [];
@@ -149,7 +141,6 @@ export const generateStorySlides = async (career: CareerRecommendation, user?: U
         }
     }
 
-    // 3. If everything exists (no indices missing), just return mapped slides
     if (missingIndices.length === 0) {
         return prompts.map((text, index) => ({
             id: index,
@@ -158,27 +149,19 @@ export const generateStorySlides = async (career: CareerRecommendation, user?: U
         }));
     }
 
-    // 4. Generate Missing
-    // Calculate age at the 'end' of the roadmap for realism
     const durationYears = calculateRoadmapDurationYears(career.roadmap);
     const futureAge = user ? user.age + durationYears : 25;
 
     try {
         const generatedResults = await generateCareerImages(career.title, promptsToGenerate, user, futureAge);
         
-        // 5. Merge Results
-        // Start with a copy of current images (filling with nulls if shorter than required)
         const finalImages = [...currentImages];
         while(finalImages.length < SLIDESHOW_IMAGE_COUNT) finalImages.push(null);
 
-        // Fill in the generated slots
         missingIndices.forEach((targetIndex, i) => {
             finalImages[targetIndex] = generatedResults[i];
         });
 
-        // 6. Return mapped slides
-        // generatedResults[i] might be null if generation failed. We map null to "" for UI.
-        // This ensures the UI sees it as "unavailable" but next time we try to generate it again.
         return prompts.map((text, index) => ({
             id: index,
             text,
@@ -189,7 +172,6 @@ export const generateStorySlides = async (career: CareerRecommendation, user?: U
         if (e.message === "QUOTA_EXCEEDED") throw e;
         
         console.error("Partial generation failed:", e);
-        // Return whatever we have, failed ones as empty strings
         const finalImages = [...currentImages];
         while(finalImages.length < SLIDESHOW_IMAGE_COUNT) finalImages.push(null);
         

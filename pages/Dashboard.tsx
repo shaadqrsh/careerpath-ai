@@ -1,5 +1,4 @@
 
-
 import React, { useEffect, useState } from 'react';
 import { useAppStore } from '../store';
 import { AppView, CareerDomain } from '../types';
@@ -10,23 +9,17 @@ import { signOut } from '../services/supabaseService';
 export const Dashboard: React.FC = () => {
   const { setView, setDomain, savedCareers, hasViewedSavedPaths, user } = useAppStore();
   
-  // Local state for counters to ensure they update immediately
   const [careerQuota, setCareerQuota] = useState(0);
   const [imageQuota, setImageQuota] = useState(0);
 
   useEffect(() => {
     if (user) {
-        // Simple logic: if date is different from today, count is 0. Else use count.
-        // NOTE: The backend handles the exact logic, but for UI display we approximate to avoid stale data
         const getRemaining = (count: number | undefined, lastDateStr: string | undefined, limit: number) => {
             if (!lastDateStr) return limit;
             
             const lastDate = new Date(lastDateStr);
             const now = new Date();
             
-            // If different day (UTC based on backend, but local check is usually fine for display)
-            // Backend uses UTC. Let's strictly check day difference to be safe
-            // Actually, backend resets if now.date() > last_date.date().
             const isSameDay = lastDate.toISOString().split('T')[0] === now.toISOString().split('T')[0];
             
             if (!isSameDay) return limit;
@@ -75,13 +68,12 @@ export const Dashboard: React.FC = () => {
 
             <div className="flex items-center gap-2 sm:gap-4">
               
-              {/* Quota Counters (Hidden on very small screens) */}
               <div className="hidden lg:flex items-center gap-3 mr-2">
-                 <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 text-xs font-medium text-blue-700 dark:text-blue-300" title="Daily Career Generations Remaining">
+                 <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 text-xs font-medium text-blue-700 dark:text-blue-300" title="Career Assessments">
                     <Zap size={14} />
-                    <span>Paths: {careerQuota}/{DAILY_CAREER_LIMIT}</span>
+                    <span>Assessments: {careerQuota}/{DAILY_CAREER_LIMIT}</span>
                  </div>
-                 <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-purple-50 dark:bg-purple-900/20 border border-purple-100 dark:border-purple-800 text-xs font-medium text-purple-700 dark:text-purple-300" title="Daily Visualizations Remaining">
+                 <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-purple-50 dark:bg-purple-900/20 border border-purple-100 dark:border-purple-800 text-xs font-medium text-purple-700 dark:text-purple-300" title="Career Visualization">
                     <Image size={14} />
                     <span>Visuals: {imageQuota}/{DAILY_IMAGE_LIMIT}</span>
                  </div>
@@ -93,7 +85,6 @@ export const Dashboard: React.FC = () => {
                 title="Saved Paths"
               >
                 <Heart size={20} />
-                {/* Show dot only if saved careers exist AND user hasn't viewed them yet */}
                 {savedCareers.length > 0 && !hasViewedSavedPaths && (
                     <span className="absolute top-1 right-1 w-2 h-2 bg-pink-500 rounded-full animate-pulse"></span>
                 )}
@@ -144,7 +135,6 @@ export const Dashboard: React.FC = () => {
           ))}
         </div>
 
-        {/* Undecided / General Option - Styled Exactly like Domain Cards */}
         <div 
             onClick={() => handleStartQuiz('general')}
             className="group relative w-full bg-white dark:bg-slate-800 rounded-2xl p-8 border border-slate-200 dark:border-slate-700 hover:shadow-xl dark:hover:bg-slate-750 transition-all duration-300 hover:scale-[1.02] cursor-pointer hover:border-blue-500 dark:hover:border-slate-500 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6"

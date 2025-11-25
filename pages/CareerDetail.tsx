@@ -1,5 +1,4 @@
 
-
 import React from 'react';
 import { useAppStore } from '../store';
 import { AppView } from '../types';
@@ -28,15 +27,12 @@ export const CareerDetail: React.FC = () => {
   };
 
   return (
-    // Added pb-32 for extra bottom padding on mobile
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white pb-32 transition-colors">
-      {/* Header */}
       <div className="relative min-h-[16rem] h-auto bg-slate-800 overflow-hidden py-8">
         <div className="absolute inset-0 bg-gradient-to-r from-blue-900 to-slate-900 opacity-90"></div>
         <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?auto=format&fit=crop&q=80')] bg-cover bg-center mix-blend-overlay"></div>
         
         <div className="relative max-w-7xl mx-auto px-4 h-full flex flex-col gap-6">
-            {/* Back Button positioned in flow to avoid overlap */}
             <div className="flex justify-between items-center z-10">
                 <button 
                     onClick={() => setView(backTarget)}
@@ -48,7 +44,7 @@ export const CareerDetail: React.FC = () => {
             </div>
             
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 md:gap-4 mt-auto">
-                <div className="flex-1 min-w-0">
+                <div className="flex-1 min-w-0 pr-4">
                     {isBestMatch && (
                         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-500/20 border border-green-500/40 text-green-300 text-xs font-bold uppercase tracking-wider mb-3 backdrop-blur-md">
                             <Star size={12} fill="currentColor" />
@@ -56,20 +52,18 @@ export const CareerDetail: React.FC = () => {
                         </div>
                     )}
                     
-                    {/* Title Wraps Normally */}
                     <h1 className="text-4xl md:text-5xl font-bold text-white whitespace-normal mb-4 leading-tight">
                         {selectedCareer.title}
                     </h1>
 
-                    {/* Static Stats with Icons */}
                     <div className="flex flex-wrap items-center gap-3 text-sm md:text-base">
-                        <div className="flex items-center gap-1.5 bg-white/10 px-3 py-1.5 rounded-lg border border-white/10 backdrop-blur-md text-white/90 shrink-0">
-                            <DollarSign size={16} className="text-green-400" />
-                            <span className="font-medium whitespace-nowrap">{selectedCareer.salaryRange}</span>
+                        <div className="flex items-center gap-1.5 bg-white/10 px-3 py-1.5 rounded-lg border border-white/10 backdrop-blur-md text-white/90 shrink-0 max-w-full">
+                            <DollarSign size={16} className="text-green-400 shrink-0" />
+                            <span className="font-medium text-wrap">{selectedCareer.salaryRange}</span>
                         </div>
-                        <div className="flex items-center gap-1.5 bg-white/10 px-3 py-1.5 rounded-lg border border-white/10 backdrop-blur-md text-white/90 shrink-0">
-                            <TrendingUp size={16} className="text-blue-400" />
-                            <span className="font-medium whitespace-nowrap">{selectedCareer.growth} Growth</span>
+                        <div className="flex items-center gap-1.5 bg-white/10 px-3 py-1.5 rounded-lg border border-white/10 backdrop-blur-md text-white/90 shrink-0 max-w-full">
+                            <TrendingUp size={16} className="text-blue-400 shrink-0" />
+                            <span className="font-medium text-wrap">{selectedCareer.growth} Growth</span>
                         </div>
                     </div>
                 </div>
@@ -105,7 +99,6 @@ export const CareerDetail: React.FC = () => {
 
       <main className="max-w-5xl mx-auto px-4 mt-8">
         
-        {/* Job Details Section */}
         <section className="mb-12">
             <div className="flex items-center gap-3 mb-6 text-slate-800 dark:text-white">
                 <Briefcase className="text-blue-600 dark:text-blue-400" size={28} />
@@ -146,7 +139,6 @@ export const CareerDetail: React.FC = () => {
             </div>
         </section>
 
-        {/* Roadmap Section */}
         <section className="mb-12">
             <div className="flex items-center gap-3 mb-6 text-slate-800 dark:text-white">
                 <GraduationCap className="text-green-600 dark:text-green-400" size={28} />
@@ -155,7 +147,6 @@ export const CareerDetail: React.FC = () => {
             
             <div className="space-y-8 relative pl-8 border-l-2 border-slate-200 dark:border-slate-800 ml-4">
                 
-                {/* Pivot / Progression Logic Box */}
                 <div className={`mb-6 p-4 rounded-lg border flex gap-4 ${
                     selectedCareer.isPivot 
                     ? 'bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/20 text-amber-900 dark:text-amber-100' 
@@ -182,7 +173,6 @@ export const CareerDetail: React.FC = () => {
                             <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">{step.title}</h3>
                             <p className="text-slate-600 dark:text-slate-400 mb-6 text-lg">{step.description}</p>
                             
-                            {/* Split View for Locations */}
                             <div className={`grid grid-cols-1 ${!isSameLocation && step.targetPath && step.targetPath !== 'NA' ? 'md:grid-cols-2' : ''} gap-4 border-t border-slate-200 dark:border-slate-700 pt-4`}>
                                 {step.localPath && step.localPath !== 'NA' && (
                                     <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-lg border border-slate-200 dark:border-slate-700/50">

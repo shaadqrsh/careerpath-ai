@@ -9,14 +9,13 @@ export const Results: React.FC = () => {
 
   const handleSelect = (career: CareerRecommendation) => {
     setSelectedCareer(career);
-    setCareerOrigin('results'); // Track origin for back button
+    setCareerOrigin('results'); 
     setView(AppView.CAREER_DETAIL);
   };
 
   const isSaved = (id: string) => savedCareers.some(c => c.id === id);
 
   return (
-    // Added pb-32
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 py-8 px-4 sm:px-6 lg:px-8 pb-32 transition-colors">
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-8">
@@ -45,7 +44,6 @@ export const Results: React.FC = () => {
                 >
                     <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-indigo-500 opacity-0 group-hover:opacity-5 transition-opacity duration-300" />
                     
-                    {/* Saved Indicator (Top Right) */}
                     {isSaved(career.id) && (
                         <div className="absolute top-4 right-4 flex items-center gap-1.5 text-pink-500 z-10 animate-[fadeIn_0.3s_ease-out]">
                             <Heart size={16} fill="currentColor" />
@@ -53,7 +51,6 @@ export const Results: React.FC = () => {
                         </div>
                     )}
 
-                    {/* Best Match Indicator (Top Left for Best Match) */}
                     {isBestMatch && !isSaved(career.id) && (
                          <div className="absolute top-4 right-4 md:right-auto md:left-4 flex items-center gap-1.5 text-green-600 dark:text-green-400 z-10 animate-[fadeIn_0.3s_ease-out] bg-green-50 dark:bg-green-900/30 px-2 py-1 rounded-full border border-green-200 dark:border-green-800">
                             <Star size={14} fill="currentColor" />
@@ -61,7 +58,6 @@ export const Results: React.FC = () => {
                         </div>
                     )}
 
-                    {/* Match Score */}
                     <div className="flex-shrink-0 relative z-10 mt-6 md:mt-0">
                         <div className="w-20 h-20 flex items-center justify-center relative bg-transparent">
                              <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 100 100">
@@ -90,7 +86,7 @@ export const Results: React.FC = () => {
                         <div className="flex items-center gap-3">
                             <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{career.title}</h3>
                         </div>
-                        <p className="text-slate-600 dark:text-slate-400 text-sm md:text-base mb-4 max-w-2xl">{career.summary}</p>
+                        <p className="text-slate-600 dark:text-slate-400 text-sm md:text-base mb-4 max-w-2xl line-clamp-3">{career.summary}</p>
                         
                         <div className="flex items-center gap-6 text-sm font-medium text-slate-500 dark:text-slate-300">
                             <div className="flex items-center gap-2">
@@ -104,7 +100,6 @@ export const Results: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* Explore Path (Bottom Right) */}
                     <div className="flex-shrink-0 self-end relative z-10 mt-4 md:mt-0">
                         <span className="text-blue-600 dark:text-blue-400 font-medium group-hover:translate-x-2 transition-transform inline-flex items-center">
                             Explore Path <ArrowRight className="ml-1 w-4 h-4" />

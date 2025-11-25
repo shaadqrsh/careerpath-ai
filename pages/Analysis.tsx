@@ -1,5 +1,4 @@
 
-
 import React, { useEffect, useState, useRef } from 'react';
 import { useAppStore } from '../store';
 import { AppView } from '../types';
@@ -28,7 +27,6 @@ export const Analysis: React.FC = () => {
   
   const scrollRef = useRef<HTMLDivElement>(null);
   
-  // Guard to prevent double execution due to dependency updates (like setUser for quota)
   const hasStartedAnalysis = useRef(false);
 
   const targetLogs = React.useMemo(() => {
@@ -94,7 +92,6 @@ export const Analysis: React.FC = () => {
 
     const performAnalysis = async () => {
       if (user) {
-        // Double-check guard inside async function to be safe
         if (hasStartedAnalysis.current) return;
         hasStartedAnalysis.current = true;
 
@@ -110,7 +107,6 @@ export const Analysis: React.FC = () => {
             const sortedResults = [...mergedResults].sort((a, b) => b.matchScore - a.matchScore);
             setRecommendations(sortedResults);
             
-            // Refresh user profile to update quota
             try {
                 const updatedProfile = await getUserProfile(user.id);
                 if (updatedProfile) setUser(updatedProfile);
@@ -120,7 +116,7 @@ export const Analysis: React.FC = () => {
 
             setTimeout(() => setView(AppView.RESULTS), 2000);
         } catch (e: any) {
-            hasStartedAnalysis.current = false; // Reset if failed so user can try again if they navigate back
+            hasStartedAnalysis.current = false;
             if (e.message === "QUOTA_EXCEEDED") {
                 showToast(`Daily limit reached (${DAILY_CAREER_LIMIT} paths/day). Try again tomorrow.`);
                 setView(AppView.DASHBOARD);

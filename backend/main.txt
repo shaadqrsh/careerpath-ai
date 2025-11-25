@@ -17,12 +17,10 @@ import google.generativeai as genai
 from supabase import create_client, Client
 import httpx 
 
-# --- CONFIGURATION ----
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
-# Constants
 DAILY_IMAGE_LIMIT = 3
 DAILY_CAREER_LIMIT = 5
 
@@ -56,8 +54,6 @@ else:
 @app.get("/")
 async def health_check():
     return {"status": "ok", "service": "CareerPath AI Backend"}
-
-# --- SCHEMAS ---
 
 class BaseSchema(BaseModel):
     model_config = ConfigDict(
@@ -125,8 +121,6 @@ class SaveCareerImageRequest(BaseSchema):
 class GenerateDomainRequest(BaseSchema):
     quiz_answers: List[Dict[str, Any]]
 
-# --- DEPENDENCIES ---
-
 async def verify_token(authorization: str = Header(None)):
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Missing or invalid token")
@@ -142,10 +136,7 @@ async def verify_token(authorization: str = Header(None)):
         logger.error(f"Auth error: {e}")
         raise HTTPException(status_code=401, detail="Authentication failed")
 
-# --- HELPERS ---
-
 def check_quota(user_id: str, count_col: str, date_col: str, limit: int) -> int:
-    """Checks usage quota, resets if new day. Returns current count."""
     try:
         res = supabase.table("profiles").select(f"{count_col}, {date_col}").eq("id", user_id).single().execute()
         if not res.data: return 0 
@@ -157,7 +148,6 @@ def check_quota(user_id: str, count_col: str, date_col: str, limit: int) -> int:
         now = datetime.now(timezone.utc)
         last_date = datetime.fromisoformat(last_date_str.replace('Z', '+00:00')) if last_date_str else now
         
-        # Reset if it's a new day
         if (now - last_date).days >= 1 or now.date() > last_date.date():
             count = 0
         
@@ -169,22 +159,16 @@ def check_quota(user_id: str, count_col: str, date_col: str, limit: int) -> int:
         raise he
     except Exception as e:
         logger.error(f"Quota check error: {e}")
-        # Default to blocking if check fails for safety
         raise HTTPException(status_code=500, detail="Could not verify quota.")
 
 def update_quota(user_id: str, count_col: str, new_count: int):
     try:
         supabase.table("profiles").update({
             count_col: new_count,
-            # We assume date_col is paired with count_col in naming convention for simplicity, 
-            # but usually we just update the specific date col.
-            # Here we hardcode mapping based on column name for simplicity.
             "last_image_generation_date" if "image" in count_col else "last_career_generation_date": datetime.now(timezone.utc).isoformat()
         }).eq("id", user_id).execute()
     except Exception as e:
         logger.error(f"Failed to update quota: {e}")
-
-# --- AUTH ROUTES ---
 
 @app.post("/api/auth/signup")
 async def signup(creds: UserLogin):
@@ -241,8 +225,6 @@ async def update_password(req: UpdatePasswordRequest, user = Depends(verify_toke
 async def get_current_user(user = Depends(verify_token)):
     return {"id": user.id, "email": user.email}
 
-# --- PROFILE ROUTES ---
-
 @app.get("/api/profile")
 async def get_profile(user = Depends(verify_token)):
     try:
@@ -251,7 +233,6 @@ async def get_profile(user = Depends(verify_token)):
              raise HTTPException(status_code=404, detail="Profile not found")
         return res.data
     except Exception as e:
-        # Check for PostgREST "0 rows" error (PGRST116) or the specific message
         err_str = str(e)
         if "PGRST116" in err_str or "The result contains 0 rows" in err_str or "JSON object requested, multiple (or no) rows returned" in err_str:
              raise HTTPException(status_code=404, detail="Profile not found")
@@ -265,7 +246,6 @@ async def upsert_profile(profile: UserProfile, user = Depends(verify_token)):
         raise HTTPException(status_code=403, detail="Cannot update other users")
     try:
         data = profile.model_dump(by_alias=False)
-        # Exclude quota fields from direct update
         keys_to_remove = [
             'daily_generations_count', 'last_generation_date', 
             'daily_image_generations_count', 'last_image_generation_date',
@@ -279,8 +259,6 @@ async def upsert_profile(profile: UserProfile, user = Depends(verify_token)):
     except Exception as e:
         logger.error(f"Upsert Profile Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
-
-# --- AI GENERATION ROUTES ---
 
 @app.post("/api/generate-domain")
 async def generate_domain(req: GenerateDomainRequest, user = Depends(verify_token)):
@@ -302,7 +280,6 @@ async def generate_domain(req: GenerateDomainRequest, user = Depends(verify_toke
 
 @app.post("/api/generate-career")
 async def generate_career(req: GenerateCareerRequest, user = Depends(verify_token)):
-    # 1. QUOTA CHECK
     current_count = check_quota(user.id, "daily_career_generations_count", "last_career_generation_date", DAILY_CAREER_LIMIT)
 
     try:
@@ -320,6 +297,7 @@ async def generate_career(req: GenerateCareerRequest, user = Depends(verify_toke
         3. PIVOT ANALYSIS: Is this a "Natural Progression" or "Major Pivot"?
         4. ROADMAP: Split into 'localPath' ({user_p.residence_country}) and 'targetPath' ({user_p.preferred_work_country}) if different.
         5. DATA INTEGRITY: Ensure 'salaryRange', 'growth', and 'roadmap' are FILLED for every recommendation. Do not leave null.
+        6. Do not refer to the user by name in the output text. Use 'You' or 'Your'.
         
         OUTPUT FORMAT: STRICT JSON.
         JSON Structure:
@@ -352,7 +330,6 @@ async def generate_career(req: GenerateCareerRequest, user = Depends(verify_toke
         for rec in result_json.get("recommendations", []):
             if not rec.get("id"): rec["id"] = str(uuid.uuid4())
             
-        # Update Quota after success
         update_quota(user.id, "daily_career_generations_count", current_count + 1)
         
         return result_json
@@ -362,10 +339,8 @@ async def generate_career(req: GenerateCareerRequest, user = Depends(verify_toke
 
 @app.post("/api/generate-images")
 async def generate_images(req: GenerateImagesRequest, user = Depends(verify_token)):
-    # 1. QUOTA CHECK
     current_count = check_quota(user.id, "daily_image_generations_count", "last_image_generation_date", DAILY_IMAGE_LIMIT)
 
-    # 2. GENERATION
     try:
         subject_desc = "a professional"
         if req.user_context:
@@ -377,17 +352,13 @@ async def generate_images(req: GenerateImagesRequest, user = Depends(verify_toke
         async def generate_single_image(prompt_text):
             full_prompt = f"Cinematic shot of {subject_desc} working as a {req.career_title}. Scene: {prompt_text}. Style: Photorealistic, 4k, dramatic lighting."
             
-            # --- 1. ATTEMPT GEMINI (IMAGEN) ---
             try:
-                # Use Gemini 2.5 Flash Image logic (generate_content with prompt)
                 model = genai.GenerativeModel(IMAGE_MODEL_NAME)
                 response = await model.generate_content_async(full_prompt)
                 
-                # Check for inline data (image)
                 if response.candidates and response.candidates[0].content.parts:
                     for part in response.candidates[0].content.parts:
                         if part.inline_data:
-                            # part.inline_data.data is bytes. Must encode to base64 string.
                             b64_data = base64.b64encode(part.inline_data.data).decode('utf-8')
                             return f"data:{part.inline_data.mime_type};base64,{b64_data}"
             except Exception as e:
@@ -396,7 +367,6 @@ async def generate_images(req: GenerateImagesRequest, user = Depends(verify_toke
                 traceback.print_exc()
                 logger.warning(f"Gemini Image Gen Failed: {e}")
 
-            # --- 2. FALLBACK: POLLINATIONS.AI ---
             try:
                 safe_prompt = full_prompt[:400] 
                 encoded_prompt = urllib.parse.quote(safe_prompt)
@@ -416,13 +386,11 @@ async def generate_images(req: GenerateImagesRequest, user = Depends(verify_toke
                 traceback.print_exc()
                 logger.error(f"Pollinations Exception: {str(e)}")
 
-            # --- 3. FAIL (Return None) ---
             return None
 
         tasks = [generate_single_image(p) for p in req.prompts]
         generated_images = await asyncio.gather(*tasks)
         
-        # 3. UPDATE QUOTA (Only if at least one image generated)
         if any(img is not None for img in generated_images):
             update_quota(user.id, "daily_image_generations_count", current_count + 1)
 
@@ -430,10 +398,7 @@ async def generate_images(req: GenerateImagesRequest, user = Depends(verify_toke
         
     except Exception as e:
         logger.error(f"Image API Global Error: {e}")
-        # Return all Nones to signify failure, UI will handle
         return {"images": [None for _ in req.prompts]}
-
-# --- SAVED CAREER ROUTES ---
 
 @app.get("/api/saved-careers")
 async def get_saved_careers(user = Depends(verify_token)):
@@ -456,13 +421,11 @@ async def save_career(career: CareerRecommendation, user = Depends(verify_token)
 @app.delete("/api/saved-careers/{career_uid}")
 async def delete_career(career_uid: str, user = Depends(verify_token)):
     try:
-        # 1. Delete DB Record
         supabase.table("saved_careers").delete().eq("user_id", user.id).eq("career_uid", career_uid).execute()
         
-        # 2. Cleanup Storage
         try:
             files_to_remove = []
-            for i in range(10): # Cleanup up to 10 slides
+            for i in range(10): 
                 files_to_remove.append(f"{user.id}/{career_uid}/slide_{i}.png")
                 files_to_remove.append(f"{user.id}/{career_uid}/slide_{i}.jpeg")
                 files_to_remove.append(f"{user.id}/{career_uid}/slide_{i}.jpg")
@@ -479,7 +442,7 @@ async def upload_career_images(req: SaveCareerImageRequest, user = Depends(verif
     if req.user_id != user.id: raise HTTPException(status_code=403)
     uploaded_urls = []
     for i, img_str in enumerate(req.images):
-        if not img_str: # Handle None/Empty
+        if not img_str: 
             uploaded_urls.append(None)
             continue
             

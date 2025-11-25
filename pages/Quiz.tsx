@@ -2,13 +2,13 @@
 import React, { useState, useEffect } from 'react';
 import { useAppStore } from '../store';
 import { AppView, CareerDomain } from '../types';
-import { QUESTIONS } from '../constants';
+import { QUESTIONS, DAILY_CAREER_LIMIT } from '../constants';
 import { Button } from '../components/Button';
 import { CheckCircle2, ChevronRight, Loader2 } from 'lucide-react';
 import { generateDomainSuggestion } from '../services/geminiService';
 
 export const Quiz: React.FC = () => {
-  const { setView, addQuizAnswer, selectedDomain, setDomain, quizAnswers } = useAppStore();
+  const { setView, addQuizAnswer, selectedDomain, setDomain, quizAnswers, user, showToast } = useAppStore();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   
@@ -35,6 +35,30 @@ export const Quiz: React.FC = () => {
     setShowGeneralResult(true);
   };
 
+  const checkQuotaAndProceed = () => {
+    if (user) {
+        const lastDateStr = user.lastCareerGenerationDate;
+        let remaining = DAILY_CAREER_LIMIT;
+        
+        if (lastDateStr) {
+            const lastDate = new Date(lastDateStr);
+            const now = new Date();
+            const isSameDay = lastDate.toISOString().split('T')[0] === now.toISOString().split('T')[0];
+            
+            if (isSameDay) {
+                remaining = Math.max(0, DAILY_CAREER_LIMIT - (user.dailyCareerGenerationsCount || 0));
+            }
+        }
+
+        if (remaining <= 0) {
+            showToast(`Daily limit reached (${DAILY_CAREER_LIMIT} assessments/day). Try again tomorrow.`);
+            setView(AppView.DASHBOARD);
+            return;
+        }
+    }
+    setView(AppView.ANALYSIS);
+  };
+
   const handleNext = () => {
     if (selectedOption && currentQuestion) {
       addQuizAnswer({
@@ -50,17 +74,16 @@ export const Quiz: React.FC = () => {
         if (selectedDomain === 'general') {
             calculateSuggestion();
         } else {
-            setView(AppView.ANALYSIS);
+            checkQuotaAndProceed();
         }
       }
     }
   };
 
-  // Handle "Enter" Key Press for Quick Navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
         if (e.key === 'Enter' && selectedOption) {
-            e.preventDefault(); // Prevent conflicting click on focused option button
+            e.preventDefault(); 
             handleNext();
         }
     };

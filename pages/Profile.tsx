@@ -18,7 +18,6 @@ export const Profile: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(true);
   
-  // Dirty State Handling
   const [initialData, setInitialData] = useState<Partial<UserProfile> | null>(null);
   const [showUnsavedModal, setShowUnsavedModal] = useState(false);
 
@@ -63,7 +62,7 @@ export const Profile: React.FC = () => {
            const profile = await getUserProfile(authUser.id);
            if (profile && isMounted) {
              setFormData(profile);
-             setInitialData(profile); // Track initial state
+             setInitialData(profile);
              setUser(profile);
            }
         }
@@ -77,7 +76,6 @@ export const Profile: React.FC = () => {
     return () => { isMounted = false; };
   }, [setUser]);
 
-  // Check if form has changed
   const hasUnsavedChanges = () => {
       if (!initialData) return false;
       return JSON.stringify(initialData) !== JSON.stringify(formData);
@@ -112,7 +110,7 @@ export const Profile: React.FC = () => {
 
         await upsertUserProfile(updatedProfile);
         setUser(updatedProfile);
-        setInitialData(updatedProfile); // Reset dirty state
+        setInitialData(updatedProfile);
         showToast("Profile Updated Successfully!");
     } catch (error: any) {
         console.error("Failed to update profile", error);
@@ -175,7 +173,6 @@ export const Profile: React.FC = () => {
 
         <form onSubmit={handleSubmit} className="space-y-8 bg-white dark:bg-slate-800 p-8 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xl transition-all">
              
-             {/* Personal Details Section */}
              <div>
                 <h3 className="text-sm font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-6 flex items-center gap-2">
                     <User size={18} /> Personal Details
@@ -272,7 +269,6 @@ export const Profile: React.FC = () => {
                 </div>
             </div>
 
-            {/* ACCOUNT DETAILS */}
             <div className="border-t border-slate-200 dark:border-slate-700 pt-6">
                  <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-6 flex items-center gap-2">
                     <Settings size={18} /> Account Details
@@ -300,7 +296,6 @@ export const Profile: React.FC = () => {
                  </div>
             </div>
             
-            {/* SAVE CHANGES */}
             <div className="border-t border-slate-200 dark:border-slate-700 pt-6">
                 <Button type="submit" fullWidth size="lg" disabled={isSaving}>
                     {isSaving ? "Saving Changes..." : "Save Changes"}
@@ -309,7 +304,6 @@ export const Profile: React.FC = () => {
         </form>
       </div>
 
-      {/* Password Reset Confirmation Modal */}
       {showPasswordResetModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowPasswordResetModal(false)}></div>
@@ -334,7 +328,6 @@ export const Profile: React.FC = () => {
         </div>
       )}
 
-      {/* Unsaved Changes Modal */}
       {showUnsavedModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowUnsavedModal(false)}></div>
