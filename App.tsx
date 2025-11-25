@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useAppStore } from './store';
 import { AppView } from './types';
 import { getUserProfile, getSavedCareers, getCurrentUser } from './services/supabaseService';
-import { Loader2, AlertTriangle } from 'lucide-react';
+import { Loader2, AlertTriangle, CheckCircle } from 'lucide-react';
 import { Button } from './components/Button';
 
 import { Landing } from './pages/Landing';
@@ -19,7 +19,7 @@ import { SavedPaths } from './pages/SavedPaths';
 import { UpdatePassword } from './pages/UpdatePassword';
 
 const App: React.FC = () => {
-  const { currentView, theme, setView, setUser, setSavedCareers, pendingDeleteCareer, confirmDeleteCareer, cancelDeleteCareer } = useAppStore();
+  const { currentView, theme, setView, setUser, setSavedCareers, pendingDeleteCareer, confirmDeleteCareer, cancelDeleteCareer, toast } = useAppStore();
   const [isInitializing, setIsInitializing] = useState(true);
 
   // Handle Dark/Light Mode
@@ -131,6 +131,17 @@ const App: React.FC = () => {
     <div className="min-h-screen transition-colors duration-300 bg-slate-50 text-slate-900 dark:bg-slate-900 dark:text-slate-50 relative">
       {renderView()}
 
+      {/* Global Toast Notification */}
+      {toast.show && (
+        <div className="fixed top-24 left-1/2 -translate-x-1/2 bg-slate-800 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 animate-[fadeIn_0.3s_ease-out] z-[150]">
+            <CheckCircle className="text-green-400 shrink-0" />
+            <div>
+                <p className="font-bold">{toast.message}</p>
+            </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
       {pendingDeleteCareer && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={cancelDeleteCareer}></div>

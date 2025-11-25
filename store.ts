@@ -30,6 +30,9 @@ interface AppState {
   pendingDeleteCareer: CareerRecommendation | null;
   showPasswordResetModal: boolean;
 
+  // Global Toast
+  toast: { show: boolean; message: string };
+
   // Actions
   setView: (view: AppView) => void;
   setCareerOrigin: (origin: 'results' | 'saved') => void;
@@ -51,6 +54,8 @@ interface AppState {
   cancelDeleteCareer: () => void;
   
   setShowPasswordResetModal: (show: boolean) => void;
+  showToast: (message: string) => void;
+  hideToast: () => void;
   
   setLoading: (loading: boolean) => void;
 }
@@ -77,6 +82,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   
   pendingDeleteCareer: null,
   showPasswordResetModal: false,
+
+  toast: { show: false, message: '' },
 
   setView: (view) => {
     window.scrollTo(0, 0);
@@ -123,14 +130,21 @@ export const useAppStore = create<AppState>((set, get) => ({
   
   cancelDeleteCareer: () => set({ pendingDeleteCareer: null }),
 
+  showToast: (message) => {
+      set({ toast: { show: true, message } });
+      setTimeout(() => {
+          set({ toast: { show: false, message: '' } });
+      }, 3000);
+  },
+
+  hideToast: () => set({ toast: { show: false, message: '' } }),
+
   confirmDeleteCareer: async () => {
       const state = get();
       const career = state.pendingDeleteCareer;
       
       if (!career) return;
       if (!state.user) return;
-
-      // NOTE: We do NOT update state immediately. We wait for DB success.
       
       try {
         await deleteCareerFromDb(state.user.id, career.id);
@@ -140,6 +154,9 @@ export const useAppStore = create<AppState>((set, get) => ({
             savedCareers: state.savedCareers.filter(c => c.id !== career.id),
             pendingDeleteCareer: null 
         });
+
+        // Trigger Global Toast
+        state.showToast("Career deleted successfully");
 
         // Redirect if we are currently looking at the deleted career
         if (state.currentView === AppView.CAREER_DETAIL && state.selectedCareer?.id === career.id) {
@@ -158,7 +175,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     const state = get();
     const exists = state.savedCareers.find(c => c.id === career.id);
 
-    // If it exists, we open the delete modal (handled above)
+    // If it exists, we open the delete modal
     if (exists) {
       set({ pendingDeleteCareer: career });
       return;
@@ -170,7 +187,6 @@ export const useAppStore = create<AppState>((set, get) => ({
     try {
         let careerToSave = { ...career };
         
-        // 1. Prepare Images
         if (state.selectedCareer?.id === career.id && state.selectedCareer.slideImages?.length) {
             careerToSave.slideImages = state.selectedCareer.slideImages;
         }
@@ -211,12 +227,10 @@ export const useAppStore = create<AppState>((set, get) => ({
             }
         }
 
-        // 2. Save Record to DB FIRST
         if (state.user) {
             await saveCareerToDb(state.user.id, careerToSave);
         }
 
-        // 3. Update Local State (Only after DB success)
         set((s) => {
             const isCurrentlySelected = s.selectedCareer?.id === careerToSave.id;
             return { 
@@ -225,6 +239,9 @@ export const useAppStore = create<AppState>((set, get) => ({
                 hasViewedSavedPaths: false 
             };
         });
+
+        // Trigger Global Toast
+        state.showToast("Career saved successfully");
 
     } catch (e) {
         console.error("Error saving career:", e);

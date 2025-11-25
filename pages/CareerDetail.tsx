@@ -1,13 +1,11 @@
-
 import React, { useState } from 'react';
 import { useAppStore } from '../store';
 import { AppView } from '../types';
 import { Button } from '../components/Button';
-import { ChevronLeft, PlayCircle, Heart, MapPin, Briefcase, GraduationCap, Loader2, CheckCircle, ArrowRightCircle, Shuffle, Sun, Moon, Star } from 'lucide-react';
+import { ChevronLeft, PlayCircle, Heart, MapPin, Briefcase, GraduationCap, Loader2, ArrowRightCircle, Shuffle, Sun, Moon, Star } from 'lucide-react';
 
 export const CareerDetail: React.FC = () => {
   const { selectedCareer, setView, careerOrigin, user, toggleSavedCareer, savedCareers, isSavingCareer, theme, toggleTheme, recommendations } = useAppStore();
-  const [showToast, setShowToast] = useState(false);
 
   if (!selectedCareer) {
     setView(AppView.DASHBOARD);
@@ -27,16 +25,8 @@ export const CareerDetail: React.FC = () => {
   const isBestMatch = careerOrigin === 'results' && recommendations.length > 0 && recommendations[0].id === selectedCareer.id;
 
   const handleSave = async () => {
-    // Determine the state before toggling
-    const wasAlreadySaved = savedCareers.some(c => c.id === selectedCareer.id);
-    
+    // Store handles validation, API calls, and Global Toast
     await toggleSavedCareer(selectedCareer);
-    
-    // If we just added it (it wasn't saved before), show toast
-    if (!wasAlreadySaved) {
-        setShowToast(true);
-        setTimeout(() => setShowToast(false), 3000);
-    }
   };
 
   return (
@@ -220,17 +210,6 @@ export const CareerDetail: React.FC = () => {
                 ))}
             </div>
         </section>
-      </main>
-
-      {/* Toast Notification - Centered at Top */}
-      {showToast && (
-        <div className="fixed top-24 left-1/2 -translate-x-1/2 bg-slate-800 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 animate-[fadeIn_0.3s_ease-out] z-50">
-            <CheckCircle className="text-green-400 shrink-0" />
-            <div>
-                <p className="font-bold">Career Saved Successfully!</p>
-            </div>
-        </div>
-      )}
     </div>
   );
 };

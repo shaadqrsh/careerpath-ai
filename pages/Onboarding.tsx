@@ -116,7 +116,6 @@ export const Onboarding: React.FC = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 px-4 py-6 transition-colors">
-      {/* UPDATED WIDTH: max-w-3xl to match Profile and Quiz */}
       <div className="w-full max-w-3xl">
         <div className="mb-8">
             <h2 className="text-3xl font-bold text-slate-900 dark:text-white mt-6">Tell us about yourself</h2>
@@ -194,10 +193,7 @@ export const Onboarding: React.FC = () => {
             <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
                 <h3 className="text-sm font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-4">Current Residence</h3>
                 <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 flex items-center justify-between">
-                        Country
-                        {isLoadingCountries && <Loader2 size={14} className="animate-spin text-blue-500" />}
-                    </label>
+                    {/* LABEL REMOVED AS REQUESTED */}
                     <select 
                             required
                             value={formData.residenceCountry}
@@ -217,7 +213,7 @@ export const Onboarding: React.FC = () => {
                 <h3 className="text-sm font-bold text-green-600 dark:text-green-400 uppercase tracking-wider mb-4">Future Work Preference</h3>
                 
                 <div className="mb-4">
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Target Country</label>
+                    {/* LABEL REMOVED AS REQUESTED */}
                     <select 
                         value={formData.preferredWorkCountry}
                         onChange={(e) => handleChange('preferredWorkCountry', e.target.value)}

@@ -2,20 +2,22 @@ import React, { useState, useEffect } from 'react';
 import { useAppStore } from '../store';
 import { AppView, UserProfile } from '../types';
 import { Button } from '../components/Button';
-import { ArrowLeft, Loader2, Shield, CheckCircle, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Loader2, Shield, AlertTriangle } from 'lucide-react';
 import { FALLBACK_COUNTRIES } from '../constants';
 import { upsertUserProfile, getUserProfile, getCurrentUser, sendPasswordResetEmail } from '../services/supabaseService';
 
 export const Profile: React.FC = () => {
-  const { user, setView, setUser, showPasswordResetModal, setShowPasswordResetModal } = useAppStore();
+  const { user, setView, setUser, showPasswordResetModal, setShowPasswordResetModal, showToast } = useAppStore();
   
   const [countries, setCountries] = useState<string[]>([]);
   const [isLoadingCountries, setIsLoadingCountries] = useState(true);
   
   const [isSaving, setIsSaving] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(true);
-  const [showToast, setShowToast] = useState(false);
-  const [toastMessage, setToastMessage] = useState("");
+  
+  // Dirty State Handling
+  const [initialData, setInitialData] = useState<Partial<UserProfile> | null>(null);
+  const [showUnsavedModal, setShowUnsavedModal] = useState(false);
 
   const [formData, setFormData] = useState<Partial<UserProfile>>({
     fullName: '',
@@ -58,6 +60,7 @@ export const Profile: React.FC = () => {
            const profile = await getUserProfile(authUser.id);
            if (profile && isMounted) {
              setFormData(profile);
+             setInitialData(profile); // Track initial state
              setUser(profile);
            }
         }
@@ -71,10 +74,23 @@ export const Profile: React.FC = () => {
     return () => { isMounted = false; };
   }, [setUser]);
 
-  const triggerToast = (msg: string) => {
-      setToastMessage(msg);
-      setShowToast(true);
-      setTimeout(() => setShowToast(false), 3000);
+  // Check if form has changed
+  const hasUnsavedChanges = () => {
+      if (!initialData) return false;
+      return JSON.stringify(initialData) !== JSON.stringify(formData);
+  };
+
+  const handleBackNavigation = () => {
+      if (hasUnsavedChanges()) {
+          setShowUnsavedModal(true);
+      } else {
+          setView(AppView.DASHBOARD);
+      }
+  };
+
+  const confirmDiscardChanges = () => {
+      setShowUnsavedModal(false);
+      setView(AppView.DASHBOARD);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -93,7 +109,8 @@ export const Profile: React.FC = () => {
 
         await upsertUserProfile(updatedProfile);
         setUser(updatedProfile);
-        triggerToast("Profile Updated Successfully!");
+        setInitialData(updatedProfile); // Reset dirty state
+        showToast("Profile Updated Successfully!");
     } catch (error: any) {
         console.error("Failed to update profile", error);
         alert(`Failed to save changes: ${error.message || "Unknown error"}`);
@@ -108,7 +125,7 @@ export const Profile: React.FC = () => {
           const authUser = await getCurrentUser();
           if (authUser && authUser.email) {
               await sendPasswordResetEmail(authUser.email);
-              triggerToast(`Email sent successfully to ${authUser.email}`);
+              showToast(`Email sent successfully to ${authUser.email}`);
           } else {
               alert("Could not determine your email address.");
           }
@@ -140,11 +157,10 @@ export const Profile: React.FC = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 px-4 py-12 transition-colors duration-300">
-      {/* UPDATED WIDTH: max-w-3xl to match Onboarding and Quiz */}
       <div className="w-full max-w-3xl">
         <div className="mb-6">
             <button 
-                onClick={() => setView(AppView.DASHBOARD)}
+                onClick={handleBackNavigation}
                 disabled={isSaving} 
                 className="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white flex items-center gap-2 transition-colors mb-6 disabled:opacity-50 disabled:cursor-not-allowed"
             >
@@ -223,10 +239,7 @@ export const Profile: React.FC = () => {
             <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
                 <h3 className="text-sm font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-4">Current Residence</h3>
                 <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 flex items-center justify-between">
-                        Country
-                        {isLoadingCountries && <Loader2 size={14} className="animate-spin text-blue-500" />}
-                    </label>
+                    {/* LABEL REMOVED AS REQUESTED */}
                     <select 
                             required
                             value={formData.residenceCountry}
@@ -246,7 +259,7 @@ export const Profile: React.FC = () => {
                 <h3 className="text-sm font-bold text-green-600 dark:text-green-400 uppercase tracking-wider mb-4">Future Work Preference</h3>
                 
                 <div className="mb-4">
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Target Country</label>
+                    {/* LABEL REMOVED AS REQUESTED */}
                     <select 
                         value={formData.preferredWorkCountry}
                         onChange={(e) => handleChange('preferredWorkCountry', e.target.value)}
@@ -281,15 +294,6 @@ export const Profile: React.FC = () => {
         </form>
       </div>
 
-      {showToast && (
-        <div className="fixed top-24 left-1/2 -translate-x-1/2 bg-slate-800 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 animate-[fadeIn_0.3s_ease-out] z-50">
-            <CheckCircle className="text-green-400 shrink-0" />
-            <div>
-                <p className="font-bold">{toastMessage}</p>
-            </div>
-        </div>
-      )}
-
       {/* Password Reset Confirmation Modal */}
       {showPasswordResetModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
@@ -309,6 +313,31 @@ export const Profile: React.FC = () => {
                         onClick={confirmPasswordReset}
                     >
                         Yes, Send Email
+                    </Button>
+                </div>
+            </div>
+        </div>
+      )}
+
+      {/* Unsaved Changes Modal */}
+      {showUnsavedModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowUnsavedModal(false)}></div>
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-md w-full p-6 relative z-10 animate-[scaleIn_0.2s_ease-out] border border-slate-200 dark:border-slate-700">
+                <div className="flex items-center gap-3 mb-4 text-amber-600 dark:text-amber-500">
+                    <AlertTriangle size={28} />
+                    <h3 className="text-xl font-bold text-slate-900 dark:text-white">Unsaved Changes</h3>
+                </div>
+                <p className="text-slate-600 dark:text-slate-300 mb-6">
+                    You have unsaved changes in your profile. Are you sure you want to discard them?
+                </p>
+                <div className="flex gap-3 justify-end">
+                    <Button variant="ghost" onClick={() => setShowUnsavedModal(false)}>Keep Editing</Button>
+                    <Button 
+                        className="bg-red-600 hover:bg-red-700 text-white border-red-600"
+                        onClick={confirmDiscardChanges}
+                    >
+                        Discard Changes
                     </Button>
                 </div>
             </div>
