@@ -22,6 +22,8 @@ GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
 DAILY_IMAGE_LIMIT = 3
 DAILY_CAREER_LIMIT = 5
+SLIDESHOW_IMAGE_COUNT = 3
+CAREERS_PER_GENERATION = 5
 
 TEXT_MODEL_NAME = "gemini-2.5-flash"
 IMAGE_MODEL_NAME = "gemini-2.5-flash-image" 
@@ -297,6 +299,8 @@ async def generate_career(req: GenerateCareerRequest, user = Depends(verify_toke
     try:
         user_p = req.user_profile
         answers = req.quiz_answers
+        prompts_list_example = ", ".join([f'"Scene {i+1} description"' for i in range(SLIDESHOW_IMAGE_COUNT)])
+        
         prompt = f"""
         Act as an expert Career Counselor using Global Market Data.
         Analyze this user profile: {user_p.full_name}, {user_p.age}y/o, {user_p.education_level} in {user_p.specialization}.
@@ -304,13 +308,14 @@ async def generate_career(req: GenerateCareerRequest, user = Depends(verify_toke
         Quiz Context: {json.dumps(answers, indent=2)}.
         
         Task:
-        1. Identify 5 personalized career paths based on the profile and quiz.
+        1. Identify {CAREERS_PER_GENERATION} personalized career paths based on the profile and quiz.
         2. STRICT ELIGIBILITY CHECK: If user is Arts, no Science. If Pivot, verify realistic paths.
         3. PIVOT ANALYSIS: Is this a "Natural Progression" or "Major Pivot"?
         4. ROADMAP: Split into 'localPath' ({user_p.residence_country}) and 'targetPath' ({user_p.preferred_work_country}) if different.
         5. DATA INTEGRITY: Ensure 'salaryRange', 'growth', and 'roadmap' are FILLED for every recommendation. Do not leave null.
         6. Do not refer to the user by name in the output text. Use 'You' or 'Your'.
         7. IMPORTANT: Do not mention specific question numbers or quote exact answers. Synthesize the user's responses into general traits (e.g., "Given your interest in visual problem solving...").
+        8. GENERATE {SLIDESHOW_IMAGE_COUNT} DAY IN A LIFE PROMPTS per career.
         
         OUTPUT FORMAT: STRICT JSON.
         JSON Structure:
@@ -331,7 +336,7 @@ async def generate_career(req: GenerateCareerRequest, user = Depends(verify_toke
                  {{ "title": "Step 2", "description": "...", "localPath": "...", "targetPath": "...", "duration": "2 Years" }},
                  {{ "title": "Step 3", "description": "...", "localPath": "...", "targetPath": "...", "duration": "1 Year" }}
               ],
-              "dayInLifePrompts": ["Scene 1 description", "Scene 2 description", "Scene 3 description"]
+              "dayInLifePrompts": [{prompts_list_example}]
             }}
           ]
         }}

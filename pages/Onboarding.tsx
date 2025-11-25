@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAppStore } from '../store';
 import { AppView, UserProfile } from '../types';
@@ -138,7 +139,7 @@ export const Onboarding: React.FC = () => {
             <p className="text-slate-600 dark:text-slate-400 mt-2">This helps our AI calibrate your recommendations based on location and demographics.</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-8 bg-white dark:bg-slate-800 p-8 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xl transition-all animate-fade-in-up opacity-0" style={{ animationDelay: '200ms' }}>
+        <form onSubmit={handleSubmit} className="space-y-8 bg-white dark:bg-slate-800/50 p-8 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xl backdrop-blur-sm transition-all animate-fade-in-up opacity-0" style={{ animationDelay: '200ms' }}>
             
             <div className="animate-fade-in-up opacity-0" style={{ animationDelay: '300ms' }}>
                 <h3 className="text-sm font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-6 flex items-center gap-2">

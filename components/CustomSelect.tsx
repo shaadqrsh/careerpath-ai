@@ -118,7 +118,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
         type="button"
         onKeyDown={handleKeyDown}
         onClick={() => !disabled && setIsOpen(!isOpen)}
-        className={`w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl py-3 pl-4 pr-10 text-left text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} ${isOpen ? 'ring-2 ring-blue-500 border-transparent' : ''}`}
+        className={`w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-600 rounded-xl py-3 pl-4 pr-10 text-left text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} ${isOpen ? 'ring-2 ring-blue-500 border-transparent' : ''}`}
       >
         <span className={`block truncate ${!value && value !== 0 ? 'text-slate-500' : ''}`}>
           {value || value === 0 ? selectedLabel : placeholder}
@@ -129,13 +129,13 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
       </button>
 
       {isOpen && (
-        <div className="absolute z-[100] mt-2 w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl max-h-60 overflow-y-auto focus:outline-none animate-in fade-in zoom-in-95 duration-100 origin-top touch-pan-y overscroll-contain">
+        <div className="absolute z-[100] mt-2 w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl max-h-60 overflow-y-auto focus:outline-none animate-in fade-in zoom-in-95 duration-100 origin-top touch-pan-y overscroll-contain">
           <ul className="py-1" ref={listRef}>
             {normalizedOptions.map((option, index) => (
               <li
                 key={option.value}
                 onClick={() => handleSelect(option.value)}
-                className={`group relative cursor-pointer select-none py-2.5 pl-4 pr-9 hover:bg-blue-50 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-100 transition-colors ${value === option.value ? 'bg-blue-50 dark:bg-slate-700/50 font-medium text-blue-600 dark:text-blue-400' : ''} ${highlightedIndex === index ? 'bg-blue-50 dark:bg-slate-700/50' : ''}`}
+                className={`group relative cursor-pointer select-none py-2.5 pl-4 pr-9 hover:bg-blue-50 dark:hover:bg-slate-800 text-slate-900 dark:text-slate-100 transition-colors ${value === option.value ? 'bg-blue-50 dark:bg-slate-800/50 font-medium text-blue-600 dark:text-blue-400' : ''} ${highlightedIndex === index ? 'bg-blue-50 dark:bg-slate-800/50' : ''}`}
               >
                 <span className="block truncate">{option.label}</span>
                 {value === option.value && (

@@ -217,15 +217,15 @@ export const Dashboard: React.FC = () => {
 
         {careerQuota === 0 && (
             <div 
-                className="mb-8 p-4 rounded-xl border border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800 text-red-700 dark:text-red-400 flex flex-row justify-between items-center animate-fade-in-up opacity-0 w-full"
+                className="mb-8 p-4 rounded-xl border border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800 text-red-700 dark:text-red-400 flex flex-col sm:flex-row justify-between sm:items-center gap-2 sm:gap-0 animate-fade-in-up opacity-0 w-full"
                 style={{ animationDelay: '100ms' }}
             >
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 mb-1 sm:mb-0">
                     <Zap className="shrink-0" size={20} />
-                    <span className="font-medium">Daily Career assessments reached</span>
+                    <span className="font-medium text-left">Daily Career assessments reached</span>
                 </div>
-                <div className="text-right">
-                    <span className="text-sm opacity-80 whitespace-nowrap">Come back tomorrow for more</span>
+                <div className="text-left sm:text-right ml-8 sm:ml-0">
+                    <span className="text-sm opacity-80">Come back tomorrow for more</span>
                 </div>
             </div>
         )}

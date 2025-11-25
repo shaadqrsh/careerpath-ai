@@ -1,4 +1,3 @@
-
 -- Recreate Profiles (matches backend UserProfile model)
 CREATE TABLE public.profiles (
   id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
