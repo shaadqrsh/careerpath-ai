@@ -4,7 +4,7 @@ import { QuizQuestion } from './types';
 export const APP_NAME = "CareerPath AI";
 
 // Load from Environment Variable (Vite) or fallback to Localhost
-export const API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL || "https://homitybscit-pathfinder-app.hf.space"; 
+export const API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL; 
 
 export const QUESTIONS: QuizQuestion[] = [
   // --- GENERAL / UNDECIDED (5 Questions) ---

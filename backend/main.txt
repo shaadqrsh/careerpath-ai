@@ -16,8 +16,8 @@ SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
-TEXT_MODEL_NAME = "gemini-1.5-pro-latest"
-IMAGE_MODEL_NAME = "gemini-pro-vision" 
+TEXT_MODEL_NAME = "gemini-2.5-flash"
+IMAGE_MODEL_NAME = "gemini-2.5-flash-image" 
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
