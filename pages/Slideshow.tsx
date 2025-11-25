@@ -4,7 +4,7 @@ import { useAppStore } from '../store';
 import { AppView, Slide } from '../types';
 import { generateStorySlides } from '../services/geminiService';
 import { uploadCareerImages, saveCareerToDb, getUserProfile } from '../services/supabaseService';
-import { X, ChevronLeft, ChevronRight, Loader2, ImageOff, AlertOctagon } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Loader2, ImageOff, AlertOctagon, ArrowLeft, ArrowRight, Hand } from 'lucide-react';
 import { DAILY_IMAGE_LIMIT, SLIDESHOW_IMAGE_COUNT } from '../constants';
 
 const BananaIcon = ({ className }: { className?: string }) => (
@@ -35,6 +35,7 @@ export const Slideshow: React.FC = () => {
   const { selectedCareer, setView, user, setUser, updateCareerImages, savedCareers } = useAppStore();
   const [slides, setSlides] = useState<Slide[]>([]);
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [imageLoaded, setImageLoaded] = useState(false);
   
   const [loading, setLoading] = useState(true);
   const [quotaError, setQuotaError] = useState(false);
@@ -42,7 +43,14 @@ export const Slideshow: React.FC = () => {
   
   const [loadingText, setLoadingText] = useState("Dreaming up possibilities...");
 
+  const touchStartX = useRef<number | null>(null);
+  const touchEndX = useRef<number | null>(null);
+
   const hasStartedRef = useRef(false);
+
+  useEffect(() => {
+    setImageLoaded(false);
+  }, [currentSlide]);
 
   useEffect(() => {
     const texts = [
@@ -177,6 +185,29 @@ export const Slideshow: React.FC = () => {
     if (currentSlide > 0) setCurrentSlide(curr => curr - 1);
   };
 
+  const onTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.targetTouches[0].clientX;
+    touchEndX.current = null;
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    touchEndX.current = e.targetTouches[0].clientX;
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStartX.current || !touchEndX.current) return;
+    
+    const distance = touchStartX.current - touchEndX.current;
+    const isLeftSwipe = distance > 50;
+    const isRightSwipe = distance < -50;
+
+    if (isLeftSwipe) {
+        handleNext();
+    } else if (isRightSwipe) {
+        handlePrev();
+    }
+  };
+
   if (quotaError) {
       return (
         <div className="fixed inset-0 bg-black/95 z-[60] flex flex-col items-center justify-center text-white p-4 text-center animate-fade-in">
@@ -246,16 +277,17 @@ export const Slideshow: React.FC = () => {
   const hasImage = slide.imageUrl && slide.imageUrl.length > 5;
 
   return (
-    <div className="fixed inset-0 bg-black z-[60] flex items-center justify-center overflow-hidden animate-fade-in px-0 md:px-4 md:py-8">
+    <div 
+        className="fixed inset-0 bg-black z-[60] flex items-center justify-center overflow-hidden animate-fade-in px-0 md:px-4 md:py-8 touch-none"
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+    >
       
-      {/* Tap zones for mobile */}
-      <div className="absolute inset-y-0 left-0 w-1/4 z-20 md:hidden" onClick={handlePrev} />
-      <div className="absolute inset-y-0 right-0 w-1/4 z-20 md:hidden" onClick={handleNext} />
-
       {hasImage && (
           <div 
             key={currentSlide}
-            className="absolute inset-0 bg-cover bg-center blur-3xl opacity-30 scale-110 transition-all duration-1000 animate-fade-in"
+            className={`absolute inset-0 bg-cover bg-center blur-3xl opacity-30 scale-110 transition-all duration-1000 ${imageLoaded ? 'opacity-30' : 'opacity-0'}`}
             style={{ backgroundImage: `url(${slide.imageUrl})` }}
           />
       )}
@@ -267,15 +299,35 @@ export const Slideshow: React.FC = () => {
         <X size={24} />
       </button>
 
+      <div className="md:hidden absolute inset-x-0 bottom-[45%] flex justify-between px-4 pointer-events-none z-50 opacity-0 animate-[fadeInOut_3s_ease-in-out_2s_infinite]">
+         {currentSlide > 0 && (
+             <div className="bg-black/40 p-2 rounded-full backdrop-blur-sm">
+                 <ArrowLeft className="w-6 h-6 text-white/70" />
+             </div>
+         )}
+         <div className="flex-1"></div>
+         {currentSlide < slides.length - 1 && (
+             <div className="bg-black/40 p-2 rounded-full backdrop-blur-sm">
+                 <ArrowRight className="w-6 h-6 text-white/70" />
+             </div>
+         )}
+      </div>
+
       <div className="relative z-10 w-full h-full max-w-md md:max-w-6xl flex flex-col md:flex-row bg-slate-900/80 backdrop-blur-md rounded-2xl md:rounded-3xl overflow-hidden border border-white/10 shadow-2xl m-4 md:m-8 max-h-[90vh] md:h-[85vh]">
         
         <div key={`img-${currentSlide}`} className="h-[50%] md:h-full md:w-[70%] relative bg-black flex items-center justify-center overflow-hidden group">
             {hasImage ? (
-                <img 
-                    src={slide.imageUrl} 
-                    alt="Day in life" 
-                    className="w-full h-full object-cover animate-fade-in"
-                />
+                <>
+                    <div className={`absolute inset-0 flex items-center justify-center transition-opacity duration-300 ${imageLoaded ? 'opacity-0' : 'opacity-100'}`}>
+                        <Loader2 className="w-8 h-8 text-slate-600 animate-spin" />
+                    </div>
+                    <img 
+                        src={slide.imageUrl} 
+                        alt="Day in life" 
+                        className={`w-full h-full object-cover transition-opacity duration-700 ease-out ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
+                        onLoad={() => setImageLoaded(true)}
+                    />
+                </>
             ) : (
                 <div className="flex flex-col items-center justify-center text-slate-500 p-8 text-center bg-slate-900/50 w-full h-full animate-fade-in">
                     <ImageOff size={64} className="mb-4 opacity-40" />

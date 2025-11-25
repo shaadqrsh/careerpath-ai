@@ -32,6 +32,17 @@ export const Dashboard: React.FC = () => {
     }
   }, [user]);
 
+  useEffect(() => {
+      if (isMobileMenuOpen) {
+          document.body.style.overflow = 'hidden';
+      } else {
+          document.body.style.overflow = 'unset';
+      }
+      return () => {
+          document.body.style.overflow = 'unset';
+      };
+  }, [isMobileMenuOpen]);
+
   const handleStartQuiz = (domain: CareerDomain) => {
     setDomain(domain);
     setView(AppView.QUIZ);
@@ -81,7 +92,6 @@ export const Dashboard: React.FC = () => {
                 </div>
             </div>
 
-            {/* Desktop Navigation */}
             <div className="hidden md:flex items-center gap-4">
               <div className="flex items-center gap-2 mr-2">
                  <div className={`flex items-center gap-1.5 px-2 py-1 rounded-md border text-xs font-medium ${getQuotaStyles(careerQuota)}`} title="Daily Career Assessments Remaining">
@@ -124,11 +134,10 @@ export const Dashboard: React.FC = () => {
               </button>
             </div>
 
-            {/* Mobile Navigation Toggle */}
             <div className="md:hidden flex items-center">
                  <button 
                     onClick={() => setIsMobileMenuOpen(true)}
-                    className="p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"
+                    className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-slate-800 rounded-lg"
                  >
                     <Menu size={24} />
                  </button>
@@ -137,10 +146,9 @@ export const Dashboard: React.FC = () => {
         </div>
       </nav>
 
-      {/* Mobile Menu Overlay */}
       {isMobileMenuOpen && (
-        <div className="fixed inset-0 z-[100] bg-white dark:bg-slate-900 animate-fade-in flex flex-col">
-            <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
+        <div className="fixed inset-0 z-[100] bg-white dark:bg-slate-900 animate-fade-in flex flex-col h-[100dvh]">
+            <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center shrink-0">
                  <h2 className="text-lg font-bold">Menu</h2>
                  <button 
                     onClick={() => setIsMobileMenuOpen(false)}
@@ -149,7 +157,7 @@ export const Dashboard: React.FC = () => {
                     <X size={24} />
                  </button>
             </div>
-            <div className="p-6 flex flex-col gap-6">
+            <div className="p-6 flex flex-col gap-6 overflow-y-auto flex-1">
                 <div className="flex flex-col gap-4">
                      <button 
                         onClick={() => { setView(AppView.SAVED_PATHS); setIsMobileMenuOpen(false); }}
@@ -182,7 +190,6 @@ export const Dashboard: React.FC = () => {
                 <div className="h-px bg-slate-200 dark:bg-slate-800"></div>
 
                 <div className="space-y-4">
-                    <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">Usage Quotas</h3>
                     <div className={`flex items-center justify-between p-3 rounded-xl border ${getQuotaStyles(careerQuota)}`}>
                         <div className="flex items-center gap-3">
                             <Zap size={20} />
@@ -279,7 +286,6 @@ export const Dashboard: React.FC = () => {
                     <span className="text-blue-600 dark:text-blue-400 font-medium group-hover:translate-x-2 transition-transform inline-flex items-center relative z-10 whitespace-nowrap pl-18 md:pl-0">
                         Start General Quiz <ArrowRight className="ml-1 w-4 h-4" />
                     </span>
-                    <span className="text-xs text-slate-400 mt-1 md:ml-2">Get AI suggested domain</span>
                 </div>
             </div>
         </div>

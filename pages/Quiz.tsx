@@ -23,7 +23,6 @@ export const Quiz: React.FC = () => {
   const progress = ((currentIndex) / domainQuestions.length) * 100;
 
   useEffect(() => {
-    // Check quota on mount
     if (user) {
         const lastDateStr = user.lastCareerGenerationDate;
         let remaining = DAILY_CAREER_LIMIT;
