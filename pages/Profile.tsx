@@ -3,12 +3,12 @@ import React, { useState, useEffect } from 'react';
 import { useAppStore } from '../store';
 import { AppView, UserProfile } from '../types';
 import { Button } from '../components/Button';
-import { ArrowLeft, Loader2, Shield, AlertTriangle, User, MapPin, ChevronDown, Sun, Moon } from 'lucide-react';
+import { ArrowLeft, Loader2, Shield, AlertTriangle, User, MapPin, ChevronDown, Moon, Sun, Monitor } from 'lucide-react';
 import { FALLBACK_COUNTRIES } from '../constants';
 import { upsertUserProfile, getUserProfile, getCurrentUser, sendPasswordResetEmail } from '../services/supabaseService';
 
 export const Profile: React.FC = () => {
-  const { user, setView, setUser, showPasswordResetModal, setShowPasswordResetModal, showToast, theme, toggleTheme } = useAppStore();
+  const { user, setView, setUser, showPasswordResetModal, setShowPasswordResetModal, showToast, theme, setTheme } = useAppStore();
   
   const [countries, setCountries] = useState<string[]>([]);
   const [isLoadingCountries, setIsLoadingCountries] = useState(true);
@@ -159,16 +159,6 @@ export const Profile: React.FC = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 px-4 py-12 transition-colors duration-300 relative">
       
-      {/* Theme Toggle */}
-      <div className="absolute top-6 right-6">
-        <button
-          onClick={toggleTheme}
-          className="p-3 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors rounded-full hover:bg-slate-200 dark:hover:bg-slate-800"
-        >
-            {theme === 'dark' ? <Sun size={24} /> : <Moon size={24} />}
-        </button>
-      </div>
-
       <div className="w-full max-w-3xl">
         <div className="mb-6">
             <button 
@@ -313,14 +303,38 @@ export const Profile: React.FC = () => {
                 </div>
             </div>
 
-            {/* SECURITY */}
+            {/* ACCOUNT DETAILS */}
             <div className="border-t border-slate-200 dark:border-slate-700 pt-6">
-                 <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-2">
-                    <Shield size={16} /> Security
+                 <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-6 flex items-center gap-2">
+                    <Shield size={16} /> Account Details
                  </h3>
-                 <Button type="button" variant="outline" fullWidth onClick={() => setShowPasswordResetModal(true)}>
-                    Send Password Reset Email
-                 </Button>
+                 
+                 <div className="space-y-6">
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">App Theme</label>
+                        <div className="relative">
+                            <select 
+                                value={theme}
+                                onChange={(e) => setTheme(e.target.value as any)}
+                                className="appearance-none w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-600 rounded-xl py-3 pl-4 pr-10 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors cursor-pointer"
+                            >
+                                <option value="system" className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">System Default</option>
+                                <option value="light" className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">Light</option>
+                                <option value="dark" className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">Dark</option>
+                            </select>
+                            <div className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none flex items-center gap-2">
+                                {theme === 'dark' ? <Moon size={16} /> : (theme === 'light' ? <Sun size={16} /> : <Monitor size={16} />)}
+                                <ChevronDown size={18} />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <Button type="button" variant="outline" fullWidth onClick={() => setShowPasswordResetModal(true)}>
+                            Send Password Reset Email
+                        </Button>
+                    </div>
+                 </div>
             </div>
             
             {/* SAVE CHANGES */}

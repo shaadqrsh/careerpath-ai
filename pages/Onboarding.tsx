@@ -3,12 +3,12 @@ import React, { useState, useEffect } from 'react';
 import { useAppStore } from '../store';
 import { AppView, UserProfile } from '../types';
 import { Button } from '../components/Button';
-import { Loader2, LogOut, Sun, Moon, User, MapPin, ChevronDown } from 'lucide-react';
+import { Loader2, LogOut, User, MapPin, ChevronDown } from 'lucide-react';
 import { FALLBACK_COUNTRIES } from '../constants';
 import { upsertUserProfile, getCurrentUser, signOut } from '../services/supabaseService';
 
 export const Onboarding: React.FC = () => {
-  const { setView, setUser, theme, toggleTheme } = useAppStore();
+  const { setView, setUser } = useAppStore();
   const [saving, setSaving] = useState(false);
   const [isVerifyingSession, setIsVerifyingSession] = useState(true);
   
@@ -125,12 +125,6 @@ export const Onboarding: React.FC = () => {
       
       {/* Top Right Controls */}
       <div className="absolute top-6 right-6 flex items-center gap-4">
-        <button
-          onClick={toggleTheme}
-          className="p-2 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors rounded-full hover:bg-slate-200 dark:hover:bg-slate-800"
-        >
-            {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
-        </button>
         <button 
             onClick={handleLogout}
             className="text-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white flex items-center gap-2 transition-colors font-medium"

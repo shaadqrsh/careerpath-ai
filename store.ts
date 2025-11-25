@@ -3,12 +3,15 @@ import { create } from 'zustand';
 import { AppView, UserProfile, QuizAnswer, CareerRecommendation, CareerDomain } from './types';
 import { saveCareerToDb, deleteCareerFromDb } from './services/supabaseService';
 
+export type AppTheme = 'light' | 'dark' | 'system';
+
 interface AppState {
   currentView: AppView;
   previousView: AppView | null; 
   careerOrigin: 'results' | 'saved' | null; 
   user: UserProfile | null;
-  theme: 'dark' | 'light';
+  
+  theme: AppTheme;
   
   debugImageGenerationEnabled: boolean; 
 
@@ -32,7 +35,7 @@ interface AppState {
   setView: (view: AppView) => void;
   setCareerOrigin: (origin: 'results' | 'saved') => void;
   setUser: (user: UserProfile) => void;
-  toggleTheme: () => void;
+  setTheme: (theme: AppTheme) => void;
   setDomain: (domain: CareerDomain) => void;
   setDebugImageGeneration: (enabled: boolean) => void;
   
@@ -60,7 +63,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   previousView: null,
   careerOrigin: null,
   user: null,
-  theme: 'dark', 
+  
+  theme: (localStorage.getItem('app_theme') as AppTheme) || 'system',
   
   debugImageGenerationEnabled: localStorage.getItem('debug_image_gen') !== 'false',
 
@@ -94,7 +98,12 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
   setCareerOrigin: (origin) => set({ careerOrigin: origin }),
   setUser: (user) => set({ user }),
-  toggleTheme: () => set((state) => ({ theme: state.theme === 'dark' ? 'light' : 'dark' })),
+  
+  setTheme: (theme) => {
+    localStorage.setItem('app_theme', theme);
+    set({ theme });
+  },
+
   setDomain: (domain) => set({ selectedDomain: domain }),
   
   setDebugImageGeneration: (enabled) => {
@@ -114,7 +123,6 @@ export const useAppStore = create<AppState>((set, get) => ({
   setSavedCareers: (careers) => set({ savedCareers: careers }),
   
   updateCareerImages: (careerId, images) => set((state) => {
-    // Only update if images actually changed
     const newSelected = state.selectedCareer?.id === careerId 
         ? { ...state.selectedCareer, slideImages: images } 
         : state.selectedCareer;
@@ -123,7 +131,6 @@ export const useAppStore = create<AppState>((set, get) => ({
         c.id === careerId ? { ...c, slideImages: images } : c
     );
     
-    // Also update saved careers if exists there
     const newSaved = state.savedCareers.map(c => 
         c.id === careerId ? { ...c, slideImages: images } : c
     );
@@ -158,11 +165,8 @@ export const useAppStore = create<AppState>((set, get) => ({
       try {
         await deleteCareerFromDb(state.user.id, career.id);
         
-        // Remove from local saved list
         const newSaved = state.savedCareers.filter(c => c.id !== career.id);
         
-        // If the selected career is the one being deleted, we need to update its state to reflect it's not saved anymore
-        // BUT we also need to clear its images as per requirements
         const cleanedCareer = { ...career, slideImages: [] };
         
         let newSelected = state.selectedCareer;
@@ -170,7 +174,6 @@ export const useAppStore = create<AppState>((set, get) => ({
              newSelected = cleanedCareer;
         }
 
-        // Also clean it in recommendations
         const newRecommendations = state.recommendations.map(c => 
              c.id === career.id ? cleanedCareer : c
         );
@@ -184,7 +187,6 @@ export const useAppStore = create<AppState>((set, get) => ({
 
         state.showToast("Career deleted successfully");
 
-        // Navigate back if on detail view derived from saved paths
         if (state.currentView === AppView.CAREER_DETAIL && state.selectedCareer?.id === career.id) {
             if (state.careerOrigin === 'saved') {
                  set({ currentView: AppView.SAVED_PATHS });
@@ -211,10 +213,6 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({ isSavingCareer: true });
     
     try {
-        // Just save whatever we have. If images exist, they get saved. If not, they don't.
-        // We do NOT trigger generation here anymore.
-        
-        // Ensure we are saving the version from store which might have images if generated in detail view
         const currentVersion = state.selectedCareer?.id === career.id ? state.selectedCareer : career;
 
         if (state.user) {
@@ -223,7 +221,7 @@ export const useAppStore = create<AppState>((set, get) => ({
 
         set((s) => {
             const isCurrentlySelected = s.selectedCareer?.id === currentVersion.id;
-            localStorage.setItem('hasViewedSavedPaths', 'false'); // Reset on new save
+            localStorage.setItem('hasViewedSavedPaths', 'false'); 
             return { 
                 savedCareers: [...s.savedCareers, currentVersion],
                 selectedCareer: isCurrentlySelected ? currentVersion : s.selectedCareer,

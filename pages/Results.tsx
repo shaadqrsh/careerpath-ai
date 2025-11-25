@@ -1,11 +1,11 @@
+
 import React from 'react';
 import { useAppStore } from '../store';
 import { AppView, CareerRecommendation } from '../types';
-import { Button } from '../components/Button';
-import { TrendingUp, DollarSign, ArrowRight, ArrowLeft, Heart, Sun, Moon, Star } from 'lucide-react';
+import { TrendingUp, DollarSign, ArrowRight, ArrowLeft, Heart, Star } from 'lucide-react';
 
 export const Results: React.FC = () => {
-  const { recommendations, setSelectedCareer, setView, toggleSavedCareer, savedCareers, setCareerOrigin, theme, toggleTheme } = useAppStore();
+  const { recommendations, setSelectedCareer, setView, savedCareers, setCareerOrigin } = useAppStore();
 
   const handleSelect = (career: CareerRecommendation) => {
     setSelectedCareer(career);
@@ -25,14 +25,6 @@ export const Results: React.FC = () => {
                 className="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white flex items-center gap-2 transition-colors"
             >
                 <ArrowLeft size={20} /> Back to Menu
-            </button>
-
-            {/* Theme Toggle */}
-            <button
-                onClick={toggleTheme}
-                className="p-2 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors rounded-full hover:bg-slate-200 dark:hover:bg-slate-800"
-            >
-                {theme === 'dark' ? <Sun size={24} /> : <Moon size={24} />}
             </button>
         </div>
 

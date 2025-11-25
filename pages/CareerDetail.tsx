@@ -1,11 +1,12 @@
+
 import React, { useState } from 'react';
 import { useAppStore } from '../store';
 import { AppView } from '../types';
 import { Button } from '../components/Button';
-import { ChevronLeft, PlayCircle, Heart, MapPin, Briefcase, GraduationCap, Loader2, ArrowRightCircle, Shuffle, Sun, Moon, Star } from 'lucide-react';
+import { ChevronLeft, PlayCircle, Heart, MapPin, Briefcase, GraduationCap, Loader2, ArrowRightCircle, Shuffle, Star } from 'lucide-react';
 
 export const CareerDetail: React.FC = () => {
-  const { selectedCareer, setView, careerOrigin, user, toggleSavedCareer, savedCareers, isSavingCareer, theme, toggleTheme, recommendations } = useAppStore();
+  const { selectedCareer, setView, careerOrigin, user, toggleSavedCareer, savedCareers, isSavingCareer, recommendations } = useAppStore();
 
   if (!selectedCareer) {
     setView(AppView.DASHBOARD);
@@ -42,14 +43,6 @@ export const CareerDetail: React.FC = () => {
                 >
                     <ChevronLeft size={20} /> {backLabel}
                 </button>
-
-                {/* Theme Toggle */}
-                <button
-                    onClick={toggleTheme}
-                    className="p-2 text-white/70 hover:text-white transition-colors rounded-full bg-black/20 backdrop-blur-sm hover:bg-black/40"
-                >
-                    {theme === 'dark' ? <Sun size={24} /> : <Moon size={24} />}
-                </button>
             </div>
             
             <div className="flex justify-between items-end">
@@ -61,16 +54,16 @@ export const CareerDetail: React.FC = () => {
                         </div>
                     )}
                     
-                    {/* Scrolling Text for Title */}
+                    {/* Scrolling Text for Title - REMOVED md:animate-none to force scroll if needed or consistent look */}
                     <div className="overflow-hidden relative w-full">
-                        <h1 className="text-4xl md:text-5xl font-bold mb-2 text-white whitespace-nowrap animate-marquee md:animate-none">
+                        <h1 className="text-4xl md:text-5xl font-bold mb-2 text-white whitespace-nowrap animate-marquee">
                             {selectedCareer.title}
                         </h1>
                     </div>
 
-                    {/* Scrolling Text for Stats */}
+                    {/* Scrolling Text for Stats - REMOVED md:animate-none */}
                     <div className="overflow-hidden relative w-full">
-                        <div className="flex items-center gap-4 text-slate-300 whitespace-nowrap animate-marquee md:animate-none text-sm md:text-base">
+                        <div className="flex items-center gap-4 text-slate-300 whitespace-nowrap animate-marquee text-sm md:text-base">
                             <span>{selectedCareer.salaryRange}</span>
                             <span className="w-1 h-1 bg-slate-500 rounded-full"></span>
                             <span>{selectedCareer.growth} Growth</span>

@@ -1,12 +1,13 @@
+
 import React, { useState } from 'react';
 import { useAppStore } from '../store';
 import { AppView } from '../types';
 import { Button } from '../components/Button';
-import { Mail, Lock, Sun, Moon, AlertCircle, CheckCircle, ArrowLeft, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, AlertCircle, CheckCircle, ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import { signInWithEmail, signUpWithEmail, getCurrentUser, getUserProfile, sendPasswordResetEmail } from '../services/supabaseService';
 
 export const Auth: React.FC = () => {
-  const { theme, toggleTheme, setView, setUser } = useAppStore();
+  const { setView, setUser } = useAppStore();
   const [isLogin, setIsLogin] = useState(true);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
   
@@ -95,16 +96,6 @@ export const Auth: React.FC = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 px-4 transition-colors duration-300 relative">
-      {/* Theme Toggle */}
-      <div className="absolute top-6 right-6 z-50 flex gap-2">
-        <button
-          onClick={toggleTheme}
-          className="p-3 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors rounded-full hover:bg-slate-200 dark:hover:bg-slate-800"
-        >
-            {theme === 'dark' ? <Sun size={24} /> : <Moon size={24} />}
-        </button>
-      </div>
-
       <div className="w-full max-w-md bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 p-8 rounded-2xl shadow-xl backdrop-blur-sm transition-all">
         <div className="text-center mb-8">
           <h2 className="text-3xl font-bold text-slate-900 dark:text-white">

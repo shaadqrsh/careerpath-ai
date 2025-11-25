@@ -1,25 +1,17 @@
+
 import React from 'react';
 import { useAppStore } from '../store';
 import { AppView } from '../types';
 import { Button } from '../components/Button';
-import { ArrowRight, Sun, Moon } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { APP_NAME } from '../constants';
 
 export const Landing: React.FC = () => {
-  const { setView, theme, toggleTheme } = useAppStore();
+  const { setView } = useAppStore();
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden bg-slate-50 dark:bg-slate-900 transition-colors duration-300">
-      {/* Theme Toggle */}
-      <div className="absolute top-6 right-6 z-50">
-        <button
-          onClick={toggleTheme}
-          className="p-3 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors rounded-full hover:bg-slate-200 dark:hover:bg-slate-800"
-        >
-            {theme === 'dark' ? <Sun size={24} /> : <Moon size={24} />}
-        </button>
-      </div>
-
+      
       {/* Background Gradients */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none">
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-blue-500/10 dark:bg-blue-600/20 blur-[100px]" />

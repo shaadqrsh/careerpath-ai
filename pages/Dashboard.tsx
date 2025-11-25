@@ -2,13 +2,12 @@
 import React from 'react';
 import { useAppStore } from '../store';
 import { AppView, CareerDomain } from '../types';
-import { Button } from '../components/Button';
-import { Beaker, Briefcase, Palette, LogOut, User, Heart, HelpCircle, ArrowRight, Sun, Moon } from 'lucide-react';
+import { Beaker, Briefcase, Palette, LogOut, User, Heart, HelpCircle, ArrowRight } from 'lucide-react';
 import { APP_NAME } from '../constants';
 import { signOut } from '../services/supabaseService';
 
 export const Dashboard: React.FC = () => {
-  const { user, setView, setDomain, savedCareers, theme, toggleTheme, hasViewedSavedPaths } = useAppStore();
+  const { setView, setDomain, savedCareers, hasViewedSavedPaths } = useAppStore();
 
   const handleStartQuiz = (domain: CareerDomain) => {
     setDomain(domain);
@@ -47,15 +46,6 @@ export const Dashboard: React.FC = () => {
 
             <div className="flex items-center gap-2 sm:gap-4">
               
-              {/* Theme Toggle */}
-              <button
-                onClick={toggleTheme}
-                className="p-2 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"
-                title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-              >
-                 {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
-              </button>
-
               <button 
                 onClick={() => setView(AppView.SAVED_PATHS)}
                 className="p-2 text-slate-500 dark:text-slate-400 hover:text-pink-600 dark:hover:text-pink-500 transition-colors relative rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"
