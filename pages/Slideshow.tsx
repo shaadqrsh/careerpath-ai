@@ -4,7 +4,7 @@ import { useAppStore } from '../store';
 import { AppView, Slide } from '../types';
 import { generateStorySlides } from '../services/geminiService';
 import { uploadCareerImages, saveCareerToDb, getUserProfile } from '../services/supabaseService';
-import { X, ChevronLeft, ChevronRight, Loader2, ImageOff, AlertOctagon, ArrowLeft, ArrowRight, Hand } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Loader2, ImageOff, AlertOctagon, ArrowLeft, ArrowRight } from 'lucide-react';
 import { DAILY_IMAGE_LIMIT, SLIDESHOW_IMAGE_COUNT } from '../constants';
 
 const BananaIcon = ({ className }: { className?: string }) => (
@@ -35,7 +35,7 @@ export const Slideshow: React.FC = () => {
   const { selectedCareer, setView, user, setUser, updateCareerImages, savedCareers } = useAppStore();
   const [slides, setSlides] = useState<Slide[]>([]);
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [imageLoaded, setImageLoaded] = useState(false);
+  const [loadedIndices, setLoadedIndices] = useState<Set<number>>(new Set());
   
   const [loading, setLoading] = useState(true);
   const [quotaError, setQuotaError] = useState(false);
@@ -47,10 +47,6 @@ export const Slideshow: React.FC = () => {
   const touchEndX = useRef<number | null>(null);
 
   const hasStartedRef = useRef(false);
-
-  useEffect(() => {
-    setImageLoaded(false);
-  }, [currentSlide]);
 
   useEffect(() => {
     const texts = [
@@ -66,6 +62,20 @@ export const Slideshow: React.FC = () => {
     }, 2500);
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    if (slides.length > 0) {
+        slides.forEach((slide, index) => {
+            if (slide.imageUrl) {
+                const img = new Image();
+                img.src = slide.imageUrl;
+                img.onload = () => {
+                    setLoadedIndices(prev => new Set(prev).add(index));
+                };
+            }
+        });
+    }
+  }, [slides]);
 
   useEffect(() => {
     let isMounted = true;
@@ -105,9 +115,7 @@ export const Slideshow: React.FC = () => {
             console.log("Loading slides for:", selectedCareer.title);
             
             const generatedSlides = await generateStorySlides(selectedCareer, user);
-            
             const imageUrls = generatedSlides.map(s => s.imageUrl || null);
-            
             const validGeneratedCount = generatedSlides.filter(s => s.imageUrl && s.imageUrl.length > 5).length;
             
             if (validGeneratedCount === 0 && generatedSlides.length > 0) {
@@ -206,6 +214,24 @@ export const Slideshow: React.FC = () => {
     } else if (isRightSwipe) {
         handlePrev();
     }
+    
+    touchStartX.current = null;
+    touchEndX.current = null;
+  };
+
+  const handleContainerClick = (e: React.MouseEvent) => {
+    // Only trigger if it's not a swipe
+    if (touchStartX.current) return;
+
+    const width = e.currentTarget.clientWidth;
+    const x = e.clientX;
+    
+    // Tap navigation logic
+    if (x < width * 0.35) {
+        handlePrev();
+    } else if (x > width * 0.65) {
+        handleNext();
+    }
   };
 
   if (quotaError) {
@@ -274,7 +300,6 @@ export const Slideshow: React.FC = () => {
   }
 
   const slide = slides[currentSlide];
-  const hasImage = slide.imageUrl && slide.imageUrl.length > 5;
 
   return (
     <div 
@@ -282,23 +307,24 @@ export const Slideshow: React.FC = () => {
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
+        onClick={handleContainerClick}
     >
       
-      {hasImage && (
-          <div 
-            key={currentSlide}
-            className={`absolute inset-0 bg-cover bg-center blur-3xl opacity-30 scale-110 transition-all duration-1000 ${imageLoaded ? 'opacity-30' : 'opacity-0'}`}
-            style={{ backgroundImage: `url(${slide.imageUrl})` }}
-          />
-      )}
+      {/* Background Blur Effect - using current slide */}
+      <div 
+         key={`bg-${currentSlide}`}
+         className="absolute inset-0 bg-cover bg-center blur-3xl opacity-30 scale-110 transition-all duration-1000"
+         style={{ backgroundImage: `url(${slide.imageUrl || ''})` }}
+      />
       
       <button 
-        onClick={() => setView(AppView.CAREER_DETAIL)}
+        onClick={(e) => { e.stopPropagation(); setView(AppView.CAREER_DETAIL); }}
         className="absolute top-6 right-6 z-[70] text-white/70 hover:text-white bg-black/40 hover:bg-black/60 p-2 rounded-full backdrop-blur-md transition-all border border-white/10"
       >
         <X size={24} />
       </button>
 
+      {/* Mobile Tap/Swipe Indicators Overlay */}
       <div className="md:hidden absolute inset-x-0 bottom-[45%] flex justify-between px-4 pointer-events-none z-50 opacity-0 animate-[fadeInOut_3s_ease-in-out_2s_infinite]">
          {currentSlide > 0 && (
              <div className="bg-black/40 p-2 rounded-full backdrop-blur-sm">
@@ -313,40 +339,52 @@ export const Slideshow: React.FC = () => {
          )}
       </div>
 
-      <div className="relative z-10 w-full h-full max-w-md md:max-w-6xl flex flex-col md:flex-row bg-slate-900/80 backdrop-blur-md rounded-2xl md:rounded-3xl overflow-hidden border border-white/10 shadow-2xl m-4 md:m-8 max-h-[90vh] md:h-[85vh]">
+      <div className="relative z-10 w-full h-full max-w-md md:max-w-6xl flex flex-col md:flex-row bg-slate-900/80 backdrop-blur-md rounded-2xl md:rounded-3xl overflow-hidden border border-white/10 shadow-2xl m-4 md:m-8 max-h-[90vh] md:h-[85vh] group" onClick={(e) => e.stopPropagation()}>
         
-        <div key={`img-${currentSlide}`} className="h-[50%] md:h-full md:w-[70%] relative bg-black flex items-center justify-center overflow-hidden group">
-            {hasImage ? (
-                <>
-                    <div className={`absolute inset-0 flex items-center justify-center transition-opacity duration-300 ${imageLoaded ? 'opacity-0' : 'opacity-100'}`}>
-                        <Loader2 className="w-8 h-8 text-slate-600 animate-spin" />
+        {/* Image Container - Preloads all images but shows one */}
+        <div className="h-[50%] md:h-full md:w-[70%] relative bg-black flex items-center justify-center overflow-hidden">
+             {slides.map((s, idx) => {
+                 const isLoaded = loadedIndices.has(idx);
+                 return (
+                    <div 
+                        key={idx}
+                        className={`absolute inset-0 flex items-center justify-center transition-opacity duration-500 ease-in-out ${idx === currentSlide ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}
+                    >
+                         {s.imageUrl ? (
+                             <>
+                                {!isLoaded && idx === currentSlide && (
+                                    <div className="absolute inset-0 flex items-center justify-center">
+                                        <Loader2 className="w-8 h-8 text-slate-600 animate-spin" />
+                                    </div>
+                                )}
+                                <img 
+                                    src={s.imageUrl} 
+                                    alt="Day in life" 
+                                    className={`w-full h-full object-cover transition-opacity duration-700 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
+                                />
+                             </>
+                         ) : (
+                            <div className="flex flex-col items-center justify-center text-slate-500 p-8 text-center bg-slate-900/50 w-full h-full">
+                                <ImageOff size={64} className="mb-4 opacity-40" />
+                                <p className="text-lg font-medium text-slate-400">Image not available</p>
+                            </div>
+                         )}
                     </div>
-                    <img 
-                        src={slide.imageUrl} 
-                        alt="Day in life" 
-                        className={`w-full h-full object-cover transition-opacity duration-700 ease-out ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
-                        onLoad={() => setImageLoaded(true)}
-                    />
-                </>
-            ) : (
-                <div className="flex flex-col items-center justify-center text-slate-500 p-8 text-center bg-slate-900/50 w-full h-full animate-fade-in">
-                    <ImageOff size={64} className="mb-4 opacity-40" />
-                    <p className="text-lg font-medium text-slate-400">Image not available</p>
-                    <p className="text-sm opacity-60 mt-2">We couldn't generate this specific scene.</p>
-                </div>
-            )}
+                 );
+             })}
 
-             <div className="absolute top-0 left-0 right-0 p-2 flex gap-1 md:hidden z-20 bg-gradient-to-b from-black/80 to-transparent">
+             {/* Mobile Position Indicators */}
+             <div className="absolute top-0 left-0 right-0 p-4 flex gap-1.5 md:hidden z-20 bg-gradient-to-b from-black/60 to-transparent">
                 {slides.map((_, idx) => (
                     <div 
                         key={idx} 
-                        className={`h-1 flex-1 rounded-full transition-colors ${idx === currentSlide ? 'bg-white' : 'bg-white/20'}`} 
+                        className={`h-1 flex-1 rounded-full transition-colors shadow-sm ${idx === currentSlide ? 'bg-white' : 'bg-white/30'}`} 
                     />
                 ))}
             </div>
         </div>
 
-        <div key={`text-${currentSlide}`} className="h-[50%] md:h-full md:w-[30%] p-6 md:p-10 flex flex-col bg-slate-950 border-t md:border-t-0 md:border-l border-white/10 relative animate-fade-in">
+        <div className="h-[50%] md:h-full md:w-[30%] p-6 md:p-10 flex flex-col bg-slate-950 border-t md:border-t-0 md:border-l border-white/10 relative animate-fade-in">
             
             <div className="mb-4 pt-2 shrink-0">
                 <div className="flex items-center gap-2 mb-4">
@@ -355,7 +393,7 @@ export const Slideshow: React.FC = () => {
                         Day in the Life
                     </h3>
                 </div>
-                <h2 className="text-white text-xl md:text-2xl font-bold leading-tight mb-1 truncate">
+                <h2 className="text-white text-xl md:text-2xl font-bold leading-tight mb-1 whitespace-normal">
                     {selectedCareer?.title}
                 </h2>
                 <div className="w-10 h-1 bg-blue-600 rounded-full mt-4 mb-2 opacity-80"></div>

@@ -161,7 +161,7 @@ export const Dashboard: React.FC = () => {
                 <div className="flex flex-col gap-4">
                      <button 
                         onClick={() => { setView(AppView.SAVED_PATHS); setIsMobileMenuOpen(false); }}
-                        className="flex items-center gap-4 text-lg font-medium text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400"
+                        className="flex items-center gap-4 text-lg font-medium text-pink-600 dark:text-pink-400 hover:bg-pink-50 dark:hover:bg-slate-800 p-2 rounded-xl transition-colors"
                     >
                         <div className="relative">
                             <Heart size={24} />
@@ -173,14 +173,14 @@ export const Dashboard: React.FC = () => {
                     </button>
                     <button 
                         onClick={() => { setView(AppView.PROFILE); setIsMobileMenuOpen(false); }}
-                        className="flex items-center gap-4 text-lg font-medium text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400"
+                        className="flex items-center gap-4 text-lg font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-slate-800 p-2 rounded-xl transition-colors"
                     >
                         <User size={24} />
                         Profile Settings
                     </button>
                     <button 
                         onClick={() => { handleLogout(); setIsMobileMenuOpen(false); }}
-                        className="flex items-center gap-4 text-lg font-medium text-slate-700 dark:text-slate-200 hover:text-red-600 dark:hover:text-red-400"
+                        className="flex items-center gap-4 text-lg font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-slate-800 p-2 rounded-xl transition-colors"
                     >
                         <LogOut size={24} />
                         Logout
@@ -243,7 +243,7 @@ export const Dashboard: React.FC = () => {
                 >
                   <div className={`absolute inset-0 bg-gradient-to-br ${cat.color} opacity-0 group-hover:opacity-5 rounded-2xl transition-opacity`} />
                   
-                  <div className="flex flex-row md:flex-col items-center md:items-start gap-4 flex-1">
+                  <div className="flex flex-row md:flex-col items-center gap-4 flex-1">
                       <div className={`w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-gradient-to-br ${cat.color} flex items-center justify-center mb-0 md:mb-6 text-white shadow-lg shrink-0`}>
                         {cat.icon}
                       </div>
