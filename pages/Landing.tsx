@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useAppStore } from '../store';
 import { AppView } from '../types';
@@ -9,14 +10,14 @@ export const Landing: React.FC = () => {
   const { setView } = useAppStore();
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden bg-slate-50 dark:bg-slate-900 transition-colors duration-300">
+    <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden bg-slate-50 dark:bg-slate-900 transition-colors duration-300 py-20 px-4">
       
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none">
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-blue-500/10 dark:bg-blue-600/20 blur-[100px]" />
         <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-indigo-500/10 dark:bg-indigo-600/20 blur-[100px]" />
       </div>
 
-      <div className="z-10 text-center w-full max-w-7xl px-6">
+      <div className="z-10 text-center w-full max-w-7xl px-2">
         <div className="mb-6 flex justify-center animate-fade-in-up opacity-0" style={{ animationDelay: '0ms' }}>
           <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 shadow-sm">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" className="text-blue-500">

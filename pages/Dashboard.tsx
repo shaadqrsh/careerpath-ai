@@ -132,21 +132,15 @@ export const Dashboard: React.FC = () => {
 
         {careerQuota === 0 && (
             <div 
-                className="mb-8 p-4 rounded-xl border border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800 text-red-700 dark:text-red-400 flex items-center justify-between animate-fade-in-up opacity-0"
+                className="mb-8 p-4 rounded-xl border border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800 text-red-700 dark:text-red-400 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-fade-in-up opacity-0"
                 style={{ animationDelay: '100ms' }}
             >
                 <div className="flex items-center gap-3">
                     <Zap className="shrink-0" size={20} />
-                    <span className="font-medium">Daily Generations Reached</span>
+                    <span className="font-medium">Daily Career assessments reached</span>
                 </div>
                 <div className="flex items-center gap-4">
                     <span className="text-sm opacity-80">Come back tomorrow for more</span>
-                    <button 
-                        onClick={() => {}} 
-                        className="text-xs font-bold border border-red-300 dark:border-red-700 px-3 py-1.5 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors"
-                    >
-                        Return to Saved
-                    </button>
                 </div>
             </div>
         )}
@@ -156,18 +150,20 @@ export const Dashboard: React.FC = () => {
             <div 
               key={cat.id}
               style={{ animationDelay: `${200 + (index * 100)}ms` }}
-              className="group relative bg-white dark:bg-slate-800 rounded-2xl p-8 hover:shadow-xl dark:hover:bg-slate-750 transition-all duration-300 hover:scale-[1.02] cursor-pointer border border-slate-200 dark:border-slate-700 hover:border-blue-500 dark:hover:border-slate-500 shadow-sm animate-fade-in-up opacity-0"
+              className="group relative bg-white dark:bg-slate-800 rounded-2xl p-6 md:p-8 hover:shadow-xl dark:hover:bg-slate-750 transition-all duration-300 hover:scale-[1.02] cursor-pointer border border-slate-200 dark:border-slate-700 hover:border-blue-500 dark:hover:border-slate-500 shadow-sm animate-fade-in-up opacity-0 flex flex-row md:flex-col items-center md:items-start gap-4 md:gap-0"
               onClick={() => handleStartQuiz(cat.id)}
             >
               <div className={`absolute inset-0 bg-gradient-to-br ${cat.color} opacity-0 group-hover:opacity-5 rounded-2xl transition-opacity`} />
-              <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${cat.color} flex items-center justify-center mb-6 text-white shadow-lg`}>
+              <div className={`w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-gradient-to-br ${cat.color} flex items-center justify-center mb-0 md:mb-6 text-white shadow-lg shrink-0`}>
                 {cat.icon}
               </div>
-              <h3 className="text-2xl font-bold mb-2 text-slate-900 dark:text-white">{cat.title}</h3>
-              <p className="text-slate-600 dark:text-slate-400 mb-6">{cat.desc}</p>
-              <span className="text-blue-600 dark:text-blue-400 font-medium group-hover:translate-x-2 transition-transform inline-flex items-center">
-                Start {cat.title.split(' ')[0]} Quiz <ArrowRight className="ml-1 w-4 h-4" />
-              </span>
+              <div className="flex-1">
+                  <h3 className="text-xl md:text-2xl font-bold mb-1 md:mb-2 text-slate-900 dark:text-white">{cat.title}</h3>
+                  <p className="text-sm md:text-base text-slate-600 dark:text-slate-400 mb-2 md:mb-6">{cat.desc}</p>
+                  <span className="text-blue-600 dark:text-blue-400 font-medium group-hover:translate-x-2 transition-transform inline-flex items-center text-sm md:text-base">
+                    Start {cat.title.split(' ')[0]} Quiz <ArrowRight className="ml-1 w-4 h-4" />
+                  </span>
+              </div>
             </div>
           ))}
         </div>
@@ -175,19 +171,19 @@ export const Dashboard: React.FC = () => {
         <div 
             style={{ animationDelay: '500ms' }}
             onClick={() => handleStartQuiz('general')}
-            className="group relative w-full bg-white dark:bg-slate-800 rounded-2xl p-8 border border-slate-200 dark:border-slate-700 hover:shadow-xl dark:hover:bg-slate-750 transition-all duration-300 hover:scale-[1.02] cursor-pointer hover:border-blue-500 dark:hover:border-slate-500 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6 animate-fade-in-up opacity-0"
+            className="group relative w-full bg-white dark:bg-slate-800 rounded-2xl p-6 md:p-8 border border-slate-200 dark:border-slate-700 hover:shadow-xl dark:hover:bg-slate-750 transition-all duration-300 hover:scale-[1.02] cursor-pointer hover:border-blue-500 dark:hover:border-slate-500 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6 animate-fade-in-up opacity-0"
         >
             <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-indigo-500 opacity-0 group-hover:opacity-5 rounded-2xl transition-opacity" />
-            <div className="flex items-center gap-6 relative z-10">
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-lg flex-shrink-0">
+            <div className="flex items-center gap-4 md:gap-6 relative z-10 w-full md:w-auto">
+                <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-lg flex-shrink-0">
                     <HelpCircle size={32} />
                 </div>
                 <div className="text-left">
-                    <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Can't decide?</h3>
-                    <p className="text-slate-600 dark:text-slate-400">Take our General Personality Quiz to find your direction.</p>
+                    <h3 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white mb-1 md:mb-2">Can't decide?</h3>
+                    <p className="text-sm md:text-base text-slate-600 dark:text-slate-400">Take our General Personality Quiz to find your direction.</p>
                 </div>
             </div>
-            <span className="text-blue-600 dark:text-blue-400 font-medium group-hover:translate-x-2 transition-transform inline-flex items-center relative z-10 whitespace-nowrap">
+            <span className="text-blue-600 dark:text-blue-400 font-medium group-hover:translate-x-2 transition-transform inline-flex items-center relative z-10 whitespace-nowrap self-start md:self-center pl-18 md:pl-0 mt-2 md:mt-0">
                 Start General Quiz <ArrowRight className="ml-1 w-4 h-4" />
             </span>
         </div>

@@ -1,12 +1,13 @@
+
 import React, { useState } from 'react';
 import { useAppStore } from '../store';
 import { AppView } from '../types';
 import { Button } from '../components/Button';
 import { Mail, Lock, AlertCircle, CheckCircle, ArrowLeft, Eye, EyeOff } from 'lucide-react';
-import { signInWithEmail, signUpWithEmail, getCurrentUser, getUserProfile, sendPasswordResetEmail } from '../services/supabaseService';
+import { signInWithEmail, signUpWithEmail, getCurrentUser, getUserProfile, sendPasswordResetEmail, getSavedCareers } from '../services/supabaseService';
 
 export const Auth: React.FC = () => {
-  const { setView, setUser } = useAppStore();
+  const { setView, setUser, setSavedCareers } = useAppStore();
   const [isLogin, setIsLogin] = useState(true);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
   
@@ -32,6 +33,12 @@ export const Auth: React.FC = () => {
             const profile = await getUserProfile(authUser.id);
             if (profile) {
                 setUser(profile);
+                try {
+                  const saved = await getSavedCareers(authUser.id);
+                  setSavedCareers(saved);
+                } catch (e) {
+                  console.warn("Failed to fetch saved careers on login", e);
+                }
                 setView(AppView.DASHBOARD);
             } else {
                 setUser({ id: authUser.id } as any);

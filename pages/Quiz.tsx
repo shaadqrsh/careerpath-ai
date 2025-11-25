@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAppStore } from '../store';
 import { AppView, CareerDomain } from '../types';
@@ -171,7 +172,7 @@ export const Quiz: React.FC = () => {
 
       <div 
         key={currentQuestion.id} 
-        className="w-full max-w-3xl mt-8"
+        className="w-full max-w-3xl mt-8 pb-10"
       >
         <span className="text-blue-600 dark:text-indigo-400 text-sm font-semibold tracking-wider uppercase mb-2 block animate-fade-in-up opacity-0" style={{ animationDelay: '0ms' }}>
           {currentQuestion.category}
@@ -200,11 +201,11 @@ export const Quiz: React.FC = () => {
           ))}
         </div>
 
-        <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-between animate-fade-in-up opacity-0" style={{ animationDelay: '600ms' }}>
+        <div className="mt-10 flex flex-col-reverse sm:flex-row gap-4 justify-between animate-fade-in-up opacity-0" style={{ animationDelay: '600ms' }}>
             <Button 
                 variant="ghost" 
                 onClick={() => setView(AppView.DASHBOARD)}
-                className="text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                className="text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 w-full sm:w-auto"
             >
                 Exit Quiz
             </Button>

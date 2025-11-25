@@ -5,21 +5,29 @@ import { AppView, Slide } from '../types';
 import { generateStorySlides } from '../services/geminiService';
 import { uploadCareerImages, saveCareerToDb, getUserProfile } from '../services/supabaseService';
 import { X, ChevronLeft, ChevronRight, Loader2, ImageOff, AlertOctagon } from 'lucide-react';
-import { DAILY_IMAGE_LIMIT } from '../constants';
+import { DAILY_IMAGE_LIMIT, SLIDESHOW_IMAGE_COUNT } from '../constants';
 
 const BananaIcon = ({ className }: { className?: string }) => (
     <svg 
-        xmlns="http://www.w3.org/2000/svg" 
         viewBox="0 0 24 24" 
-        fill="currentColor" 
-        stroke="currentColor" 
-        strokeWidth="2" 
-        strokeLinecap="round" 
-        strokeLinejoin="round" 
+        fill="none" 
+        xmlns="http://www.w3.org/2000/svg"
         className={className}
     >
-        <path d="M4 13c3.5-2 8-2 10 2a5.5 5.5 0 0 1 8 5" />
-        <path d="M5.15 17a9 9 0 1 0 17.77-2.88" />
+        <path 
+            d="M8.61603 3.5C8.61603 3.5 12.3381 2.5 14.8195 4.9814C17.3009 7.46279 16.0598 11.1849 16.0598 11.1849" 
+            stroke="currentColor" 
+            strokeWidth="2" 
+            strokeLinecap="round" 
+            strokeLinejoin="round"
+        />
+        <path 
+            d="M16.0598 11.1849C16.0598 11.1849 17.3009 19.8685 9.85671 22.35C2.41253 24.8314 1.17144 18.6279 1.17144 18.6279C1.17144 18.6279 5.51329 19.2483 9.23637 12.4255C12.9594 5.60271 8.61603 3.5 8.61603 3.5Z" 
+            stroke="currentColor" 
+            strokeWidth="2" 
+            strokeLinecap="round" 
+            strokeLinejoin="round"
+        />
     </svg>
 );
 
@@ -56,40 +64,49 @@ export const Slideshow: React.FC = () => {
     let isMounted = true;
     
     const loadSlides = async () => {
-      // Pre-check quota locally if possible to avoid flash of loading
-      if (user) {
-          const lastDateStr = user.lastImageGenerationDate;
-          let remaining = DAILY_IMAGE_LIMIT;
-          
-          if (lastDateStr) {
-              const lastDate = new Date(lastDateStr);
-              const now = new Date();
-              const isSameDay = lastDate.toISOString().split('T')[0] === now.toISOString().split('T')[0];
-              if (isSameDay) {
-                  remaining = Math.max(0, DAILY_IMAGE_LIMIT - (user.dailyImageGenerationsCount || 0));
-              }
-          }
-          
-          if (remaining <= 0) {
-              setQuotaError(true);
-              setLoading(false);
-              return;
-          }
-      }
-
       if (selectedCareer && !hasStartedRef.current) {
+        
+        // Determine if we actually need to generate new images
+        const existingImages = selectedCareer.slideImages || [];
+        const validCount = existingImages.filter(img => img && img.length > 5).length;
+        const needsGeneration = validCount < SLIDESHOW_IMAGE_COUNT;
+
+        // Only check quota if we intend to generate
+        if (needsGeneration && user) {
+            const lastDateStr = user.lastImageGenerationDate;
+            let remaining = DAILY_IMAGE_LIMIT;
+            
+            if (lastDateStr) {
+                const lastDate = new Date(lastDateStr);
+                const now = new Date();
+                const isSameDay = lastDate.toISOString().split('T')[0] === now.toISOString().split('T')[0];
+                if (isSameDay) {
+                    remaining = Math.max(0, DAILY_IMAGE_LIMIT - (user.dailyImageGenerationsCount || 0));
+                }
+            }
+            
+            if (remaining <= 0) {
+                if (isMounted) {
+                    setQuotaError(true);
+                    setLoading(false);
+                }
+                return;
+            }
+        }
+
         hasStartedRef.current = true;
         
         try {
             console.log("Loading slides for:", selectedCareer.title);
             
+            // This service handles partial generation (only generates what is missing)
             const generatedSlides = await generateStorySlides(selectedCareer, user);
             
             const imageUrls = generatedSlides.map(s => s.imageUrl || null);
             
-            const validCount = generatedSlides.filter(s => s.imageUrl && s.imageUrl.length > 5).length;
+            const validGeneratedCount = generatedSlides.filter(s => s.imageUrl && s.imageUrl.length > 5).length;
             
-            if (validCount === 0 && generatedSlides.length > 0) {
+            if (validGeneratedCount === 0 && generatedSlides.length > 0) {
                 if (isMounted) {
                     setAllFailed(true);
                 }
@@ -101,6 +118,7 @@ export const Slideshow: React.FC = () => {
                 setSlides(generatedSlides);
             }
             
+            // Only update user stats if we actually generated something
             if (user) {
                 getUserProfile(user.id).then(u => {
                     if (u) setUser(u);
@@ -136,6 +154,18 @@ export const Slideshow: React.FC = () => {
                 setLoading(false);
             }
         }
+      } else if (hasStartedRef.current && !loading && slides.length === 0) {
+          // Case where we re-enter or update but have no slides loaded in local state yet
+          // We can try to recover from selectedCareer if available
+           const existingImages = selectedCareer?.slideImages || [];
+           if (existingImages.length > 0) {
+              const simpleSlides = existingImages.map((img, i) => ({
+                  id: i,
+                  text: selectedCareer?.dayInLifePrompts?.[i] || "Career Visualization",
+                  imageUrl: img || ""
+              }));
+              setSlides(simpleSlides);
+           }
       }
     };
 
@@ -188,9 +218,9 @@ export const Slideshow: React.FC = () => {
                 {loadingText}
             </p>
             
-            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-yellow-500/10 border border-yellow-500/20 backdrop-blur-md">
-                <BananaIcon className="w-3 h-3 text-yellow-500" />
-                <span className="text-xs font-semibold text-yellow-500">
+            <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-yellow-400/10 border border-yellow-400/20 backdrop-blur-md">
+                <BananaIcon className="w-4 h-4 text-yellow-400" />
+                <span className="text-xs font-bold text-yellow-400 tracking-wide">
                     Powered by Nano Banana
                 </span>
             </div>
@@ -223,11 +253,12 @@ export const Slideshow: React.FC = () => {
   const hasImage = slide.imageUrl && slide.imageUrl.length > 5;
 
   return (
-    <div className="fixed inset-0 bg-black z-[60] flex items-center justify-center overflow-hidden animate-in fade-in duration-500">
+    <div className="fixed inset-0 bg-black z-[60] flex items-center justify-center overflow-hidden animate-in fade-in duration-500 px-4 py-8">
       
       {hasImage && (
           <div 
-            className="absolute inset-0 bg-cover bg-center blur-3xl opacity-30 scale-110 transition-all duration-1000"
+            key={currentSlide}
+            className="absolute inset-0 bg-cover bg-center blur-3xl opacity-30 scale-110 transition-all duration-1000 animate-in fade-in"
             style={{ backgroundImage: `url(${slide.imageUrl})` }}
           />
       )}
@@ -239,17 +270,18 @@ export const Slideshow: React.FC = () => {
         <X size={24} />
       </button>
 
-      <div className="relative z-10 w-full h-full max-w-md md:max-w-6xl flex flex-col md:flex-row bg-slate-900/80 backdrop-blur-md md:rounded-3xl overflow-hidden border border-white/10 shadow-2xl m-0 md:m-8 md:h-[85vh]">
+      <div className="relative z-10 w-full h-full max-w-md md:max-w-6xl flex flex-col md:flex-row bg-slate-900/80 backdrop-blur-md md:rounded-3xl overflow-hidden border border-white/10 shadow-2xl m-0 md:m-8 max-h-[90vh] md:h-[85vh]">
         
-        <div className="h-[60%] md:h-full md:w-[70%] relative bg-black flex items-center justify-center overflow-hidden group">
+        <div className="h-[50%] md:h-full md:w-[70%] relative bg-black flex items-center justify-center overflow-hidden group">
             {hasImage ? (
                 <img 
+                    key={currentSlide}
                     src={slide.imageUrl} 
                     alt="Day in life" 
-                    className="w-full h-full object-cover transition-transform duration-[2000ms] ease-in-out group-hover:scale-105"
+                    className="w-full h-full object-cover animate-in fade-in duration-700"
                 />
             ) : (
-                <div className="flex flex-col items-center justify-center text-slate-500 p-8 text-center bg-slate-900/50 w-full h-full">
+                <div key={currentSlide} className="flex flex-col items-center justify-center text-slate-500 p-8 text-center bg-slate-900/50 w-full h-full animate-in fade-in">
                     <ImageOff size={64} className="mb-4 opacity-40" />
                     <p className="text-lg font-medium text-slate-400">Image not available</p>
                     <p className="text-sm opacity-60 mt-2">We couldn't generate this specific scene.</p>
@@ -266,26 +298,28 @@ export const Slideshow: React.FC = () => {
             </div>
         </div>
 
-        <div className="h-[40%] md:h-full md:w-[30%] p-6 md:p-10 flex flex-col justify-center bg-slate-950 border-t md:border-t-0 md:border-l border-white/10 relative">
+        <div key={`text-${currentSlide}`} className="h-[50%] md:h-full md:w-[30%] p-6 md:p-10 flex flex-col bg-slate-950 border-t md:border-t-0 md:border-l border-white/10 relative animate-in slide-in-from-right-4 duration-500">
             
-            <div className="mb-auto pt-2">
+            <div className="mb-4 pt-2 shrink-0">
                 <div className="flex items-center gap-2 mb-4">
                     <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
                     <h3 className="text-blue-400 font-bold tracking-widest text-xs uppercase">
                         Day in the Life
                     </h3>
                 </div>
-                <h2 className="text-white text-xl md:text-2xl font-bold leading-tight mb-1">
+                <h2 className="text-white text-xl md:text-2xl font-bold leading-tight mb-1 truncate">
                     {selectedCareer?.title}
                 </h2>
-                <div className="w-10 h-1 bg-blue-600 rounded-full mt-4 mb-6 opacity-80"></div>
+                <div className="w-10 h-1 bg-blue-600 rounded-full mt-4 mb-2 opacity-80"></div>
             </div>
 
-            <p className="text-slate-300 text-lg md:text-xl leading-relaxed font-light italic relative z-10">
-                "{slide.text}"
-            </p>
+            <div className="overflow-y-auto pr-2 custom-scrollbar flex-grow">
+                 <p className="text-slate-300 text-lg md:text-xl leading-relaxed font-light italic relative z-10">
+                    "{slide.text}"
+                </p>
+            </div>
 
-            <div className="mt-auto pt-8 flex justify-between items-center">
+            <div className="mt-4 pt-4 flex justify-between items-center shrink-0 border-t border-slate-800">
                 <button 
                     onClick={handlePrev}
                     disabled={currentSlide === 0}
