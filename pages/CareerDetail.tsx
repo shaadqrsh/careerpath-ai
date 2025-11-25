@@ -217,6 +217,7 @@ export const CareerDetail: React.FC = () => {
                 ))}
             </div>
         </section>
+      </main>
     </div>
   );
 };
