@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { AppView, UserProfile, QuizAnswer, CareerRecommendation, CareerDomain } from './types';
-import { saveCareerToDb, deleteCareerFromDb } from './services/supabaseService';
+import { saveCareerToDb, deleteCareerFromDb, uploadCareerImages, signOut as serviceSignOut } from './services/supabaseService';
 
 export type AppTheme = 'light' | 'dark' | 'system';
 
@@ -55,6 +55,8 @@ interface AppState {
   hideToast: () => void;
   
   setLoading: (loading: boolean) => void;
+  logout: () => Promise<void>;
+  clearState: () => void;
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -212,9 +214,20 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({ isSavingCareer: true });
     
     try {
-        const currentVersion = state.selectedCareer?.id === career.id ? state.selectedCareer : career;
-
+        let currentVersion = state.selectedCareer?.id === career.id ? state.selectedCareer : career;
+        
         if (state.user) {
+            const hasRawImages = currentVersion.slideImages && currentVersion.slideImages.some(img => img && img.startsWith('data:'));
+            if (hasRawImages && currentVersion.slideImages) {
+                 try {
+                     const uploadedUrls = await uploadCareerImages(state.user.id, currentVersion.id, currentVersion.slideImages as string[]);
+                     currentVersion = { ...currentVersion, slideImages: uploadedUrls };
+                     state.updateCareerImages(currentVersion.id, uploadedUrls);
+                 } catch (uploadError) {
+                     console.warn("Image upload during save failed, saving career without images first", uploadError);
+                 }
+            }
+
             await saveCareerToDb(state.user.id, currentVersion);
         }
 
@@ -241,4 +254,26 @@ export const useAppStore = create<AppState>((set, get) => ({
   setShowPasswordResetModal: (show) => set({ showPasswordResetModal: show }),
 
   setLoading: (loading) => set({ isLoading: loading }),
+
+  clearState: () => {
+      set({
+        currentView: AppView.LANDING,
+        previousView: null,
+        careerOrigin: null,
+        user: null,
+        selectedDomain: 'general',
+        quizAnswers: [],
+        recommendations: [],
+        selectedCareer: null,
+        savedCareers: [],
+        hasViewedSavedPaths: false,
+        pendingDeleteCareer: null
+      });
+      localStorage.removeItem('hasViewedSavedPaths');
+  },
+
+  logout: async () => {
+      await serviceSignOut();
+      get().clearState();
+  }
 }));

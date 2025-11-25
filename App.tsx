@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAppStore } from './store';
 import { AppView } from './types';
-import { getUserProfile, getSavedCareers, getCurrentUser, signOut } from './services/supabaseService';
+import { getUserProfile, getSavedCareers, getCurrentUser } from './services/supabaseService';
 import { Loader2, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
 import { Button } from './components/Button';
 import { APP_NAME } from './constants';
@@ -20,7 +20,7 @@ import { SavedPaths } from './pages/SavedPaths';
 import { UpdatePassword } from './pages/UpdatePassword';
 
 const App: React.FC = () => {
-  const { currentView, theme, setView, setUser, setSavedCareers, pendingDeleteCareer, confirmDeleteCareer, cancelDeleteCareer, toast, isDeletingCareer, showToast } = useAppStore();
+  const { currentView, theme, setView, setUser, setSavedCareers, pendingDeleteCareer, confirmDeleteCareer, cancelDeleteCareer, toast, isDeletingCareer, showToast, logout } = useAppStore();
   const [isInitializing, setIsInitializing] = useState(true);
 
   useEffect(() => {
@@ -131,7 +131,7 @@ const App: React.FC = () => {
             }
         } catch (e) {
             console.error("Auth initialization failed", e);
-            signOut(); 
+            await logout(); 
             setView(AppView.LANDING);
         } finally {
             setIsInitializing(false);
@@ -139,7 +139,7 @@ const App: React.FC = () => {
     };
     
     initAuth();
-  }, [setUser, setView, setSavedCareers, showToast]);
+  }, [setUser, setView, setSavedCareers, showToast, logout]);
 
   const renderView = () => {
     switch (currentView) {

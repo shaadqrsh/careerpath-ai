@@ -3,10 +3,9 @@ import { useAppStore } from '../store';
 import { AppView, CareerDomain } from '../types';
 import { Beaker, Briefcase, Palette, LogOut, User, Heart, HelpCircle, ArrowRight, Zap, Image, Menu, X } from 'lucide-react';
 import { APP_NAME, DAILY_CAREER_LIMIT, DAILY_IMAGE_LIMIT } from '../constants';
-import { signOut } from '../services/supabaseService';
 
 export const Dashboard: React.FC = () => {
-  const { setView, setDomain, savedCareers, hasViewedSavedPaths, user } = useAppStore();
+  const { setView, setDomain, savedCareers, hasViewedSavedPaths, user, logout } = useAppStore();
   
   const [careerQuota, setCareerQuota] = useState(0);
   const [imageQuota, setImageQuota] = useState(0);
@@ -48,7 +47,7 @@ export const Dashboard: React.FC = () => {
   };
 
   const handleLogout = async () => {
-      await signOut();
+      await logout();
       setView(AppView.LANDING);
   };
 

@@ -358,11 +358,13 @@ async def generate_career(req: GenerateCareerRequest, authorization: str = Heade
         
         Task:
         1. Identify {CAREERS_PER_GENERATION} personalized career paths.
-        2. STRICT ELIGIBILITY: If user is Arts, no Science. If Pivot, verify realistic paths.
+        2. STRICT ELIGIBILITY CHECK: If user is Arts, no Science. If Pivot, verify realistic paths.
         3. PIVOT ANALYSIS: Is this a "Natural Progression" or "Major Pivot"?
         4. ROADMAP: Split into 'localPath' ({user_p.residence_country}) and 'targetPath' ({user_p.preferred_work_country}) if different.
-        5. DATA INTEGRITY: Ensure 'salaryRange', 'growth', and 'roadmap' are FILLED.
-        6. GENERATE {SLIDESHOW_IMAGE_COUNT} DAY IN A LIFE PROMPTS per career.
+        5. DATA INTEGRITY: Ensure 'salaryRange', 'growth', and 'roadmap' are FILLED for every recommendation. Do not leave null.
+        6. Do not refer to the user by name in the output text. Use 'You' or 'Your'.
+        7. IMPORTANT: Do not mention specific question numbers or quote exact answers. Synthesize the user's responses into general traits (e.g., "Given your interest in visual problem solving...").
+        8. GENERATE {SLIDESHOW_IMAGE_COUNT} DAY IN A LIFE PROMPTS per career. Synthesize the user's responses into general traits (e.g., "Given your interest in visual problem solving...").
         
         OUTPUT FORMAT: STRICT JSON.
         {{

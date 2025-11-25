@@ -5,10 +5,10 @@ import { Button } from '../components/Button';
 import { CustomSelect } from '../components/CustomSelect';
 import { Loader2, LogOut, User, MapPin } from 'lucide-react';
 import { FALLBACK_COUNTRIES } from '../constants';
-import { upsertUserProfile, getCurrentUser, signOut } from '../services/supabaseService';
+import { upsertUserProfile, getCurrentUser } from '../services/supabaseService';
 
 export const Onboarding: React.FC = () => {
-  const { setView, setUser } = useAppStore();
+  const { setView, setUser, logout } = useAppStore();
   const [saving, setSaving] = useState(false);
   const [isVerifyingSession, setIsVerifyingSession] = useState(true);
   
@@ -94,7 +94,7 @@ export const Onboarding: React.FC = () => {
   };
 
   const handleLogout = async () => {
-      await signOut();
+      await logout();
       setView(AppView.AUTH);
   };
 
