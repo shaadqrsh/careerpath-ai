@@ -18,11 +18,6 @@ export const Slideshow: React.FC = () => {
   
   // Refs for safety checks
   const hasStartedRef = useRef(false);
-  const loadingRef = useRef(true); // Track loading state in ref for timeout closure
-
-  useEffect(() => {
-    loadingRef.current = loading;
-  }, [loading]);
 
   useEffect(() => {
     let isMounted = true;
@@ -36,9 +31,10 @@ export const Slideshow: React.FC = () => {
             
             // This service method now handles checking for existing images and only generating missing ones
             // It throws "QUOTA_EXCEEDED" if backend rejects the request
+            // If images exist in selectedCareer.slideImages, it returns them immediately.
             const generatedSlides = await generateStorySlides(selectedCareer, user);
             
-            // Extract URLs (some might be empty strings if failed)
+            // Extract URLs
             const imageUrls = generatedSlides.map(s => s.imageUrl || null);
             
             // Check if ALL images failed (are empty strings/nulls)
@@ -47,66 +43,57 @@ export const Slideshow: React.FC = () => {
             if (validCount === 0 && generatedSlides.length > 0) {
                 if (isMounted) {
                     setAllFailed(true);
-                    setLoading(false);
                 }
                 return;
             }
 
-            // Update Store locally
+            // Update Store locally so user sees them immediately
             updateCareerImages(selectedCareer.id, imageUrls);
+            if (isMounted) {
+                setSlides(generatedSlides);
+            }
             
+            // If saved, upload to bucket and save to DB in background
             const isSaved = savedCareers.some(c => c.id === selectedCareer.id);
             if (isSaved && user) {
-                 try {
-                     const processedUrls = await uploadCareerImages(user.id, selectedCareer.id, imageUrls);
+                 // Non-blocking upload logic
+                 uploadCareerImages(user.id, selectedCareer.id, imageUrls).then(async (processedUrls) => {
                      updateCareerImages(selectedCareer.id, processedUrls);
                      const updatedCareer = { ...selectedCareer, slideImages: processedUrls };
                      await saveCareerToDb(user.id, updatedCareer);
                      
+                     // Update local slides state with permalinks if still mounted
                      if (isMounted) {
                         setSlides(generatedSlides.map((s, i) => ({ ...s, imageUrl: processedUrls[i] || "" })));
                      }
-                 } catch (saveErr) {
-                     console.error("Failed to persist generated images", saveErr);
-                     if (isMounted) setSlides(generatedSlides);
-                 }
-            } else {
-                 if (isMounted) setSlides(generatedSlides);
+                 }).catch(err => {
+                     console.error("Background upload failed:", err);
+                 });
             }
 
-            if (isMounted) {
-                setLoading(false);
-            }
         } catch (e: any) {
             console.error("Slideshow Error:", e);
             if (isMounted) {
-                setLoading(false);
                 if (e.message === "QUOTA_EXCEEDED") {
                     setQuotaError(true);
                 } else {
                     setAllFailed(true);
                 }
             }
+        } finally {
+            if (isMounted) {
+                setLoading(false);
+            }
         }
       }
     };
-
-    // Safety Timeout using Ref to avoid stale closure issues
-    const safetyTimeout = setTimeout(() => {
-        if (isMounted && loadingRef.current && !quotaError) {
-            console.warn("Slideshow generation timed out.");
-            setLoading(false);
-            setAllFailed(true);
-        }
-    }, 50000); 
 
     loadSlides();
 
     return () => {
         isMounted = false;
-        clearTimeout(safetyTimeout);
     };
-  }, [selectedCareer, user, updateCareerImages, savedCareers, quotaError]);
+  }, [selectedCareer, user, updateCareerImages, savedCareers]);
 
   const handleNext = () => {
     if (currentSlide < slides.length - 1) setCurrentSlide(curr => curr + 1);

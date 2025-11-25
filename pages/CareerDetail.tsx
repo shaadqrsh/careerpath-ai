@@ -1,5 +1,5 @@
 
-import React, { useState, useRef, useEffect } from 'react';
+import React from 'react';
 import { useAppStore } from '../store';
 import { AppView } from '../types';
 import { Button } from '../components/Button';
@@ -8,21 +8,6 @@ import { ChevronLeft, PlayCircle, Heart, MapPin, Briefcase, GraduationCap, Loade
 export const CareerDetail: React.FC = () => {
   const { selectedCareer, setView, careerOrigin, user, toggleSavedCareer, savedCareers, isSavingCareer, recommendations } = useAppStore();
   
-  const titleRef = useRef<HTMLHeadingElement>(null);
-  const [isTitleOverflowing, setIsTitleOverflowing] = useState(false);
-
-  useEffect(() => {
-    const checkOverflow = () => {
-      if (titleRef.current) {
-        setIsTitleOverflowing(titleRef.current.scrollWidth > titleRef.current.clientWidth);
-      }
-    };
-    
-    checkOverflow();
-    window.addEventListener('resize', checkOverflow);
-    return () => window.removeEventListener('resize', checkOverflow);
-  }, [selectedCareer?.title]);
-
   if (!selectedCareer) {
     setView(AppView.DASHBOARD);
     return null;
@@ -45,49 +30,45 @@ export const CareerDetail: React.FC = () => {
     // Added pb-32 for extra bottom padding on mobile
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white pb-32 transition-colors">
       {/* Header */}
-      <div className="relative h-64 bg-slate-800 overflow-hidden">
+      <div className="relative min-h-[16rem] h-auto bg-slate-800 overflow-hidden pt-20 pb-8">
         <div className="absolute inset-0 bg-gradient-to-r from-blue-900 to-slate-900 opacity-90"></div>
         <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?auto=format&fit=crop&q=80')] bg-cover bg-center mix-blend-overlay"></div>
         
-        <div className="relative max-w-7xl mx-auto px-4 h-full flex flex-col justify-end pb-8">
-            <div className="absolute top-6 left-4 right-4 flex justify-between items-center">
+        <div className="relative max-w-7xl mx-auto px-4 h-full flex flex-col justify-end">
+            {/* Back Button positioned safely at top */}
+            <div className="absolute top-6 left-4 right-4 flex justify-between items-center z-10">
                 <button 
                     onClick={() => setView(backTarget)}
                     disabled={isSavingCareer}
-                    className="text-white/80 hover:text-white flex items-center gap-2 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="text-white/80 hover:text-white flex items-center gap-2 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed bg-black/20 backdrop-blur-sm px-3 py-1.5 rounded-full"
                 >
                     <ChevronLeft size={20} /> {backLabel}
                 </button>
             </div>
             
-            <div className="flex justify-between items-end">
-                <div className="flex-1 min-w-0 mr-4">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 md:gap-4">
+                <div className="flex-1 min-w-0">
                     {isBestMatch && (
-                        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-500/20 border border-green-500/40 text-green-300 text-xs font-bold uppercase tracking-wider mb-2 backdrop-blur-md">
+                        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-500/20 border border-green-500/40 text-green-300 text-xs font-bold uppercase tracking-wider mb-3 backdrop-blur-md">
                             <Star size={12} fill="currentColor" />
                             Best Match
                         </div>
                     )}
                     
-                    {/* Title with Conditional Marquee */}
-                    <div className="overflow-hidden relative w-full mb-3">
-                        <h1 
-                            ref={titleRef}
-                            className={`text-4xl md:text-5xl font-bold text-white whitespace-nowrap ${isTitleOverflowing ? 'animate-marquee' : ''}`}
-                        >
-                            {selectedCareer.title}
-                        </h1>
-                    </div>
+                    {/* Title Wraps Normally */}
+                    <h1 className="text-4xl md:text-5xl font-bold text-white whitespace-normal mb-4 leading-tight">
+                        {selectedCareer.title}
+                    </h1>
 
                     {/* Static Stats with Icons */}
                     <div className="flex flex-wrap items-center gap-3 text-sm md:text-base">
-                        <div className="flex items-center gap-1.5 bg-white/10 px-3 py-1.5 rounded-lg border border-white/10 backdrop-blur-md text-white/90">
+                        <div className="flex items-center gap-1.5 bg-white/10 px-3 py-1.5 rounded-lg border border-white/10 backdrop-blur-md text-white/90 shrink-0">
                             <DollarSign size={16} className="text-green-400" />
-                            <span className="font-medium">{selectedCareer.salaryRange}</span>
+                            <span className="font-medium whitespace-nowrap">{selectedCareer.salaryRange}</span>
                         </div>
-                        <div className="flex items-center gap-1.5 bg-white/10 px-3 py-1.5 rounded-lg border border-white/10 backdrop-blur-md text-white/90">
+                        <div className="flex items-center gap-1.5 bg-white/10 px-3 py-1.5 rounded-lg border border-white/10 backdrop-blur-md text-white/90 shrink-0">
                             <TrendingUp size={16} className="text-blue-400" />
-                            <span className="font-medium">{selectedCareer.growth} Growth</span>
+                            <span className="font-medium whitespace-nowrap">{selectedCareer.growth} Growth</span>
                         </div>
                     </div>
                 </div>
@@ -111,7 +92,7 @@ export const CareerDetail: React.FC = () => {
                      <Button 
                         onClick={() => setView(AppView.SLIDESHOW)}
                         disabled={isSavingCareer} 
-                        className="shadow-xl shadow-blue-900/50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="shadow-xl shadow-blue-900/50 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                      >
                         <PlayCircle className="w-5 h-5 mr-2" />
                         {isSavingCareer ? "Saving..." : "View Day in Life"}

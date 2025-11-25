@@ -261,12 +261,15 @@ async def generate_career(req: GenerateCareerRequest, user = Depends(verify_toke
         Analyze this user profile: {user_p.full_name}, {user_p.age}y/o, {user_p.education_level} in {user_p.specialization}.
         Residence: {user_p.residence_country}, Target: {user_p.preferred_work_country}.
         Quiz Context: {json.dumps(answers, indent=2)}.
+        
         Task:
-        1. Identify 5 personalized career paths.
+        1. Identify 5 personalized career paths based on the profile and quiz.
         2. STRICT ELIGIBILITY CHECK: If user is Arts, no Science. If Pivot, verify realistic paths.
         3. PIVOT ANALYSIS: Is this a "Natural Progression" or "Major Pivot"?
         4. ROADMAP: Split into 'localPath' ({user_p.residence_country}) and 'targetPath' ({user_p.preferred_work_country}) if different.
-        5. OUTPUT FORMAT: STRICT JSON.
+        5. DATA INTEGRITY: Ensure 'salaryRange', 'growth', and 'roadmap' are FILLED for every recommendation. Do not leave null.
+        
+        OUTPUT FORMAT: STRICT JSON.
         JSON Structure:
         {{
           "recommendations": [
@@ -274,14 +277,18 @@ async def generate_career(req: GenerateCareerRequest, user = Depends(verify_toke
               "id": "uuid-placeholder",
               "title": "Job Title",
               "matchScore": 85,
-              "summary": "...",
-              "salaryRange": "$X - $Y",
-              "growth": "High/Medium",
-              "tags": ["Tag1"],
+              "summary": "Full detailed summary...",
+              "salaryRange": "$50k - $80k",
+              "growth": "High (20% by 2030)",
+              "tags": ["Tag1", "Tag2"],
               "isPivot": boolean,
-              "pivotAnalysis": "...",
-              "roadmap": [{{ "title": "...", "description": "...", "localPath": "...", "targetPath": "...", "duration": "..." }}],
-              "dayInLifePrompts": ["Scene 1", "Scene 2", "Scene 3"]
+              "pivotAnalysis": "Analysis string...",
+              "roadmap": [
+                 {{ "title": "Step 1", "description": "...", "localPath": "...", "targetPath": "...", "duration": "1 Year" }},
+                 {{ "title": "Step 2", "description": "...", "localPath": "...", "targetPath": "...", "duration": "2 Years" }},
+                 {{ "title": "Step 3", "description": "...", "localPath": "...", "targetPath": "...", "duration": "1 Year" }}
+              ],
+              "dayInLifePrompts": ["Scene 1 description", "Scene 2 description", "Scene 3 description"]
             }}
           ]
         }}
