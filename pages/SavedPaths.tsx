@@ -1,11 +1,14 @@
-import React from 'react';
+
+import React, { useState } from 'react';
 import { useAppStore } from '../store';
 import { AppView, CareerRecommendation } from '../types';
 import { Button } from '../components/Button';
-import { ArrowLeft, Trash2, ArrowRight, TrendingUp, DollarSign } from 'lucide-react';
+import { ArrowLeft, Trash2, ArrowRight, TrendingUp, DollarSign, RefreshCw, Loader2 } from 'lucide-react';
+import { getSavedCareers } from '../services/supabaseService';
 
 export const SavedPaths: React.FC = () => {
-  const { savedCareers, setView, toggleSavedCareer, setSelectedCareer, setCareerOrigin } = useAppStore();
+  const { savedCareers, setView, toggleSavedCareer, setSelectedCareer, setCareerOrigin, user, setSavedCareers, showToast } = useAppStore();
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const handleSelect = (career: CareerRecommendation) => {
     setSelectedCareer(career);
@@ -13,15 +16,41 @@ export const SavedPaths: React.FC = () => {
     setView(AppView.CAREER_DETAIL);
   };
 
+  const handleRefresh = async () => {
+    if (!user) return;
+    setIsRefreshing(true);
+    try {
+        const saved = await getSavedCareers(user.id);
+        setSavedCareers(saved);
+        if (saved.length > 0) {
+            showToast("Careers refreshed");
+        } else {
+            showToast("No saved careers found");
+        }
+    } catch(e) {
+        showToast("Failed to refresh careers");
+    } finally {
+        setIsRefreshing(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 py-8 px-4 sm:px-6 lg:px-8 pb-32 transition-colors duration-300">
       <div className="max-w-7xl mx-auto">
-        <div className="flex items-center mb-8 animate-fade-in-up opacity-0" style={{ animationDelay: '0ms' }}>
+        <div className="flex items-center justify-between mb-8 animate-fade-in-up opacity-0" style={{ animationDelay: '0ms' }}>
             <button 
                 onClick={() => setView(AppView.DASHBOARD)} 
                 className="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white flex items-center gap-2 transition-colors"
             >
                 <ArrowLeft size={20} /> Back to Dashboard
+            </button>
+            <button
+                onClick={handleRefresh}
+                disabled={isRefreshing}
+                className="text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-2 transition-colors disabled:opacity-50"
+            >
+                {isRefreshing ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />}
+                Refresh List
             </button>
         </div>
 
@@ -89,12 +118,21 @@ export const SavedPaths: React.FC = () => {
         {savedCareers.length === 0 && (
              <div className="mt-8 p-8 border-2 border-dashed border-slate-300 dark:border-slate-800 rounded-xl text-center animate-fade-in-up opacity-0" style={{ animationDelay: '200ms' }}>
                 <p className="text-slate-500 dark:text-slate-400">Go explore some quizzes to find your dream job!</p>
-                <Button 
-                    className="mt-4 group transition-transform hover:scale-105" 
-                    onClick={() => setView(AppView.DASHBOARD)}
-                >
-                    Explore Careers
-                </Button>
+                <div className="mt-4 flex gap-4 justify-center">
+                    <Button 
+                        onClick={() => setView(AppView.DASHBOARD)}
+                        className="group transition-transform hover:scale-105" 
+                    >
+                        Explore Careers
+                    </Button>
+                    <Button 
+                        onClick={handleRefresh}
+                        variant="secondary"
+                        disabled={isRefreshing}
+                    >
+                         {isRefreshing ? 'Refreshing...' : 'Refresh List'}
+                    </Button>
+                </div>
              </div>
         )}
       </div>

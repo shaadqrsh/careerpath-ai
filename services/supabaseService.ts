@@ -1,5 +1,5 @@
 
-import { CareerRecommendation, UserProfile } from '../types';
+import { CareerRecommendation, UserProfile, CareerRoadmapStep } from '../types';
 import { API_BASE_URL } from '../constants';
 
 const getToken = () => localStorage.getItem('access_token');
@@ -57,7 +57,13 @@ const fromDbCareer = (d: any): CareerRecommendation => ({
     tags: d.tags || [],
     isPivot: d.is_pivot,
     pivotAnalysis: d.pivot_analysis,
-    roadmap: d.roadmap || [],
+    roadmap: (d.roadmap || []).map((step: any) => ({
+        title: step.title,
+        description: step.description,
+        localPath: step.local_path || step.localPath,
+        targetPath: step.target_path || step.targetPath,
+        duration: step.duration
+    })),
     dayInLifePrompts: d.day_in_life_prompts || [],
     slideImages: d.slide_images || []
 });

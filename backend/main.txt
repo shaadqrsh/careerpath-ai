@@ -423,7 +423,10 @@ async def get_saved_careers(user = Depends(verify_token)):
     try:
         res = supabase.table("saved_careers").select("*").eq("user_id", user.id).execute()
         return res.data
-    except Exception: return []
+    except Exception as e:
+        logger.error(f"Error fetching saved careers: {e}")
+        traceback.print_exc()
+        return []
 
 @app.post("/api/saved-careers")
 async def save_career(career: CareerRecommendation, user = Depends(verify_token)):
