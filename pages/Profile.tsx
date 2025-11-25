@@ -3,7 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { useAppStore } from '../store';
 import { AppView, UserProfile } from '../types';
 import { Button } from '../components/Button';
-import { ArrowLeft, Loader2, Shield, AlertTriangle, User, MapPin, ChevronDown, Moon, Sun, Monitor } from 'lucide-react';
+import { CustomSelect } from '../components/CustomSelect';
+import { ArrowLeft, Loader2, AlertTriangle, User, MapPin, Settings } from 'lucide-react';
 import { FALLBACK_COUNTRIES } from '../constants';
 import { upsertUserProfile, getUserProfile, getCurrentUser, sendPasswordResetEmail } from '../services/supabaseService';
 
@@ -192,18 +193,11 @@ export const Profile: React.FC = () => {
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Gender</label>
-                            <div className="relative">
-                                <select 
-                                    value={formData.gender}
-                                    onChange={(e) => handleChange('gender', e.target.value)}
-                                    className="appearance-none w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-600 rounded-xl py-3 pl-4 pr-10 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors cursor-pointer"
-                                >
-                                    <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">Male</option>
-                                    <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">Female</option>
-                                    <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">Non-binary</option>
-                                </select>
-                                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" size={18} />
-                            </div>
+                            <CustomSelect 
+                                value={formData.gender || 'Male'}
+                                onChange={(val) => handleChange('gender', val)}
+                                options={['Male', 'Female', 'Non-binary']}
+                            />
                         </div>
                     </div>
 
@@ -222,20 +216,11 @@ export const Profile: React.FC = () => {
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Level</label>
-                            <div className="relative">
-                                <select 
-                                    value={formData.educationLevel}
-                                    onChange={(e) => handleChange('educationLevel', e.target.value)}
-                                    className="appearance-none w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-600 rounded-xl py-3 pl-4 pr-10 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors cursor-pointer"
-                                >
-                                    <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">High School</option>
-                                    <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">Undergraduate</option>
-                                    <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">Graduate</option>
-                                    <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">PhD</option>
-                                    <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">Bootcamp/Self-taught</option>
-                                </select>
-                                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" size={18} />
-                            </div>
+                            <CustomSelect 
+                                value={formData.educationLevel || 'High School'}
+                                onChange={(val) => handleChange('educationLevel', val)}
+                                options={['High School', 'Undergraduate', 'Graduate', 'PhD', 'Bootcamp/Self-taught']}
+                            />
                         </div>
                     </div>
 
@@ -261,44 +246,27 @@ export const Profile: React.FC = () => {
                 <div className="space-y-6">
                     <div>
                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Current Residence</label>
-                        <div className="relative">
-                            <select 
-                                    required
-                                    value={formData.residenceCountry}
-                                    onChange={(e) => handleChange('residenceCountry', e.target.value)}
-                                    disabled={isLoadingCountries}
-                                    className="appearance-none w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-600 rounded-xl py-3 pl-4 pr-10 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors disabled:opacity-50 cursor-pointer"
-                            >
-                                <option value="" className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">{isLoadingCountries ? "Loading..." : "Select Country"}</option>
-                                {countries.map(c => (
-                                    <option key={c} value={c} className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">{c}</option>
-                                ))}
-                            </select>
-                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" size={18} />
-                        </div>
+                        <CustomSelect 
+                            value={formData.residenceCountry || ''}
+                            onChange={(val) => handleChange('residenceCountry', val)}
+                            options={isLoadingCountries ? [{label: "Loading...", value: ""}] : countries}
+                            placeholder="Select Country"
+                            disabled={isLoadingCountries}
+                            required
+                        />
                     </div>
 
                     <div>
                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Future Work Preference</label>
-                        <div className="relative">
-                            <select 
-                                value={formData.preferredWorkCountry}
-                                onChange={(e) => handleChange('preferredWorkCountry', e.target.value)}
-                                className="appearance-none w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-600 rounded-xl py-3 pl-4 pr-10 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors cursor-pointer"
-                            >
-                                {formData.residenceCountry && <option value={formData.residenceCountry} className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">{formData.residenceCountry} (Current)</option>}
-                                <option value="USA" className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">USA</option>
-                                <option value="United Kingdom" className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">United Kingdom</option>
-                                <option value="Canada" className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">Canada</option>
-                                <option value="Germany" className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">Germany</option>
-                                <option value="Australia" className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">Australia</option>
-                                <option value="Singapore" className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">Singapore</option>
-                                <option value="India" className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">India</option>
-                                <option value="Undecided" className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">Undecided</option>
-                                <option value="Remote (Global)" className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">Remote (Global)</option>
-                            </select>
-                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" size={18} />
-                        </div>
+                        <CustomSelect 
+                            value={formData.preferredWorkCountry || ''}
+                            onChange={(val) => handleChange('preferredWorkCountry', val)}
+                            options={[
+                                ...(formData.residenceCountry ? [{label: `${formData.residenceCountry} (Current)`, value: formData.residenceCountry}] : []),
+                                'USA', 'United Kingdom', 'Canada', 'Germany', 'Australia', 'Singapore', 'India', 'Undecided', 'Remote (Global)'
+                            ]}
+                            placeholder="Select Preference"
+                        />
                     </div>
                 </div>
             </div>
@@ -306,27 +274,21 @@ export const Profile: React.FC = () => {
             {/* ACCOUNT DETAILS */}
             <div className="border-t border-slate-200 dark:border-slate-700 pt-6">
                  <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-6 flex items-center gap-2">
-                    <Shield size={16} /> Account Details
+                    <Settings size={18} /> Account Details
                  </h3>
                  
                  <div className="space-y-6">
                     <div>
                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">App Theme</label>
-                        <div className="relative">
-                            <select 
-                                value={theme}
-                                onChange={(e) => setTheme(e.target.value as any)}
-                                className="appearance-none w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-600 rounded-xl py-3 pl-4 pr-10 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors cursor-pointer"
-                            >
-                                <option value="system" className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">System Default</option>
-                                <option value="light" className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">Light</option>
-                                <option value="dark" className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">Dark</option>
-                            </select>
-                            <div className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none flex items-center gap-2">
-                                {theme === 'dark' ? <Moon size={16} /> : (theme === 'light' ? <Sun size={16} /> : <Monitor size={16} />)}
-                                <ChevronDown size={18} />
-                            </div>
-                        </div>
+                        <CustomSelect 
+                            value={theme}
+                            onChange={(val) => setTheme(val)}
+                            options={[
+                                { label: "System Default", value: "system" },
+                                { label: "Light", value: "light" },
+                                { label: "Dark", value: "dark" }
+                            ]}
+                        />
                     </div>
 
                     <div>

@@ -3,7 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { useAppStore } from '../store';
 import { AppView, UserProfile } from '../types';
 import { Button } from '../components/Button';
-import { Loader2, LogOut, User, MapPin, ChevronDown } from 'lucide-react';
+import { CustomSelect } from '../components/CustomSelect';
+import { Loader2, LogOut, User, MapPin } from 'lucide-react';
 import { FALLBACK_COUNTRIES } from '../constants';
 import { upsertUserProfile, getCurrentUser, signOut } from '../services/supabaseService';
 
@@ -161,18 +162,11 @@ export const Onboarding: React.FC = () => {
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Gender</label>
-                            <div className="relative">
-                                <select 
-                                    value={formData.gender}
-                                    onChange={(e) => handleChange('gender', e.target.value)}
-                                    className="appearance-none w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-600 rounded-xl py-3 pl-4 pr-10 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors cursor-pointer"
-                                >
-                                    <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">Male</option>
-                                    <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">Female</option>
-                                    <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">Non-binary</option>
-                                </select>
-                                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" size={18} />
-                            </div>
+                            <CustomSelect 
+                                value={formData.gender || 'Male'}
+                                onChange={(val) => handleChange('gender', val)}
+                                options={['Male', 'Female', 'Non-binary']}
+                            />
                         </div>
                     </div>
 
@@ -191,20 +185,11 @@ export const Onboarding: React.FC = () => {
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Level</label>
-                            <div className="relative">
-                                <select 
-                                    value={formData.educationLevel}
-                                    onChange={(e) => handleChange('educationLevel', e.target.value)}
-                                    className="appearance-none w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-600 rounded-xl py-3 pl-4 pr-10 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors cursor-pointer"
-                                >
-                                    <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">High School</option>
-                                    <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">Undergraduate</option>
-                                    <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">Graduate</option>
-                                    <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">PhD</option>
-                                    <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">Bootcamp/Self-taught</option>
-                                </select>
-                                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" size={18} />
-                            </div>
+                            <CustomSelect 
+                                value={formData.educationLevel || 'High School'}
+                                onChange={(val) => handleChange('educationLevel', val)}
+                                options={['High School', 'Undergraduate', 'Graduate', 'PhD', 'Bootcamp/Self-taught']}
+                            />
                         </div>
                     </div>
 
@@ -231,44 +216,27 @@ export const Onboarding: React.FC = () => {
                 <div className="space-y-6">
                     <div>
                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Current Residence</label>
-                        <div className="relative">
-                            <select 
-                                    required
-                                    value={formData.residenceCountry}
-                                    onChange={(e) => handleChange('residenceCountry', e.target.value)}
-                                    disabled={isLoadingCountries}
-                                    className="appearance-none w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-600 rounded-xl py-3 pl-4 pr-10 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors disabled:opacity-50 cursor-pointer"
-                            >
-                                <option value="" className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">{isLoadingCountries ? "Loading Countries..." : "Select Country"}</option>
-                                {countries.map(c => (
-                                    <option key={c} value={c} className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">{c}</option>
-                                ))}
-                            </select>
-                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" size={18} />
-                        </div>
+                        <CustomSelect 
+                            value={formData.residenceCountry || ''}
+                            onChange={(val) => handleChange('residenceCountry', val)}
+                            options={isLoadingCountries ? [{label: "Loading Countries...", value: ""}] : countries}
+                            placeholder="Select Country"
+                            disabled={isLoadingCountries}
+                            required
+                        />
                     </div>
 
                     <div>
                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Future Work Preference</label>
-                        <div className="relative">
-                            <select 
-                                value={formData.preferredWorkCountry}
-                                onChange={(e) => handleChange('preferredWorkCountry', e.target.value)}
-                                className="appearance-none w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-600 rounded-xl py-3 pl-4 pr-10 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors cursor-pointer"
-                            >
-                                {formData.residenceCountry && <option value={formData.residenceCountry} className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">{formData.residenceCountry} (Current)</option>}
-                                <option value="USA" className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">USA</option>
-                                <option value="United Kingdom" className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">United Kingdom</option>
-                                <option value="Canada" className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">Canada</option>
-                                <option value="Germany" className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">Germany</option>
-                                <option value="Australia" className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">Australia</option>
-                                <option value="Singapore" className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">Singapore</option>
-                                <option value="India" className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">India</option>
-                                <option value="Undecided" className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">Undecided</option>
-                                <option value="Remote (Global)" className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">Remote (Global)</option>
-                            </select>
-                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" size={18} />
-                        </div>
+                        <CustomSelect 
+                            value={formData.preferredWorkCountry || ''}
+                            onChange={(val) => handleChange('preferredWorkCountry', val)}
+                            options={[
+                                ...(formData.residenceCountry ? [{label: `${formData.residenceCountry} (Current)`, value: formData.residenceCountry}] : []),
+                                'USA', 'United Kingdom', 'Canada', 'Germany', 'Australia', 'Singapore', 'India', 'Undecided', 'Remote (Global)'
+                            ]}
+                            placeholder="Select Preference"
+                        />
                     </div>
                 </div>
             </div>

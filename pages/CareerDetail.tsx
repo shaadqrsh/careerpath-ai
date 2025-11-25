@@ -1,12 +1,27 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useAppStore } from '../store';
 import { AppView } from '../types';
 import { Button } from '../components/Button';
-import { ChevronLeft, PlayCircle, Heart, MapPin, Briefcase, GraduationCap, Loader2, ArrowRightCircle, Shuffle, Star } from 'lucide-react';
+import { ChevronLeft, PlayCircle, Heart, MapPin, Briefcase, GraduationCap, Loader2, ArrowRightCircle, Shuffle, Star, DollarSign, TrendingUp } from 'lucide-react';
 
 export const CareerDetail: React.FC = () => {
   const { selectedCareer, setView, careerOrigin, user, toggleSavedCareer, savedCareers, isSavingCareer, recommendations } = useAppStore();
+  
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  const [isTitleOverflowing, setIsTitleOverflowing] = useState(false);
+
+  useEffect(() => {
+    const checkOverflow = () => {
+      if (titleRef.current) {
+        setIsTitleOverflowing(titleRef.current.scrollWidth > titleRef.current.clientWidth);
+      }
+    };
+    
+    checkOverflow();
+    window.addEventListener('resize', checkOverflow);
+    return () => window.removeEventListener('resize', checkOverflow);
+  }, [selectedCareer?.title]);
 
   if (!selectedCareer) {
     setView(AppView.DASHBOARD);
@@ -54,19 +69,25 @@ export const CareerDetail: React.FC = () => {
                         </div>
                     )}
                     
-                    {/* Scrolling Text for Title - REMOVED md:animate-none to force scroll if needed or consistent look */}
-                    <div className="overflow-hidden relative w-full">
-                        <h1 className="text-4xl md:text-5xl font-bold mb-2 text-white whitespace-nowrap animate-marquee">
+                    {/* Title with Conditional Marquee */}
+                    <div className="overflow-hidden relative w-full mb-3">
+                        <h1 
+                            ref={titleRef}
+                            className={`text-4xl md:text-5xl font-bold text-white whitespace-nowrap ${isTitleOverflowing ? 'animate-marquee' : ''}`}
+                        >
                             {selectedCareer.title}
                         </h1>
                     </div>
 
-                    {/* Scrolling Text for Stats - REMOVED md:animate-none */}
-                    <div className="overflow-hidden relative w-full">
-                        <div className="flex items-center gap-4 text-slate-300 whitespace-nowrap animate-marquee text-sm md:text-base">
-                            <span>{selectedCareer.salaryRange}</span>
-                            <span className="w-1 h-1 bg-slate-500 rounded-full"></span>
-                            <span>{selectedCareer.growth} Growth</span>
+                    {/* Static Stats with Icons */}
+                    <div className="flex flex-wrap items-center gap-3 text-sm md:text-base">
+                        <div className="flex items-center gap-1.5 bg-white/10 px-3 py-1.5 rounded-lg border border-white/10 backdrop-blur-md text-white/90">
+                            <DollarSign size={16} className="text-green-400" />
+                            <span className="font-medium">{selectedCareer.salaryRange}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 bg-white/10 px-3 py-1.5 rounded-lg border border-white/10 backdrop-blur-md text-white/90">
+                            <TrendingUp size={16} className="text-blue-400" />
+                            <span className="font-medium">{selectedCareer.growth} Growth</span>
                         </div>
                     </div>
                 </div>
