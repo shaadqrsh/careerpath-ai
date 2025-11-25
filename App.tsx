@@ -4,6 +4,7 @@ import { AppView } from './types';
 import { getUserProfile, getSavedCareers, getCurrentUser, signOut } from './services/supabaseService';
 import { Loader2, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
 import { Button } from './components/Button';
+import { APP_NAME } from './constants';
 
 import { Landing } from './pages/Landing';
 import { Auth } from './pages/Auth';
