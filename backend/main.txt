@@ -2,7 +2,7 @@ import os
 import json
 import uuid
 import logging
-import traceback  # Added for detailed error logging
+import traceback
 from typing import List, Optional, Dict, Any
 
 from fastapi import FastAPI, HTTPException, Depends, Header, Request
@@ -18,7 +18,8 @@ SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
 TEXT_MODEL_NAME = "gemini-2.5-flash"
-IMAGE_MODEL_NAME = "gemini-2.5-flash" # Try using the standard flash model, as it may handle image gen requests or specific Imagen model name
+# UPDATED: Use the specific Image generation model. Flash 2.5 is text/multimodal-in only.
+IMAGE_MODEL_NAME = "imagen-3.0-generate-001" 
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -290,8 +291,7 @@ async def generate_images(req: GenerateImagesRequest, user = Depends(verify_toke
             age = req.future_age or (u.age + 5)
             subject_desc = f"a {age} year old {u.gender} {u.residence_country} national"
 
-        # Using the constant defined at top. If this fails, user might need 'imagen-3.0-generate-001'
-        # depending on their Google AI Studio access.
+        # Using specific image model now
         model = genai.GenerativeModel(IMAGE_MODEL_NAME) 
         
         import asyncio

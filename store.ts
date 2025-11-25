@@ -126,29 +126,31 @@ export const useAppStore = create<AppState>((set, get) => ({
   confirmDeleteCareer: async () => {
       const state = get();
       const career = state.pendingDeleteCareer;
+      
       if (!career) return;
-      
-      const previousSaved = state.savedCareers;
-      
-      if (state.currentView === AppView.CAREER_DETAIL && state.selectedCareer?.id === career.id) {
-          if (state.careerOrigin === 'saved') {
-               set({ currentView: AppView.SAVED_PATHS });
-          }
-      }
+      if (!state.user) return;
 
-      set({ 
-          savedCareers: state.savedCareers.filter(c => c.id !== career.id),
-          pendingDeleteCareer: null
-      });
+      // NOTE: We do NOT update state immediately. We wait for DB success.
       
-      if (state.user) {
-        try {
-            await deleteCareerFromDb(state.user.id, career.id);
-        } catch (e) {
-            console.error("Error deleting from DB, reverting state", e);
-            set({ savedCareers: previousSaved }); 
-            alert("Failed to delete career. Please try again.");
+      try {
+        await deleteCareerFromDb(state.user.id, career.id);
+        
+        // Success! Now update UI
+        set({ 
+            savedCareers: state.savedCareers.filter(c => c.id !== career.id),
+            pendingDeleteCareer: null 
+        });
+
+        // Redirect if we are currently looking at the deleted career
+        if (state.currentView === AppView.CAREER_DETAIL && state.selectedCareer?.id === career.id) {
+            if (state.careerOrigin === 'saved') {
+                 set({ currentView: AppView.SAVED_PATHS });
+            }
         }
+      } catch (e) {
+        console.error("Error deleting from DB", e);
+        alert("Failed to delete career. Please try again.");
+        set({ pendingDeleteCareer: null });
       }
   },
 
@@ -156,16 +158,19 @@ export const useAppStore = create<AppState>((set, get) => ({
     const state = get();
     const exists = state.savedCareers.find(c => c.id === career.id);
 
+    // If it exists, we open the delete modal (handled above)
     if (exists) {
       set({ pendingDeleteCareer: career });
       return;
     }
 
+    // Saving Process
     set({ isSavingCareer: true });
     
     try {
         let careerToSave = { ...career };
         
+        // 1. Prepare Images
         if (state.selectedCareer?.id === career.id && state.selectedCareer.slideImages?.length) {
             careerToSave.slideImages = state.selectedCareer.slideImages;
         }
@@ -196,7 +201,7 @@ export const useAppStore = create<AppState>((set, get) => ({
             careerToSave.slideImages = finalImageUrls;
 
         } catch (imgError) {
-            console.warn("Image processing failed during save, falling back to mock images to allow save to proceed:", imgError);
+            console.warn("Image processing failed during save, falling back to mock images:", imgError);
             if (!careerToSave.slideImages || careerToSave.slideImages.length === 0) {
                  careerToSave.slideImages = [
                     `https://picsum.photos/seed/${career.id}-1/1280/720`,
@@ -206,6 +211,12 @@ export const useAppStore = create<AppState>((set, get) => ({
             }
         }
 
+        // 2. Save Record to DB FIRST
+        if (state.user) {
+            await saveCareerToDb(state.user.id, careerToSave);
+        }
+
+        // 3. Update Local State (Only after DB success)
         set((s) => {
             const isCurrentlySelected = s.selectedCareer?.id === careerToSave.id;
             return { 
@@ -214,10 +225,6 @@ export const useAppStore = create<AppState>((set, get) => ({
                 hasViewedSavedPaths: false 
             };
         });
-
-        if (state.user) {
-            await saveCareerToDb(state.user.id, careerToSave);
-        }
 
     } catch (e) {
         console.error("Error saving career:", e);

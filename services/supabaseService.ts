@@ -43,7 +43,9 @@ const toDbCareer = (c: CareerRecommendation) => ({
 });
 
 const fromDbCareer = (d: any): CareerRecommendation => ({
-    id: d.id,
+    // CRITICAL FIX: Map the DB 'career_uid' to the frontend 'id'.
+    // The backend delete endpoint requires 'career_uid'.
+    id: d.career_uid, 
     title: d.title,
     matchScore: d.match_score,
     summary: d.summary,
