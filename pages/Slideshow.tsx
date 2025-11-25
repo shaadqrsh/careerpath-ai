@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useRef } from 'react';
 import { useAppStore } from '../store';
 import { AppView, Slide } from '../types';
@@ -208,7 +207,6 @@ export const Slideshow: React.FC = () => {
 
     if (touchStartX.current === null) return;
     
-    // If no movement recorded, treat as tap
     if (touchEndX.current === null) {
         const x = touchStartX.current;
         const width = window.innerWidth;
@@ -238,7 +236,6 @@ export const Slideshow: React.FC = () => {
   };
 
   const handleContainerClick = (e: React.MouseEvent) => {
-    // Prevent mouse click from firing immediately after a touch event
     if (Date.now() - lastTouchTime.current < 500) return;
 
     const rect = e.currentTarget.getBoundingClientRect();

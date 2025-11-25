@@ -1,17 +1,13 @@
-
-
 import { QuizQuestion } from './types';
 
 // --- CONFIGURATION ---
 export const APP_NAME = "CareerPath AI";
-
 export const API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL; 
-
-export const SLIDESHOW_IMAGE_COUNT = 3;
 
 // Limits (Must match backend configuration)
 export const DAILY_IMAGE_LIMIT = 3; 
 export const DAILY_CAREER_LIMIT = 5;
+export const SLIDESHOW_IMAGE_COUNT = 3;
 
 export const QUESTIONS: QuizQuestion[] = [
   {
