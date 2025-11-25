@@ -82,7 +82,7 @@ export const CareerDetail: React.FC = () => {
                      <button 
                         onClick={handleSave}
                         disabled={isSavingCareer}
-                        className={`p-3 rounded-full backdrop-blur border transition-all duration-300 group ${
+                        className={`p-3 rounded-full backdrop-blur border transition-all duration-300 group hover:scale-110 active:scale-95 ${
                             isSaved 
                             ? 'bg-pink-500/20 border-pink-500/50 text-pink-500 hover:bg-red-500/20 hover:border-red-500/50 hover:text-red-500' 
                             : 'bg-white/10 dark:bg-slate-800/50 border-white/20 dark:border-slate-600 hover:bg-white/20 dark:hover:bg-slate-700 text-white'
@@ -92,7 +92,7 @@ export const CareerDetail: React.FC = () => {
                         {isSavingCareer ? (
                             <Loader2 className="w-6 h-6 animate-spin" />
                         ) : (
-                            <Heart className={`w-6 h-6 transition-transform duration-300 ${isSaved ? 'group-hover:scale-110' : ''}`} fill={isSaved ? "currentColor" : "none"} />
+                            <Heart className={`w-6 h-6 transition-transform duration-300 ${isSaved ? 'scale-110' : ''}`} fill={isSaved ? "currentColor" : "none"} />
                         )}
                      </button>
                      <Button 
@@ -178,7 +178,7 @@ export const CareerDetail: React.FC = () => {
 
                 {selectedCareer.roadmap.map((step, idx) => (
                     <div key={idx} className="relative group animate-fade-in-up opacity-0" style={{ animationDelay: `${500 + (idx * 150)}ms` }}>
-                        <div className="absolute -left-[32px] top-6 w-6 h-6 rounded-full bg-white dark:bg-slate-800 border-2 border-green-500 group-hover:bg-green-500 transition-colors z-10"></div>
+                        <div className="absolute -left-[51px] top-6 w-6 h-6 rounded-full bg-white dark:bg-slate-800 border-2 border-green-500 group-hover:bg-green-500 transition-colors z-10"></div>
                         <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
                             <span className="text-xs font-bold text-green-600 dark:text-green-400 tracking-wider uppercase mb-1 block">{step.duration}</span>
                             <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">{step.title}</h3>

@@ -127,12 +127,12 @@ export const Dashboard: React.FC = () => {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="text-center mb-12 animate-fade-in-up opacity-0" style={{ animationDelay: '0ms' }}>
           <h2 className="text-3xl md:text-4xl font-bold mb-4 text-slate-900 dark:text-white">Start Your Discovery</h2>
-          <p className="text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">Select a domain to begin a specialized assessment, or use our General Assessment if you are unsure.</p>
+          <p className="text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">Select a domain to begin a specialized career assessment, or use our General Assessment if you are unsure.</p>
         </div>
 
         {careerQuota === 0 && (
             <div 
-                className="mb-8 p-4 rounded-xl border border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800 text-red-700 dark:text-red-400 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-fade-in-up opacity-0"
+                className="mb-8 p-4 rounded-xl border border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800 text-red-700 dark:text-red-400 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-fade-in-up opacity-0"
                 style={{ animationDelay: '100ms' }}
             >
                 <div className="flex items-center gap-3">
@@ -148,44 +148,52 @@ export const Dashboard: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
           {categories.map((cat, index) => (
             <div 
-              key={cat.id}
-              style={{ animationDelay: `${200 + (index * 100)}ms` }}
-              className="group relative bg-white dark:bg-slate-800 rounded-2xl p-6 md:p-8 hover:shadow-xl dark:hover:bg-slate-750 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] cursor-pointer border border-slate-200 dark:border-slate-700 hover:border-blue-500 dark:hover:border-slate-500 shadow-sm animate-fade-in-up opacity-0 flex flex-row md:flex-col items-center md:items-start gap-4 md:gap-0"
-              onClick={() => handleStartQuiz(cat.id)}
+                key={cat.id}
+                style={{ animationDelay: `${200 + (index * 100)}ms` }}
+                className="animate-fade-in-up opacity-0"
             >
-              <div className={`absolute inset-0 bg-gradient-to-br ${cat.color} opacity-0 group-hover:opacity-5 rounded-2xl transition-opacity`} />
-              <div className={`w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-gradient-to-br ${cat.color} flex items-center justify-center mb-0 md:mb-6 text-white shadow-lg shrink-0`}>
-                {cat.icon}
-              </div>
-              <div className="flex-1">
-                  <h3 className="text-xl md:text-2xl font-bold mb-1 md:mb-2 text-slate-900 dark:text-white">{cat.title}</h3>
-                  <p className="text-sm md:text-base text-slate-600 dark:text-slate-400 mb-2 md:mb-6">{cat.desc}</p>
-                  <span className="text-blue-600 dark:text-blue-400 font-medium group-hover:translate-x-2 transition-transform inline-flex items-center text-sm md:text-base">
-                    Start {cat.title.split(' ')[0]} Quiz <ArrowRight className="ml-1 w-4 h-4" />
-                  </span>
-              </div>
+                <div 
+                  className="group relative bg-white dark:bg-slate-800 rounded-2xl p-6 md:p-8 hover:shadow-xl dark:hover:bg-slate-750 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] cursor-pointer border border-slate-200 dark:border-slate-700 hover:border-blue-500 dark:hover:border-slate-500 shadow-sm flex flex-row md:flex-col items-center md:items-start gap-4 md:gap-0 h-full"
+                  onClick={() => handleStartQuiz(cat.id)}
+                >
+                  <div className={`absolute inset-0 bg-gradient-to-br ${cat.color} opacity-0 group-hover:opacity-5 rounded-2xl transition-opacity`} />
+                  <div className={`w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-gradient-to-br ${cat.color} flex items-center justify-center mb-0 md:mb-6 text-white shadow-lg shrink-0`}>
+                    {cat.icon}
+                  </div>
+                  <div className="flex-1">
+                      <h3 className="text-xl md:text-2xl font-bold mb-1 md:mb-2 text-slate-900 dark:text-white">{cat.title}</h3>
+                      <p className="text-sm md:text-base text-slate-600 dark:text-slate-400 mb-2 md:mb-6">{cat.desc}</p>
+                      <span className="text-blue-600 dark:text-blue-400 font-medium group-hover:translate-x-2 transition-transform inline-flex items-center text-sm md:text-base">
+                        Start {cat.title.split(' ')[0]} Quiz <ArrowRight className="ml-1 w-4 h-4" />
+                      </span>
+                  </div>
+                </div>
             </div>
           ))}
         </div>
 
         <div 
             style={{ animationDelay: '500ms' }}
-            onClick={() => handleStartQuiz('general')}
-            className="group relative w-full bg-white dark:bg-slate-800 rounded-2xl p-6 md:p-8 border border-slate-200 dark:border-slate-700 hover:shadow-xl dark:hover:bg-slate-750 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] cursor-pointer hover:border-blue-500 dark:hover:border-slate-500 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6 animate-fade-in-up opacity-0"
+            className="animate-fade-in-up opacity-0"
         >
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-indigo-500 opacity-0 group-hover:opacity-5 rounded-2xl transition-opacity" />
-            <div className="flex items-center gap-4 md:gap-6 relative z-10 w-full md:w-auto">
-                <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-lg flex-shrink-0">
-                    <HelpCircle size={32} />
+            <div 
+                onClick={() => handleStartQuiz('general')}
+                className="group relative w-full bg-white dark:bg-slate-800 rounded-2xl p-6 md:p-8 border border-slate-200 dark:border-slate-700 hover:shadow-xl dark:hover:bg-slate-750 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] cursor-pointer hover:border-blue-500 dark:hover:border-slate-500 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6"
+            >
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-indigo-500 opacity-0 group-hover:opacity-5 rounded-2xl transition-opacity" />
+                <div className="flex items-center gap-4 md:gap-6 relative z-10 w-full md:w-auto">
+                    <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-lg flex-shrink-0">
+                        <HelpCircle size={32} />
+                    </div>
+                    <div className="text-left">
+                        <h3 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white mb-1 md:mb-2">Can't decide?</h3>
+                        <p className="text-sm md:text-base text-slate-600 dark:text-slate-400">Take our General Personality Quiz to find your direction.</p>
+                    </div>
                 </div>
-                <div className="text-left">
-                    <h3 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white mb-1 md:mb-2">Can't decide?</h3>
-                    <p className="text-sm md:text-base text-slate-600 dark:text-slate-400">Take our General Personality Quiz to find your direction.</p>
-                </div>
+                <span className="text-blue-600 dark:text-blue-400 font-medium group-hover:translate-x-2 transition-transform inline-flex items-center relative z-10 whitespace-nowrap self-start md:self-center pl-18 md:pl-0 mt-2 md:mt-0">
+                    Start General Quiz <ArrowRight className="ml-1 w-4 h-4" />
+                </span>
             </div>
-            <span className="text-blue-600 dark:text-blue-400 font-medium group-hover:translate-x-2 transition-transform inline-flex items-center relative z-10 whitespace-nowrap self-start md:self-center pl-18 md:pl-0 mt-2 md:mt-0">
-                Start General Quiz <ArrowRight className="ml-1 w-4 h-4" />
-            </span>
         </div>
       </main>
     </div>

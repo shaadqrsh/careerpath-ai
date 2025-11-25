@@ -204,7 +204,7 @@ export const Onboarding: React.FC = () => {
                 </div>
             </div>
 
-            <div className="border-t border-slate-200 dark:border-slate-700 pt-6 animate-fade-in-up opacity-0" style={{ animationDelay: '400ms' }}>
+            <div className="border-t border-slate-200 dark:border-slate-700 pt-6 animate-fade-in-up opacity-0 relative z-20" style={{ animationDelay: '400ms' }}>
                 <h3 className="text-sm font-bold text-green-600 dark:text-green-400 uppercase tracking-wider mb-6 flex items-center gap-2">
                     <MapPin size={18} /> Location Details
                 </h3>
@@ -237,7 +237,7 @@ export const Onboarding: React.FC = () => {
                 </div>
             </div>
 
-            <div className="animate-fade-in-up opacity-0" style={{ animationDelay: '500ms' }}>
+            <div className="animate-fade-in-up opacity-0 relative z-10" style={{ animationDelay: '500ms' }}>
                 <Button type="submit" fullWidth size="lg" disabled={saving}>
                     {saving ? "Creating Profile..." : "Continue to Dashboard"}
                 </Button>
