@@ -1,9 +1,51 @@
+import React from 'react';
 import { CareerRecommendation, UserProfile, CareerRoadmapStep } from '../types';
 import { API_BASE_URL } from '../constants';
+import { useAppStore } from './store';
+import { AlertOctagon } from 'lucide-react';
 
 const getToken = () => localStorage.getItem('access_token');
 const setToken = (token: string) => localStorage.setItem('access_token', token);
 const clearToken = () => localStorage.removeItem('access_token');
+
+const handleAuthError = () => {
+    const { showModal, logout } = useAppStore.getState();
+    if (useAppStore.getState().modal?.isOpen) return;
+
+    showModal({
+        icon: <AlertOctagon className="w-16 h-16 text-red-500 mx-auto mb-6" />,
+        title: "Session Expired",
+        description: "Your session has expired. Please log in again to continue.",
+        buttonText: "Okay, Log In",
+        onButtonClick: () => logout(),
+    });
+};
+
+const apiFetch = async (url: string, options: RequestInit = {}) => {
+    const token = getToken();
+    const headers = {
+        'Content-Type': 'application/json',
+        ...(token && { 'Authorization': `Bearer ${token}` }),
+        ...options.headers,
+    };
+
+    const response = await fetch(url, { ...options, headers });
+
+    if (response.status === 401 || response.status === 403) {
+        const urlsWithoutAuthErrorModal = ['/api/auth/login', '/api/auth/signup', '/api/auth/reset-password'];
+        const shouldShowModal = !urlsWithoutAuthErrorModal.some(u => url.includes(u));
+        
+        if (shouldShowModal) {
+            handleAuthError();
+        }
+        
+        const errorBody = await response.json().catch(() => ({ detail: "Authentication Error" }));
+        throw new Error(errorBody.detail || "Authentication Error");
+    }
+
+    return response;
+};
+
 
 const toDbProfile = (p: UserProfile) => ({
     id: p.id,
@@ -81,15 +123,13 @@ export interface AuthUser {
 
 export const signInWithEmail = async (email: string, password: string) => {
     try {
-        const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+        const response = await apiFetch(`${API_BASE_URL}/api/auth/login`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password })
         });
         
         if (!response.ok) {
-            const err = await response.json();
-            throw new Error(err.detail || "Login failed");
+           throw new Error("Login failed");
         }
         
         const data = await response.json();
@@ -103,15 +143,13 @@ export const signInWithEmail = async (email: string, password: string) => {
 
 export const signUpWithEmail = async (email: string, password: string) => {
     try {
-        const response = await fetch(`${API_BASE_URL}/api/auth/signup`, {
+        const response = await apiFetch(`${API_BASE_URL}/api/auth/signup`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password })
         });
 
         if (!response.ok) {
-            const err = await response.json();
-            throw new Error(err.detail || "Signup failed");
+            throw new Error("Signup failed");
         }
         
         return await response.json();
@@ -123,9 +161,8 @@ export const signUpWithEmail = async (email: string, password: string) => {
 
 export const sendPasswordResetEmail = async (email: string) => {
     try {
-        const response = await fetch(`${API_BASE_URL}/api/auth/reset-password`, {
+        const response = await apiFetch(`${API_BASE_URL}/api/auth/reset-password`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email })
         });
 
@@ -139,15 +176,8 @@ export const sendPasswordResetEmail = async (email: string) => {
 
 export const updateUserPassword = async (password: string) => {
     try {
-        const token = getToken();
-        if (!token) throw new Error("Not authenticated");
-
-        const response = await fetch(`${API_BASE_URL}/api/auth/update-password`, {
+        const response = await apiFetch(`${API_BASE_URL}/api/auth/update-password`, {
             method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}` 
-            },
             body: JSON.stringify({ password })
         });
 
@@ -168,37 +198,22 @@ export const getCurrentUser = async (): Promise<AuthUser | null> => {
     if (!token) return null;
 
     try {
-        const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-
+        const response = await apiFetch(`${API_BASE_URL}/api/auth/me`);
         if (!response.ok) {
             clearToken();
             return null;
         }
-
-        const user = await response.json();
-        return user;
+        return await response.json();
     } catch (e) {
         return null;
     }
-};
-
-const getAuthHeaders = () => {
-    const token = getToken();
-    if (!token) throw new Error("Not Authenticated");
-    return {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-    };
 };
 
 export const supabase = null; 
 
 export const getUserProfile = async (userId: string): Promise<UserProfile | null> => {
     try {
-        const headers = getAuthHeaders();
-        const response = await fetch(`${API_BASE_URL}/api/profile`, { headers });
+        const response = await apiFetch(`${API_BASE_URL}/api/profile`);
         
         if (response.status === 404) return null;
         if (!response.ok) throw new Error(`Profile fetch failed: ${response.status}`);
@@ -213,10 +228,8 @@ export const getUserProfile = async (userId: string): Promise<UserProfile | null
 
 export const upsertUserProfile = async (profile: UserProfile) => {
     try {
-        const headers = getAuthHeaders();
-        const response = await fetch(`${API_BASE_URL}/api/profile`, {
+        const response = await apiFetch(`${API_BASE_URL}/api/profile`, {
             method: 'POST',
-            headers,
             body: JSON.stringify(toDbProfile(profile))
         });
         
@@ -233,15 +246,8 @@ export const uploadCareerImages = async (
   images: string[]
 ): Promise<string[]> => {
     try {
-        const token = getToken();
-        if (!token) throw new Error("Not authenticated");
-
-        const response = await fetch(`${API_BASE_URL}/api/career-images`, {
+        const response = await apiFetch(`${API_BASE_URL}/api/career-images`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
             body: JSON.stringify({
                 user_id: userId,
                 career_uid: careerUid,
@@ -261,8 +267,7 @@ export const uploadCareerImages = async (
 
 export const getSavedCareers = async (userId: string): Promise<CareerRecommendation[]> => {
     try {
-        const headers = getAuthHeaders();
-        const response = await fetch(`${API_BASE_URL}/api/saved-careers`, { headers });
+        const response = await apiFetch(`${API_BASE_URL}/api/saved-careers`);
         
         if (!response.ok) throw new Error("Failed to fetch saved careers");
 
@@ -276,10 +281,8 @@ export const getSavedCareers = async (userId: string): Promise<CareerRecommendat
 
 export const saveCareerToDb = async (userId: string, career: CareerRecommendation) => {
     try {
-        const headers = getAuthHeaders();
-        const response = await fetch(`${API_BASE_URL}/api/saved-careers`, {
+        const response = await apiFetch(`${API_BASE_URL}/api/saved-careers`, {
             method: 'POST',
-            headers,
             body: JSON.stringify(toDbCareer(career))
         });
         
@@ -292,10 +295,8 @@ export const saveCareerToDb = async (userId: string, career: CareerRecommendatio
 
 export const deleteCareerFromDb = async (userId: string, careerUid: string) => {
     try {
-        const headers = getAuthHeaders();
-        const response = await fetch(`${API_BASE_URL}/api/saved-careers/${careerUid}`, {
-            method: 'DELETE',
-            headers
+        const response = await apiFetch(`${API_BASE_URL}/api/saved-careers/${careerUid}`, {
+            method: 'DELETE'
         });
         
         if (!response.ok) throw new Error("Failed to delete career");

@@ -1,5 +1,41 @@
+import React from 'react';
 import { UserProfile, QuizAnswer, CareerRecommendation, Slide, CareerRoadmapStep, CareerDomain } from "../types";
 import { MOCK_CAREERS, API_BASE_URL, SLIDESHOW_IMAGE_COUNT } from "../constants";
+import { useAppStore } from './store';
+import { AlertOctagon } from 'lucide-react';
+
+const handleAuthError = () => {
+    const { showModal, logout } = useAppStore.getState();
+    if (useAppStore.getState().modal?.isOpen) return;
+
+    showModal({
+        icon: <AlertOctagon className="w-16 h-16 text-red-500 mx-auto mb-6" />,
+        title: "Session Expired",
+        description: "Your session has expired. Please log in again to continue.",
+        buttonText: "Okay, Log In",
+        onButtonClick: () => logout(),
+    });
+};
+
+const apiFetch = async (url: string, options: RequestInit = {}) => {
+    const token = localStorage.getItem('access_token');
+    const headers = {
+        'Content-Type': 'application/json',
+        ...(token && { 'Authorization': `Bearer ${token}` }),
+        ...options.headers,
+    };
+
+    const response = await fetch(url, { ...options, headers });
+
+    if (response.status === 401 || response.status === 403) {
+        handleAuthError();
+        const errorBody = await response.json().catch(() => ({ detail: "Authentication Error" }));
+        throw new Error(errorBody.detail || "Authentication Error");
+    }
+
+    return response;
+};
+
 
 export const calculateRoadmapDurationYears = (roadmap: CareerRoadmapStep[]): number => {
     if (!roadmap) return 3;
@@ -19,15 +55,8 @@ export const calculateRoadmapDurationYears = (roadmap: CareerRoadmapStep[]): num
 
 export const generateDomainSuggestion = async (answers: QuizAnswer[]): Promise<CareerDomain> => {
     try {
-        const token = localStorage.getItem('access_token');
-        if (!token) throw new Error("User not authenticated");
-
-        const response = await fetch(`${API_BASE_URL}/api/generate-domain`, {
+        const response = await apiFetch(`${API_BASE_URL}/api/generate-domain`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
             body: JSON.stringify({ quiz_answers: answers })
         });
 
@@ -47,18 +76,8 @@ export const generateCareerRecommendations = async (
 ): Promise<CareerRecommendation[]> => {
 
   try {
-    const token = localStorage.getItem('access_token');
-
-    if (!token) {
-        throw new Error("User not authenticated");
-    }
-
-    const response = await fetch(`${API_BASE_URL}/api/generate-career`, {
+    const response = await apiFetch(`${API_BASE_URL}/api/generate-career`, {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-        },
         body: JSON.stringify({
             user_profile: user,
             quiz_answers: answers
@@ -89,15 +108,8 @@ export const generateCareerDetails = async (
     career: CareerRecommendation
 ): Promise<Partial<CareerRecommendation>> => {
     try {
-        const token = localStorage.getItem('access_token');
-        if (!token) throw new Error("User not authenticated");
-
-        const response = await fetch(`${API_BASE_URL}/api/generate-career-details`, {
+        const response = await apiFetch(`${API_BASE_URL}/api/generate-career-details`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
             body: JSON.stringify({
                 user_profile: user,
                 career_title: career.title,
@@ -129,15 +141,8 @@ export const generateCareerImages = async (
     futureAge?: number
 ): Promise<(string | null)[]> => {
     
-    const token = localStorage.getItem('access_token');
-    if (!token) throw new Error("Not authenticated");
-
-    const response = await fetch(`${API_BASE_URL}/api/generate-images`, {
+    const response = await apiFetch(`${API_BASE_URL}/api/generate-images`, {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-        },
         body: JSON.stringify({
             career_title: careerTitle,
             prompts: prompts,

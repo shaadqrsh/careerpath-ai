@@ -1,8 +1,18 @@
+import React from 'react';
 import { create } from 'zustand';
 import { AppView, UserProfile, QuizAnswer, CareerRecommendation, CareerDomain } from './types';
 import { saveCareerToDb, deleteCareerFromDb, uploadCareerImages, signOut as serviceSignOut } from './services/supabaseService';
 
 export type AppTheme = 'light' | 'dark' | 'system';
+
+interface ModalConfig {
+    isOpen: boolean;
+    title: string;
+    description: React.ReactNode;
+    icon?: React.ReactNode;
+    buttonText: string;
+    onButtonClick: () => void;
+}
 
 interface AppState {
   currentView: AppView;
@@ -28,6 +38,10 @@ interface AppState {
   
   pendingDeleteCareer: CareerRecommendation | null;
   showPasswordResetModal: boolean;
+  
+  modal: ModalConfig | null;
+  showModal: (config: Omit<ModalConfig, 'isOpen'>) => void;
+  hideModal: () => void;
 
   toast: { show: boolean; message: string };
 
@@ -85,6 +99,10 @@ export const useAppStore = create<AppState>((set, get) => ({
   
   pendingDeleteCareer: null,
   showPasswordResetModal: false,
+  
+  modal: null,
+  showModal: (config) => set({ modal: { ...config, isOpen: true } }),
+  hideModal: () => set(state => ({ modal: state.modal ? { ...state.modal, isOpen: false } : null })),
 
   toast: { show: false, message: '' },
 
@@ -217,6 +235,7 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   toggleSavedCareer: async (career) => {
     const state = get();
+    // Use the potentially updated state from the store in case details were just loaded
     const currentCareerState = state.selectedCareer?.id === career.id ? state.selectedCareer : career;
 
     const exists = state.savedCareers.find(c => c.id === career.id);
@@ -284,7 +303,8 @@ export const useAppStore = create<AppState>((set, get) => ({
         selectedCareer: null,
         savedCareers: [],
         hasViewedSavedPaths: false,
-        pendingDeleteCareer: null
+        pendingDeleteCareer: null,
+        modal: null
       });
       localStorage.removeItem('hasViewedSavedPaths');
   },
@@ -292,5 +312,6 @@ export const useAppStore = create<AppState>((set, get) => ({
   logout: async () => {
       await serviceSignOut();
       get().clearState();
+      get().hideModal();
   }
 }));

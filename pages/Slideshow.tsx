@@ -31,7 +31,7 @@ const BananaIcon = ({ className }: { className?: string }) => (
 );
 
 export const Slideshow: React.FC = () => {
-  const { selectedCareer, setView, user, setUser, updateCareerImages, savedCareers } = useAppStore();
+  const { selectedCareer, setView, user, setUser, updateCareerImages, savedCareers, showModal, hideModal } = useAppStore();
   const [slides, setSlides] = useState<Slide[]>([]);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [loadedIndices, setLoadedIndices] = useState<Set<number>>(new Set());
@@ -48,6 +48,21 @@ export const Slideshow: React.FC = () => {
   const lastTouchTime = useRef<number>(0);
 
   const hasStartedRef = useRef(false);
+
+  useEffect(() => {
+    if (quotaError) {
+        showModal({
+            icon: <AlertOctagon className="w-16 h-16 text-red-500 mx-auto mb-6" />,
+            title: "Daily Limit Reached",
+            description: <>You've used all <strong>{DAILY_IMAGE_LIMIT}</strong> free visualizations for today. Please return in 24 hours to generate more career scenes.</>,
+            buttonText: "Return to Career",
+            onButtonClick: () => {
+                hideModal();
+                setView(AppView.CAREER_DETAIL);
+            }
+        });
+    }
+  }, [quotaError, showModal, hideModal, setView]);
 
   useEffect(() => {
     const texts = [
@@ -267,24 +282,7 @@ export const Slideshow: React.FC = () => {
   };
 
   if (quotaError) {
-      return (
-        <div className="fixed inset-0 bg-black/95 z-[60] flex flex-col items-center justify-center text-white p-4 text-center animate-fade-in">
-            <div className="bg-slate-900 p-8 rounded-2xl border border-red-900/50 max-w-md shadow-2xl animate-fade-in-up">
-                <AlertOctagon className="w-16 h-16 text-red-500 mx-auto mb-6" />
-                <h3 className="text-2xl font-bold mb-3">Daily Limit Reached</h3>
-                <p className="text-slate-400 mb-8 leading-relaxed">
-                    You've used all <strong>{DAILY_IMAGE_LIMIT}</strong> free visualizations for today. 
-                    Please return in 24 hours to generate more career scenes.
-                </p>
-                <button 
-                    onClick={() => setView(AppView.CAREER_DETAIL)} 
-                    className="px-8 py-3 bg-white text-black hover:bg-slate-200 rounded-xl transition-colors font-bold"
-                >
-                    Return to Career
-                </button>
-            </div>
-        </div>
-      );
+      return null;
   }
 
   const allImagesLoaded = slides.length > 0 && slides.every((s, i) => !s.imageUrl || loadedIndices.has(i));

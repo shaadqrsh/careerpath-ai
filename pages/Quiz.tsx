@@ -7,7 +7,7 @@ import { CheckCircle2, ChevronRight, Loader2, AlertOctagon } from 'lucide-react'
 import { generateDomainSuggestion } from '../services/geminiService';
 
 export const Quiz: React.FC = () => {
-  const { setView, addQuizAnswer, selectedDomain, setDomain, quizAnswers, user, showToast } = useAppStore();
+  const { setView, addQuizAnswer, selectedDomain, setDomain, quizAnswers, user, showModal, hideModal } = useAppStore();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   
@@ -41,6 +41,21 @@ export const Quiz: React.FC = () => {
         }
     }
   }, [user]);
+
+  useEffect(() => {
+    if (quotaExceeded) {
+        showModal({
+            icon: <AlertOctagon className="w-16 h-16 text-red-500 mx-auto mb-6" />,
+            title: "Daily Limit Reached",
+            description: <>You've reached your daily limit of <strong>{DAILY_CAREER_LIMIT}</strong> career assessments. Please return in 24 hours to explore more paths.</>,
+            buttonText: "Return to Dashboard",
+            onButtonClick: () => {
+                hideModal();
+                setView(AppView.DASHBOARD);
+            }
+        });
+    }
+  }, [quotaExceeded, showModal, hideModal, setView]);
 
   useEffect(() => {
     if (domainQuestions.length === 0 && !showGeneralResult) {
@@ -98,24 +113,7 @@ export const Quiz: React.FC = () => {
   };
 
   if (quotaExceeded) {
-      return (
-        <div className="fixed inset-0 bg-black/95 z-[60] flex flex-col items-center justify-center text-white p-4 text-center animate-in fade-in duration-300">
-            <div className="bg-slate-900 p-8 rounded-2xl border border-red-900/50 max-w-md shadow-2xl animate-fade-in-up">
-                <AlertOctagon className="w-16 h-16 text-red-500 mx-auto mb-6" />
-                <h3 className="text-2xl font-bold mb-3">Daily Limit Reached</h3>
-                <p className="text-slate-400 mb-8 leading-relaxed">
-                    You've reached your daily limit of <strong>{DAILY_CAREER_LIMIT}</strong> career assessments.
-                    Please return in 24 hours to explore more paths.
-                </p>
-                <button 
-                    onClick={() => setView(AppView.DASHBOARD)} 
-                    className="px-8 py-3 bg-white text-black hover:bg-slate-200 rounded-xl transition-colors font-bold"
-                >
-                    Return to Dashboard
-                </button>
-            </div>
-        </div>
-      );
+      return null;
   }
 
   if (isCalculating) {
