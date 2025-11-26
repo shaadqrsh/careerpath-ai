@@ -30,7 +30,7 @@ export interface QuizQuestion {
   id: number;
   text: string;
   options: string[];
-  category: 'personality' | 'aptitude' | 'preference';
+  category: 'preference' | 'personality' | 'aptitude' | 'workstyle' | 'values' | 'environment';
   domain: CareerDomain;
 }
 
