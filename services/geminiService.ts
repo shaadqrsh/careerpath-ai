@@ -28,14 +28,15 @@ const apiFetch = async (url: string, options: RequestInit = {}) => {
     const response = await fetch(url, { ...options, headers });
 
     if (response.status === 401 || response.status === 403) {
-        handleAuthError();
+        if (response.status === 401) {
+             handleAuthError();
+        }
         const errorBody = await response.json().catch(() => ({ detail: "Authentication Error" }));
         throw new Error(errorBody.detail || "Authentication Error");
     }
 
     return response;
 };
-
 
 export const calculateRoadmapDurationYears = (roadmap: CareerRoadmapStep[]): number => {
     if (!roadmap) return 3;

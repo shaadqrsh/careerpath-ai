@@ -12,6 +12,8 @@ CREATE TABLE public.profiles (
   last_image_generation_date TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
   daily_career_generations_count INTEGER DEFAULT 0,
   last_career_generation_date TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
+  daily_general_quiz_count INTEGER DEFAULT 0,
+  daily_details_view_count INTEGER DEFAULT 0,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
@@ -35,6 +37,7 @@ CREATE TABLE public.saved_careers (
   UNIQUE(user_id, career_uid)
 );
 
+-- Function for Atomic Increment
 CREATE OR REPLACE FUNCTION increment_field(table_name TEXT, field_name TEXT, row_id UUID, increment_val INT)
 RETURNS void AS $$
 BEGIN
@@ -43,57 +46,27 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-
 -- 3. Enable Row Level Security
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.saved_careers ENABLE ROW LEVEL SECURITY;
 
--- 4. Policies for Profiles
+-- 4. Policies
 CREATE POLICY "Users can view own profile" ON public.profiles FOR SELECT USING (auth.uid() = id);
 CREATE POLICY "Users can insert own profile" ON public.profiles FOR INSERT WITH CHECK (auth.uid() = id);
 CREATE POLICY "Users can update own profile" ON public.profiles FOR UPDATE USING (auth.uid() = id);
 
--- 5. Policies for Saved Careers
 CREATE POLICY "Users can view own saved careers" ON public.saved_careers FOR SELECT USING (auth.uid() = user_id);
 CREATE POLICY "Users can insert own saved careers" ON public.saved_careers FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "Users can update own saved careers" ON public.saved_careers FOR UPDATE USING (auth.uid() = user_id);
 CREATE POLICY "Users can delete own saved careers" ON public.saved_careers FOR DELETE USING (auth.uid() = user_id);
 
--- 6. Storage Bucket Setup
+-- 5. Storage
 INSERT INTO storage.buckets (id, name, public) 
 VALUES ('career_slideshows', 'career_slideshows', true) 
 ON CONFLICT (id) DO UPDATE SET public = true;
 
 -- 7. Storage Policies
--- Allow public read access
-CREATE POLICY "Give public access to career images" 
-ON storage.objects FOR SELECT 
-TO public 
-USING (bucket_id = 'career_slideshows');
-
--- Allow authenticated users to upload to their own folder
-CREATE POLICY "Users can upload their own career images" 
-ON storage.objects FOR INSERT 
-TO authenticated 
-WITH CHECK (
-  bucket_id = 'career_slideshows' AND 
-  (storage.foldername(name))[1] = auth.uid()::text
-);
-
--- Allow authenticated users to update their own files
-CREATE POLICY "Users can update their own career images" 
-ON storage.objects FOR UPDATE 
-TO authenticated 
-USING (
-  bucket_id = 'career_slideshows' AND 
-  (storage.foldername(name))[1] = auth.uid()::text
-);
-
--- Allow authenticated users to delete their own files
-CREATE POLICY "Users can delete their own career images" 
-ON storage.objects FOR DELETE 
-TO authenticated 
-USING (
-  bucket_id = 'career_slideshows' AND 
-  (storage.foldername(name))[1] = auth.uid()::text
-);
+CREATE POLICY "Give public access to career images" ON storage.objects FOR SELECT TO public USING (bucket_id = 'career_slideshows');
+CREATE POLICY "Users can upload their own career images" ON storage.objects FOR INSERT TO authenticated WITH CHECK (bucket_id = 'career_slideshows' AND (storage.foldername(name))[1] = auth.uid()::text);
+CREATE POLICY "Users can update their own career images" ON storage.objects FOR UPDATE TO authenticated USING (bucket_id = 'career_slideshows' AND (storage.foldername(name))[1] = auth.uid()::text);
+CREATE POLICY "Users can delete their own career images" ON storage.objects FOR DELETE TO authenticated USING (bucket_id = 'career_slideshows' AND (storage.foldername(name))[1] = auth.uid()::text);

@@ -2,14 +2,25 @@ import React, { useState } from 'react';
 import { useAppStore } from '../store';
 import { AppView, CareerRecommendation } from '../types';
 import { Button } from '../components/Button';
-import { ArrowLeft, Trash2, ArrowRight, TrendingUp, DollarSign, RefreshCw, Loader2 } from 'lucide-react';
+import { ArrowLeft, Trash2, ArrowRight, TrendingUp, DollarSign, RefreshCw, Loader2, AlertOctagon } from 'lucide-react';
 import { getSavedCareers } from '../services/supabaseService';
 
 export const SavedPaths: React.FC = () => {
-  const { savedCareers, setView, toggleSavedCareer, setSelectedCareer, setCareerOrigin, user, setSavedCareers, showToast } = useAppStore();
+  const { savedCareers, setView, toggleSavedCareer, setSelectedCareer, setCareerOrigin, user, setSavedCareers, showToast, showModal, hideModal } = useAppStore();
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const handleSelect = (career: CareerRecommendation) => {
+    if (!career.detailsLoaded && user && (user.dailyDetailsViewCount || 0) >= 50) {
+        showModal({
+            icon: <AlertOctagon className="w-16 h-16 text-red-500 mx-auto mb-6" />,
+            title: "Usage Limit Reached",
+            description: "You have viewed too many career details today. Please come back tomorrow.",
+            buttonText: "Okay",
+            onButtonClick: hideModal
+        });
+        return;
+    }
+
     setSelectedCareer(career);
     setCareerOrigin('saved'); 
     setView(AppView.CAREER_DETAIL);

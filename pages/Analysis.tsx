@@ -108,12 +108,12 @@ export const Analysis: React.FC = () => {
             
             const mergedResults = results.map(rec => {
                 const existing = savedCareers.find(s => s.title.trim().toLowerCase() === rec.title.trim().toLowerCase());
-                if (existing) return existing;
+                if (existing) return { ...existing, matchScore: rec.matchScore };
                 return { ...rec, id: generateUUID() };
             });
 
             const sortedResults = [...mergedResults].sort((a, b) => b.matchScore - a.matchScore);
-            setRecommendations(sortedResults);
+            setRecommendations(sortedResults); 
             
             try {
                 const updatedProfile = await getUserProfile(user.id);
@@ -130,7 +130,8 @@ export const Analysis: React.FC = () => {
                 setView(AppView.DASHBOARD);
             } else {
                 console.error("Failed to generate", e);
-                setView(AppView.RESULTS);
+                showToast("An error occurred during analysis. Please try again.");
+                setView(AppView.DASHBOARD);
             }
         }
       }

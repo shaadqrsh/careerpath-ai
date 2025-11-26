@@ -15,7 +15,7 @@ from pydantic import BaseModel, Field, ConfigDict
 from pydantic.alias_generators import to_camel
 import google.generativeai as genai
 from supabase import create_client, Client
-import httpx 
+import httpx
 
 # --- CONFIGURATION ---
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "").strip()
@@ -26,6 +26,10 @@ FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:3000")
 
 DAILY_IMAGE_LIMIT = 3
 DAILY_CAREER_LIMIT = 5
+
+DAILY_GENERAL_QUIZ_LIMIT = 20  
+DAILY_DETAILS_VIEW_LIMIT = 50 
+
 SLIDESHOW_IMAGE_COUNT = 3
 CAREERS_PER_GENERATION = 5
 
@@ -36,9 +40,6 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = FastAPI()
-
-generated_career_cache: Dict[str, Dict[str, Any]] = {}
-CACHE_EXPIRATION_MINUTES = 10
 
 origins = [
     "http://localhost:3000",
@@ -66,8 +67,7 @@ else:
     genai.configure(api_key=GEMINI_API_KEY)
 
 def sanitize_input(text: str) -> str:
-    if not isinstance(text, str):
-        return str(text)
+    if not isinstance(text, str): return str(text)
     return re.sub(r'[^\w\s.,!?-]', '', text).strip()
 
 def sanitize_quiz_answers(answers: List[Dict[str, Any]]) -> str:
@@ -88,11 +88,7 @@ async def health_check():
     return {"status": "ok", "service": "CareerPath AI Backend"}
 
 class BaseSchema(BaseModel):
-    model_config = ConfigDict(
-        alias_generator=to_camel,
-        populate_by_name=True,
-        from_attributes=True
-    )
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True, from_attributes=True)
 
 class UserLogin(BaseSchema):
     email: str
@@ -113,6 +109,12 @@ class UserProfile(BaseSchema):
     specialization: str
     residence_country: str
     preferred_work_country: str
+    daily_image_generations_count: Optional[int] = 0
+    daily_career_generations_count: Optional[int] = 0
+    daily_general_quiz_count: Optional[int] = 0
+    daily_details_view_count: Optional[int] = 0
+    last_image_generation_date: Optional[datetime] = None
+    last_career_generation_date: Optional[datetime] = None
 
 class CareerRoadmapStep(BaseSchema):
     title: str
@@ -134,6 +136,9 @@ class CareerRecommendation(BaseSchema):
     roadmap: Optional[List[CareerRoadmapStep]] = []
     day_in_life_prompts: Optional[List[str]] = []
     slide_images: Optional[List[Optional[str]]] = []
+
+class GenerateCareerResponse(BaseSchema):
+    recommendations: List[CareerRecommendation]
 
 class GenerateCareerRequest(BaseSchema):
     user_profile: UserProfile
@@ -163,21 +168,18 @@ async def verify_token(authorization: str = Header(None)):
         raise HTTPException(status_code=401, detail="Missing or invalid token")
     
     token = authorization.split(" ")[1]
-    
     try:
         user = supabase.auth.get_user(token)
-        if not user:
-            raise HTTPException(status_code=401, detail="Invalid token")
+        if not user: raise HTTPException(status_code=401, detail="Invalid token")
         return user.user
     except Exception as e:
         logger.error(f"Auth error: {e}")
         raise HTTPException(status_code=401, detail="Authentication failed")
 
-def increment_and_verify_quota(client: Client, user_id: str, count_col: str, date_col: str, limit: int):
+def increment_and_verify_quota(client: Client, user_id: str, count_col: str, date_col: str, limit: int, error_msg: str = None):
     try:
         res = client.table("profiles").select(f"{count_col}, {date_col}").eq("id", user_id).single().execute()
-        if not res.data:
-            raise HTTPException(status_code=404, detail="User profile not found for quota check.")
+        if not res.data: raise HTTPException(status_code=404, detail="Profile not found")
         
         data = res.data
         count = data.get(count_col, 0)
@@ -185,144 +187,98 @@ def increment_and_verify_quota(client: Client, user_id: str, count_col: str, dat
         now = datetime.now(timezone.utc)
 
         if last_date_str:
-            last_date = datetime.fromisoformat(last_date_str.replace('Z', '+00:00'))
+            try:
+                last_date = datetime.fromisoformat(last_date_str.replace('Z', '+00:00'))
+            except ValueError: last_date = now
+            
             if now.date() > last_date.date():
                 client.table("profiles").update({count_col: 0, date_col: now.isoformat()}).eq("id", user_id).execute()
                 count = 0
         
         if count >= limit:
-            raise HTTPException(status_code=429, detail=f"Daily limit of {limit} reached.")
-        client.rpc('increment_field', {
-            'table_name': 'profiles',
-            'field_name': count_col,
-            'row_id': user_id,
-            'increment_val': 1
-        }).execute()
-        
+            msg = error_msg or f"Daily limit of {limit} reached."
+            raise HTTPException(status_code=429, detail=msg)
+            
+        client.rpc('increment_field', {'table_name': 'profiles', 'field_name': count_col, 'row_id': user_id, 'increment_val': 1}).execute()
         client.table("profiles").update({date_col: now.isoformat()}).eq("id", user_id).execute()
 
-    except HTTPException as he:
-        raise he
+    except HTTPException as he: raise he
     except Exception as e:
-        logger.error(f"Quota increment error: {e}")
-        raise HTTPException(status_code=500, detail="Could not verify and update quota.")
+        logger.error(f"Quota error: {e}")
+        raise HTTPException(status_code=500, detail="Quota verification failed")
 
 @app.post("/api/auth/signup")
 async def signup(creds: UserLogin):
     try:
-        res = supabase.auth.sign_up({
-            "email": creds.email,
-            "password": creds.password,
-        })
-        if res.user and (res.user.identities is not None) and len(res.user.identities) == 0:
-            raise Exception("User already registered")
+        res = supabase.auth.sign_up({"email": creds.email, "password": creds.password})
+        if res.user and (res.user.identities is not None) and len(res.user.identities) == 0: raise Exception("User already registered")
         return res
     except Exception as e:
         msg = str(e)
-        if "User already registered" in msg:
-             raise HTTPException(status_code=400, detail="User already registered")
+        if "User already registered" in msg: raise HTTPException(status_code=400, detail="User already registered")
         raise HTTPException(status_code=400, detail=msg)
 
 @app.post("/api/auth/login")
 async def login(creds: UserLogin):
     try:
-        res = supabase.auth.sign_in_with_password({
-            "email": creds.email,
-            "password": creds.password,
-        })
-        return {
-            "access_token": res.session.access_token,
-            "user": res.user
-        }
-    except Exception as e:
-        raise HTTPException(status_code=400, detail="Invalid login credentials")
+        res = supabase.auth.sign_in_with_password({"email": creds.email, "password": creds.password})
+        return {"access_token": res.session.access_token, "user": res.user}
+    except Exception: raise HTTPException(status_code=400, detail="Invalid login credentials")
 
 @app.post("/api/auth/reset-password")
 async def reset_password(req: PasswordResetRequest):
-    try:
-        supabase.auth.reset_password_email(req.email)
-        return {"status": "success", "message": "Password reset email sent"}
-    except Exception as e:
-        logger.error(f"Reset Password Error: {e}")
-        return {"status": "success", "message": "Password reset email sent"}
+    try: supabase.auth.reset_password_email(req.email)
+    except Exception: pass
+    return {"status": "success"}
 
 @app.post("/api/auth/update-password")
 async def update_password(req: UpdatePasswordRequest, user = Depends(verify_token)):
-    try:
-        supabase.auth.update_user({ "password": req.password })
-        return {"status": "success"}
-    except Exception as e:
-        logger.error(f"Update Password Error: {e}")
-        msg = str(e)
-        if "different from the old password" in msg:
-             raise HTTPException(status_code=400, detail="New password must be different from the old password.")
-        raise HTTPException(status_code=500, detail="Failed to update password")
+    try: supabase.auth.update_user({ "password": req.password })
+    except Exception: raise HTTPException(status_code=500, detail="Failed")
+    return {"status": "success"}
 
 @app.get("/api/auth/me")
-async def get_current_user(user = Depends(verify_token)):
-    return {"id": user.id, "email": user.email}
+async def get_current_user(user = Depends(verify_token)): return {"id": user.id, "email": user.email}
 
 @app.get("/api/profile")
 async def get_profile(authorization: str = Header(None), user = Depends(verify_token)):
     token = authorization.split(" ")[1]
     client = get_user_client(token)
-    
     try:
         res = client.table("profiles").select("*").eq("id", user.id).single().execute()
-        if not res.data:
-             raise HTTPException(status_code=404, detail="Profile not found")
+        if not res.data: raise HTTPException(status_code=404, detail="Profile not found")
         return res.data
-    except Exception as e:
-        err_str = str(e)
-        if "PGRST116" in err_str or "The result contains 0 rows" in err_str or "JSON object requested, multiple (or no) rows returned" in err_str:
-             raise HTTPException(status_code=404, detail="Profile not found")
-        
-        logger.error(f"Get Profile Error: {e}")
-        raise HTTPException(status_code=500, detail="Database error")
+    except Exception: raise HTTPException(status_code=500, detail="Database error")
 
 @app.post("/api/profile")
 async def upsert_profile(profile: UserProfile, authorization: str = Header(None), user = Depends(verify_token)):
-    if profile.id != user.id:
-        raise HTTPException(status_code=403, detail="Cannot update other users")
-    
+    if profile.id != user.id: raise HTTPException(status_code=403)
     token = authorization.split(" ")[1]
     client = get_user_client(token)
-
     try:
         data = profile.model_dump(by_alias=False)
-        keys_to_remove = [
-            'daily_generations_count', 'last_generation_date', 
-            'daily_image_generations_count', 'last_image_generation_date',
-            'daily_career_generations_count', 'last_career_generation_date'
-        ]
-        for k in keys_to_remove:
-            if k in data: del data[k]
-        
-        res = client.table("profiles").upsert(data).execute()
+        keys = [k for k in data if 'count' in k or 'date' in k]
+        for k in keys: del data[k]
+        client.table("profiles").upsert(data).execute()
         return {"status": "success"}
-    except Exception as e:
-        logger.error(f"Upsert Profile Error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+    except Exception: raise HTTPException(status_code=500)
+
 
 @app.post("/api/generate-domain")
-async def generate_domain(req: GenerateDomainRequest, user = Depends(verify_token)):
+async def generate_domain(req: GenerateDomainRequest, authorization: str = Header(None), user = Depends(verify_token)):
+    token = authorization.split(" ")[1]
+    client = get_user_client(token)
+    
+    increment_and_verify_quota(client, user.id, "daily_general_quiz_count", "last_career_generation_date", DAILY_GENERAL_QUIZ_LIMIT, "You have taken the general quiz too many times today.")
+
     try:
-        clean_answers = sanitize_quiz_answers(req.quiz_answers)
-        prompt = f"""
-        Analyze these quiz answers from a General Career Assessment.
-        Identify the most suitable broad domain for this user.
-        Context: {clean_answers}
-        Options: 'science', 'commerce', 'arts'.
-        Output strictly JSON: {{ "suggested_domain": "science" }}
-        """
+        prompt = f"Analyze quiz answers: {sanitize_quiz_answers(req.quiz_answers)}. Suggest domain: 'science', 'commerce', or 'arts'. Output JSON: {{ \"suggested_domain\": \"name\" }}"
         model = genai.GenerativeModel(TEXT_MODEL_NAME)
         response = await model.generate_content_async(prompt, generation_config={"response_mime_type": "application/json"})
         return json.loads(response.text)
-    except Exception as e:
-        logger.error(f"Domain Gen Error: {e}")
-        return {"suggested_domain": "general"}
+    except Exception: return {"suggested_domain": "general"}
 
-@app.post("/api/generate-career")
+@app.post("/api/generate-career", response_model=GenerateCareerResponse)
 async def generate_career(req: GenerateCareerRequest, authorization: str = Header(None), user = Depends(verify_token)):
     token = authorization.split(" ")[1]
     client = get_user_client(token)
@@ -330,109 +286,47 @@ async def generate_career(req: GenerateCareerRequest, authorization: str = Heade
     increment_and_verify_quota(client, user.id, "daily_career_generations_count", "last_career_generation_date", DAILY_CAREER_LIMIT)
 
     try:
-        user_p = req.user_profile
-        clean_answers = sanitize_quiz_answers(req.quiz_answers)
-        safe_full_name = sanitize_input(user_p.full_name)
-        safe_specialization = sanitize_input(user_p.specialization)
-
         prompt = f"""
         Act as an expert Career Counselor.
-        Profile: {safe_full_name}, {user_p.age}y/o, {user_p.education_level} in {safe_specialization}.
-        Residence: {user_p.residence_country}, Target: {user_p.preferred_work_country}.
-        Traits: {clean_answers}.
-        
-        Task:
-        1. Identify {CAREERS_PER_GENERATION} personalized career paths.
-        2. STRICT ELIGIBILITY CHECK: If user is Arts, no Science.
-        3. Provide only high-level details. Do NOT generate roadmaps or pivot analysis yet.
-        
-        OUTPUT FORMAT: STRICT JSON.
-        {{
-          "recommendations": [
-            {{
-              "id": "uuid-placeholder",
-              "title": "Job Title",
-              "matchScore": 85,
-              "summary": "1-2 sentence summary of why this fits.",
-              "salaryRange": "$50k - $80k",
-              "growth": "High",
-              "tags": ["Tag1", "Tag2"],
-              "roadmap": [],
-              "dayInLifePrompts": []
-            }}
-          ]
-        }}
+        Profile: {req.user_profile.age}y/o, {req.user_profile.education_level} in {req.user_profile.specialization}.
+        Residence: {req.user_profile.residence_country}, Target: {req.user_profile.preferred_work_country}.
+        Traits: {sanitize_quiz_answers(req.quiz_answers)}.
+        Task: Identify {CAREERS_PER_GENERATION} personalized career paths. Strict Eligibility (No Science for Arts students). Provide only high-level details (title, summary, salary, growth, tags). No roadmaps yet.
+        OUTPUT FORMAT: STRICT JSON as {{ "recommendations": [ ... ] }}
         """
         model = genai.GenerativeModel(TEXT_MODEL_NAME)
         response = await model.generate_content_async(prompt, generation_config={"response_mime_type": "application/json"})
         result_json = json.loads(response.text)
         
-        career_titles = []
         for rec in result_json.get("recommendations", []):
             if not rec.get("id"): rec["id"] = str(uuid.uuid4())
             rec["roadmap"] = []
             rec["dayInLifePrompts"] = []
-            career_titles.append(rec["title"])
-
-        generated_career_cache[user.id] = {"titles": career_titles, "timestamp": datetime.now(timezone.utc)}
             
-        return result_json
+        return {"recommendations": result_json["recommendations"]}
     except Exception as e:
         logger.error(f"Career Gen Error: {e}")
         raise HTTPException(status_code=500, detail="AI generation failed")
 
 @app.post("/api/generate-career-details")
-async def generate_career_details(req: GenerateCareerDetailsRequest, user = Depends(verify_token)):
-    user_cache = generated_career_cache.get(user.id)
-    if not user_cache:
-        raise HTTPException(status_code=400, detail="No careers generated. Please start a new assessment.")
-    
-    cache_age = datetime.now(timezone.utc) - user_cache["timestamp"]
-    if cache_age > timedelta(minutes=CACHE_EXPIRATION_MINUTES):
-        del generated_career_cache[user.id]
-        raise HTTPException(status_code=400, detail="Your session for viewing career details has expired. Please start a new assessment.")
+async def generate_career_details(req: GenerateCareerDetailsRequest, authorization: str = Header(None), user = Depends(verify_token)):
+    token = authorization.split(" ")[1]
+    client = get_user_client(token)
 
-    if req.career_title not in user_cache["titles"]:
-        raise HTTPException(status_code=403, detail="Unauthorized to request details for this career.")
+    increment_and_verify_quota(client, user.id, "daily_details_view_count", "last_career_generation_date", DAILY_DETAILS_VIEW_LIMIT, "You have viewed details too many times today.")
 
     try:
-        user_p = req.user_profile
-        safe_title = sanitize_input(req.career_title)
-        prompts_count = SLIDESHOW_IMAGE_COUNT
-        
         prompt = f"""
-        Act as a visionary Career Coach.
-        User: {user_p.education_level} in {user_p.specialization}.
-        Goal Career: {safe_title}.
-        Context: {req.career_summary}.
-        
+        Act as a visionary Career Coach. Goal: {sanitize_input(req.career_title)}. Context: {req.career_summary}.
         Task:
-        1. Create a detailed Education Roadmap (3-4 steps) to get from current state to {safe_title}.
-           - Split into 'localPath' ({user_p.residence_country}) and 'targetPath' ({user_p.preferred_work_country}) if different.
-           - Address the user as "You" or "Your" in step descriptions. Do NOT use their name.
-        2. Pivot Analysis: Is this a "Natural Progression" or "Major Pivot"? 
-           - Explain briefly (1-2 sentences MAX).
-           - Address the user as "You" or "Your". Do NOT use their name.
-        3. Generate {prompts_count} 'Day in the Life' image prompts.
-           - GLORIFY THE JOB. Make it sound prestigious, cinematic, high-impact, and inspiring.
-           - Examples: "Addressing a global summit," "Designing a futuristic city," "Making a breakthrough discovery."
-           - Do not use names. Use "A professional..."
-        
-        OUTPUT FORMAT: STRICT JSON.
-        {{
-            "isPivot": boolean,
-            "pivotAnalysis": "Short 1-2 sentence analysis...",
-            "roadmap": [
-                 {{ "title": "Step Name", "description": "Details using 'You'...", "localPath": "...", "targetPath": "...", "duration": "Duration" }}
-            ],
-            "dayInLifePrompts": ["Glorified prompt 1", "Glorified prompt 2", "Glorified prompt 3"]
-        }}
+        1. Roadmap (3-4 steps). Address user as 'You'.
+        2. Pivot Analysis (1-2 sentences).
+        3. {SLIDESHOW_IMAGE_COUNT} Glorified 'Day in Life' image prompts (No names).
+        OUTPUT FORMAT: STRICT JSON {{ "isPivot": boolean, "pivotAnalysis": "...", "roadmap": [], "dayInLifePrompts": [] }}
         """
         model = genai.GenerativeModel(TEXT_MODEL_NAME)
         response = await model.generate_content_async(prompt, generation_config={"response_mime_type": "application/json"})
-        result_json = json.loads(response.text)
-        
-        return result_json
+        return json.loads(response.text)
     except Exception as e:
         logger.error(f"Career Details Gen Error: {e}")
         raise HTTPException(status_code=500, detail="AI details generation failed")
@@ -441,68 +335,33 @@ async def generate_career_details(req: GenerateCareerDetailsRequest, user = Depe
 async def generate_images(req: GenerateImagesRequest, authorization: str = Header(None), user = Depends(verify_token)):
     token = authorization.split(" ")[1]
     client = get_user_client(token)
-
     increment_and_verify_quota(client, user.id, "daily_image_generations_count", "last_image_generation_date", DAILY_IMAGE_LIMIT)
-
     try:
-        safe_career_title = sanitize_input(req.career_title)
-        subject_desc = "a professional"
-        if req.user_context:
-            u = req.user_context
-            age = req.future_age or (u.age + 5)
-            subject_desc = f"a {age} year old {u.gender} {u.residence_country} national"
-
-        async def generate_single_image(prompt_text):
-            safe_prompt = sanitize_input(prompt_text)
-            full_prompt = f"Cinematic shot of {subject_desc} working as a {safe_career_title}. Scene: {safe_prompt}. Style: Photorealistic, 4k, dramatic lighting, inspiring, prestigious atmosphere. Negative prompt: text, words, letters, malformed"
-            
-            for attempt in range(2):
+        safe_title = sanitize_input(req.career_title)
+        subject = f"a professional"
+        if req.user_context: subject = f"a {req.future_age}yo {req.user_context.gender} {req.user_context.residence_country} national"
+        
+        async def gen_one(p):
+            prompt = f"Cinematic shot of {subject} working as {safe_title}. Scene: {sanitize_input(p)}. Photorealistic 4k. Negative: text, words."
+            for i in range(2):
                 try:
                     model = genai.GenerativeModel(IMAGE_MODEL_NAME)
-                    response = await model.generate_content_async(full_prompt)
-                    
-                    if response.candidates and response.candidates[0].content.parts:
-                        for part in response.candidates[0].content.parts:
-                            if part.inline_data:
-                                b64_data = base64.b64encode(part.inline_data.data).decode('utf-8')
-                                return f"data:{part.inline_data.mime_type};base64,{b64_data}"
-                except Exception as e:
-                    logger.warning(f"Image gen attempt {attempt + 1} failed for prompt: '{safe_prompt}'. Retrying...")
-                    await asyncio.sleep(1)
-            
-            try:
-                encoded_prompt = urllib.parse.quote(full_prompt[:300])
-                seed = uuid.uuid4().int % 10000
-                image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1280&height=720&seed={seed}&nologo=true"
-                
-                headers = {'User-Agent': 'CareerPathAI/1.0'}
-                async with httpx.AsyncClient(follow_redirects=True, timeout=30.0) as http_client:
-                    resp = await http_client.get(image_url, headers=headers)
-                    if resp.status_code == 200:
-                        b64_img = base64.b64encode(resp.content).decode('utf-8')
-                        return f"data:image/jpeg;base64,{b64_img}"
-            except Exception as e:
-                pass
-
+                    res = await model.generate_content_async(prompt)
+                    if res.candidates[0].content.parts[0].inline_data:
+                        return f"data:{res.candidates[0].content.parts[0].inline_data.mime_type};base64,{base64.b64encode(res.candidates[0].content.parts[0].inline_data.data).decode('utf-8')}"
+                except: await asyncio.sleep(1.5)
             return None
 
-        tasks = [generate_single_image(p) for p in req.prompts]
-        generated_images = await asyncio.gather(*tasks)
-        
-        return {"images": generated_images}
-        
-    except Exception as e:
-        return {"images": [None for _ in req.prompts]}
+        tasks = [gen_one(p) for p in req.prompts]
+        return {"images": await asyncio.gather(*tasks)}
+    except Exception: return {"images": [None]*len(req.prompts)}
 
 @app.get("/api/saved-careers")
 async def get_saved_careers(authorization: str = Header(None), user = Depends(verify_token)):
     token = authorization.split(" ")[1]
     client = get_user_client(token)
-    try:
-        res = client.table("saved_careers").select("*").eq("user_id", user.id).execute()
-        return res.data
-    except Exception as e:
-        return []
+    try: return client.table("saved_careers").select("*").eq("user_id", user.id).execute().data
+    except Exception: return []
 
 @app.post("/api/saved-careers")
 async def save_career(career: CareerRecommendation, authorization: str = Header(None), user = Depends(verify_token)):
@@ -510,26 +369,12 @@ async def save_career(career: CareerRecommendation, authorization: str = Header(
     client = get_user_client(token)
     try:
         data = career.model_dump(by_alias=False)
-        data['user_id'] = user.id
-        data['career_uid'] = career.id
+        data.update({"user_id": user.id, "career_uid": career.id})
         if 'id' in data: del data['id']
-
-        if 'slide_images' in data and data['slide_images']:
-            cleaned_images = []
-            for img in data['slide_images']:
-                if img and len(img) > 2000:
-                    cleaned_images.append(None)
-                else:
-                    cleaned_images.append(img)
-            data['slide_images'] = cleaned_images
-            
-        if 'roadmap' not in data or data['roadmap'] is None: data['roadmap'] = []
-        if 'day_in_life_prompts' not in data or data['day_in_life_prompts'] is None: data['day_in_life_prompts'] = []
-
+        if data.get('slide_images'): data['slide_images'] = [img if img and len(img) < 2000 else None for img in data['slide_images']]
         client.table("saved_careers").upsert(data, on_conflict="user_id,career_uid").execute()
         return {"status": "success"}
-    except Exception as e: 
-        raise HTTPException(status_code=500, detail=str(e))
+    except Exception as e: raise HTTPException(status_code=500, detail=str(e))
 
 @app.delete("/api/saved-careers/{career_uid}")
 async def delete_career(career_uid: str, authorization: str = Header(None), user = Depends(verify_token)):
@@ -537,65 +382,27 @@ async def delete_career(career_uid: str, authorization: str = Header(None), user
     client = get_user_client(token)
     try:
         client.table("saved_careers").delete().eq("user_id", user.id).eq("career_uid", career_uid).execute()
-        
-        try:
-            files_to_remove = [f"{user.id}/{career_uid}/"]
-            supabase.storage.from_("career_slideshows").remove(files_to_remove)
-        except Exception as storage_e:
-            pass
-
         return {"status": "success"}
-    except Exception as e: 
-        raise HTTPException(status_code=500, detail=str(e))
+    except Exception as e: raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/career-images")
 async def upload_career_images(req: SaveCareerImageRequest, authorization: str = Header(None), user = Depends(verify_token)):
     if req.user_id != user.id: raise HTTPException(status_code=403)
-    
-    uploaded_urls = []
-    
-    async with httpx.AsyncClient(timeout=30.0) as http_client:
-        for i, img_str in enumerate(req.images):
-            if not img_str: 
-                uploaded_urls.append(None)
+    uploaded = []
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        for i, img in enumerate(req.images):
+            if not img or img.startswith("http"): 
+                uploaded.append(img)
                 continue
-                
-            if img_str.startswith("http"):
-                uploaded_urls.append(img_str)
-                continue
-                
             try:
-                if "," in img_str: header, encoded = img_str.split(",", 1); ext = header.split(";")[0].split("/")[1]
-                else: encoded = img_str; ext = "png"
-                
-                import base64
-                file_data = base64.b64decode(encoded)
-                file_path = f"{user.id}/{req.career_uid}/slide_{i}.{ext}"
-                
-                url = f"{SUPABASE_URL}/storage/v1/object/career_slideshows/{file_path}"
-                
-                resp = await http_client.post(
-                    url,
-                    content=file_data,
-                    headers={
-                        "Authorization": authorization,
-                        "apikey": SUPABASE_KEY,
-                        "Content-Type": f"image/{ext}",
-                        "x-upsert": "true"
-                    }
-                )
-
-                if resp.status_code == 200:
-                    public_url = f"{SUPABASE_URL}/storage/v1/object/public/career_slideshows/{file_path}"
-                    uploaded_urls.append(public_url)
-                else:
-                    logger.error(f"Raw HTTP Upload Failed: {resp.status_code} - {resp.text}")
-                    uploaded_urls.append(None)
-
-            except Exception as e: 
-                uploaded_urls.append(None)
-
-    return {"image_urls": uploaded_urls}
+                ext = "png"
+                if "," in img: ext = img.split(";")[0].split("/")[1]
+                url = f"{SUPABASE_URL}/storage/v1/object/career_slideshows/{user.id}/{req.career_uid}/slide_{i}.{ext}"
+                data = base64.b64decode(img.split(",")[1] if "," in img else img)
+                await client.post(url, content=data, headers={"Authorization": authorization, "apikey": SUPABASE_KEY, "Content-Type": f"image/{ext}", "x-upsert": "true"})
+                uploaded.append(f"{SUPABASE_URL}/storage/v1/object/public/career_slideshows/{user.id}/{req.career_uid}/slide_{i}.{ext}")
+            except: uploaded.append(None)
+    return {"image_urls": uploaded}
 
 if __name__ == "__main__":
     import uvicorn

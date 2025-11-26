@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useAppStore } from '../store';
 import { AppView, CareerDomain } from '../types';
-import { Beaker, Briefcase, Palette, LogOut, User, Heart, HelpCircle, ArrowRight, Zap, Image, Menu, X } from 'lucide-react';
+import { Beaker, Briefcase, Palette, LogOut, User, Heart, HelpCircle, ArrowRight, Zap, Image, Menu, X, AlertOctagon } from 'lucide-react';
 import { APP_NAME, DAILY_CAREER_LIMIT, DAILY_IMAGE_LIMIT } from '../constants';
 
 export const Dashboard: React.FC = () => {
-  const { setView, setDomain, savedCareers, hasViewedSavedPaths, user, logout } = useAppStore();
+  const { setView, setDomain, savedCareers, hasViewedSavedPaths, user, logout, showModal, hideModal } = useAppStore();
   
   const [careerQuota, setCareerQuota] = useState(0);
   const [imageQuota, setImageQuota] = useState(0);
@@ -42,6 +42,17 @@ export const Dashboard: React.FC = () => {
   }, [isMobileMenuOpen]);
 
   const handleStartQuiz = (domain: CareerDomain) => {
+    if (domain === 'general' && user && (user.dailyGeneralQuizCount || 0) >= 20) {
+        showModal({
+            icon: <AlertOctagon className="w-16 h-16 text-red-500 mx-auto mb-6" />,
+            title: "Usage Limit Reached",
+            description: "You have started the general assessment too many times today. Please try again tomorrow or use a specific domain quiz.",
+            buttonText: "Okay",
+            onButtonClick: hideModal
+        });
+        return;
+    }
+
     setDomain(domain);
     setView(AppView.QUIZ);
   };

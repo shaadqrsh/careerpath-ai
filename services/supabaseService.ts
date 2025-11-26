@@ -32,20 +32,15 @@ const apiFetch = async (url: string, options: RequestInit = {}) => {
     const response = await fetch(url, { ...options, headers });
 
     if (response.status === 401 || response.status === 403) {
-        const urlsWithoutAuthErrorModal = ['/api/auth/login', '/api/auth/signup', '/api/auth/reset-password'];
-        const shouldShowModal = !urlsWithoutAuthErrorModal.some(u => url.includes(u));
-        
-        if (shouldShowModal) {
-            handleAuthError();
+        if (response.status === 401) {
+             handleAuthError();
         }
-        
         const errorBody = await response.json().catch(() => ({ detail: "Authentication Error" }));
         throw new Error(errorBody.detail || "Authentication Error");
     }
 
     return response;
 };
-
 
 const toDbProfile = (p: UserProfile) => ({
     id: p.id,
@@ -70,7 +65,9 @@ const fromDbProfile = (d: any): UserProfile => ({
     dailyImageGenerationsCount: d.daily_image_generations_count,
     lastImageGenerationDate: d.last_image_generation_date,
     dailyCareerGenerationsCount: d.daily_career_generations_count,
-    lastCareerGenerationDate: d.last_career_generation_date
+    lastCareerGenerationDate: d.last_career_generation_date,
+    dailyGeneralQuizCount: d.daily_general_quiz_count,
+    dailyDetailsViewCount: d.daily_details_view_count
 });
 
 const toDbCareer = (c: CareerRecommendation) => ({
@@ -208,8 +205,6 @@ export const getCurrentUser = async (): Promise<AuthUser | null> => {
         return null;
     }
 };
-
-export const supabase = null; 
 
 export const getUserProfile = async (userId: string): Promise<UserProfile | null> => {
     try {

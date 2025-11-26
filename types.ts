@@ -11,6 +11,8 @@ export interface UserProfile {
   lastImageGenerationDate?: string;
   dailyCareerGenerationsCount?: number;
   lastCareerGenerationDate?: string;
+  dailyGeneralQuizCount?: number;
+  dailyDetailsViewCount?: number;
 }
 
 export type CareerDomain = 'science' | 'commerce' | 'arts' | 'general';
