@@ -1,5 +1,5 @@
 -- 1. Profiles Table
-CREATE TABLE public.profiles (
+CREATE TABLE IF NOT EXISTS public.profiles (
   id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
   full_name TEXT,
   gender TEXT,
@@ -18,7 +18,7 @@ CREATE TABLE public.profiles (
 );
 
 -- 2. Saved Careers Table
-CREATE TABLE public.saved_careers (
+CREATE TABLE IF NOT EXISTS public.saved_careers (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
   career_uid TEXT NOT NULL,
@@ -37,20 +37,40 @@ CREATE TABLE public.saved_careers (
   UNIQUE(user_id, career_uid)
 );
 
--- Function for Atomic Increment
-CREATE OR REPLACE FUNCTION increment_field(table_name TEXT, field_name TEXT, row_id UUID, increment_val INT)
-RETURNS void AS $$
+-- 3. SECURE QUOTA MANAGEMENT (REPLACES OLD increment_field)
+CREATE OR REPLACE FUNCTION check_and_increment_quota(
+    p_user_id UUID,
+    p_count_field TEXT,
+    p_date_field TEXT,
+    p_limit INT
+)
+RETURNS BOOLEAN AS $$
+DECLARE
+    current_val INT;
+    last_date TIMESTAMPTZ;
+    new_val INT;
 BEGIN
-  EXECUTE format('UPDATE public.%I SET %I = %I + %s WHERE id = %L',
-                 table_name, field_name, field_name, increment_val, row_id);
+    EXECUTE format('SELECT %I, %I FROM public.profiles WHERE id = $1 FOR UPDATE', p_count_field, p_date_field)
+    INTO current_val, last_date
+    USING p_user_id;
+    IF date(now() AT TIME ZONE 'utc') > date(last_date AT TIME ZONE 'utc') THEN
+        current_val := 0;
+    END IF;
+    IF current_val >= p_limit THEN
+        RETURN FALSE; -- Quota exceeded
+    END IF;
+    new_val := current_val + 1;
+    EXECUTE format('UPDATE public.profiles SET %I = $1, %I = $2 WHERE id = $3', p_count_field, p_date_field)
+    USING new_val, now(), p_user_id;
+    RETURN TRUE; -- Success
 END;
 $$ LANGUAGE plpgsql;
 
--- 3. Enable Row Level Security
+-- 4. Enable Row Level Security
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.saved_careers ENABLE ROW LEVEL SECURITY;
 
--- 4. Policies
+-- 5. Policies
 CREATE POLICY "Users can view own profile" ON public.profiles FOR SELECT USING (auth.uid() = id);
 CREATE POLICY "Users can insert own profile" ON public.profiles FOR INSERT WITH CHECK (auth.uid() = id);
 CREATE POLICY "Users can update own profile" ON public.profiles FOR UPDATE USING (auth.uid() = id);
@@ -60,12 +80,12 @@ CREATE POLICY "Users can insert own saved careers" ON public.saved_careers FOR I
 CREATE POLICY "Users can update own saved careers" ON public.saved_careers FOR UPDATE USING (auth.uid() = user_id);
 CREATE POLICY "Users can delete own saved careers" ON public.saved_careers FOR DELETE USING (auth.uid() = user_id);
 
--- 5. Storage
+-- 6. Storage (Existing)
 INSERT INTO storage.buckets (id, name, public) 
 VALUES ('career_slideshows', 'career_slideshows', true) 
 ON CONFLICT (id) DO UPDATE SET public = true;
 
--- 7. Storage Policies
+-- 7. Storage Policies (Existing)
 CREATE POLICY "Give public access to career images" ON storage.objects FOR SELECT TO public USING (bucket_id = 'career_slideshows');
 CREATE POLICY "Users can upload their own career images" ON storage.objects FOR INSERT TO authenticated WITH CHECK (bucket_id = 'career_slideshows' AND (storage.foldername(name))[1] = auth.uid()::text);
 CREATE POLICY "Users can update their own career images" ON storage.objects FOR UPDATE TO authenticated USING (bucket_id = 'career_slideshows' AND (storage.foldername(name))[1] = auth.uid()::text);

@@ -6,6 +6,7 @@ import base64
 import urllib.parse
 import re
 import asyncio
+import random
 from datetime import datetime, timezone, timedelta
 from typing import List, Optional, Dict, Any
 
@@ -18,17 +19,11 @@ from supabase import create_client, Client
 import httpx
 
 # --- CONFIGURATION ---
-SUPABASE_URL = os.environ.get("SUPABASE_URL", "").strip()
-SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "").strip()
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "").strip()
-
-FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:3000")
-
-# Visible Limits (User Facing)
+# Visible Rate Limits
 DAILY_IMAGE_LIMIT = 3
 DAILY_CAREER_LIMIT = 5
 
-# Hidden Anti-Abuse Limits (Backend Enforcement)
+# Hidden Rate Limits
 DAILY_GENERAL_QUIZ_LIMIT = 20  
 DAILY_DETAILS_VIEW_LIMIT = 50 
 
@@ -36,8 +31,28 @@ DAILY_DETAILS_VIEW_LIMIT = 50
 SLIDESHOW_IMAGE_COUNT = 3
 CAREERS_PER_GENERATION = 5
 
+# Model names
 TEXT_MODEL_NAME = "gemini-2.5-flash"
 IMAGE_MODEL_NAME = "gemini-2.5-flash-image" 
+
+# API Keys and URLs
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "").strip()
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "").strip()
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "").strip()
+FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:3000")
+
+# Realism contexts for grounded image generation
+REALISM_CONTEXTS = [
+    "during a typical Monday morning",
+    "handling a routine task",
+    "in a standard workplace setting",
+    "during a regular workday",
+    "taking a short break between tasks",
+    "collaborating with a colleague",
+    "reviewing work at their desk",
+    "in a casual team discussion"
+]
+# --- CONFIGURATION ENDS ---
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -71,13 +86,15 @@ else:
 
 def sanitize_input(text: str) -> str:
     if not isinstance(text, str): return str(text)
+    # Remove XML-like tags to prevent injection within our prompt structure
+    text = re.sub(r'<[^>]*>', '', text)
     return re.sub(r'[^\w\s.,!?-]', '', text).strip()
 
 def sanitize_quiz_answers(answers: List[Dict[str, Any]]) -> str:
     clean_text = []
     for a in answers:
         q_id = a.get("questionId", "Unknown")
-        ans = sanitize_input(str(a.get("answer", "")))
+        ans = sanitize_input(str(a.get("answer", "")))[:200]
         clean_text.append(f"Q{q_id}: {ans}")
     return "; ".join(clean_text)
 
@@ -101,24 +118,24 @@ class PasswordResetRequest(BaseSchema):
     email: str
 
 class UpdatePasswordRequest(BaseSchema):
-    password: str
+    password: str = Field(..., min_length=6, max_length=128)
 
 class Limits(BaseSchema):
     daily_image_limit: int = DAILY_IMAGE_LIMIT
     daily_career_limit: int = DAILY_CAREER_LIMIT
     daily_general_quiz_limit: int = DAILY_GENERAL_QUIZ_LIMIT
     daily_details_view_limit: int = DAILY_DETAILS_VIEW_LIMIT
-    slideshow_image_count: int = SLIDESHOW_IMAGE_COUNT # <-- ADDED
+    slideshow_image_count: int = SLIDESHOW_IMAGE_COUNT
 
 class UserProfile(BaseSchema):
     id: str
-    full_name: str
-    gender: str
-    age: int
-    education_level: str
-    specialization: str
-    residence_country: str
-    preferred_work_country: str
+    full_name: str = Field(..., max_length=100)
+    gender: str = Field(..., max_length=50)
+    age: int = Field(..., ge=10, le=100)
+    education_level: str = Field(..., max_length=100)
+    specialization: str = Field(..., max_length=100)
+    residence_country: str = Field(..., max_length=100)
+    preferred_work_country: str = Field(..., max_length=100)
     daily_image_generations_count: Optional[int] = 0
     daily_career_generations_count: Optional[int] = 0
     daily_general_quiz_count: Optional[int] = 0
@@ -133,6 +150,7 @@ class CareerRoadmapStep(BaseSchema):
     local_path: Optional[str] = None
     target_path: Optional[str] = None
     duration: str
+    challenges: Optional[str] = None
 
 class CareerRecommendation(BaseSchema):
     id: str
@@ -142,6 +160,7 @@ class CareerRecommendation(BaseSchema):
     salary_range: str
     growth: str
     tags: List[str]
+    entry_barriers: Optional[str] = None
     is_pivot: Optional[bool] = False
     pivot_analysis: Optional[str] = None
     roadmap: Optional[List[CareerRoadmapStep]] = []
@@ -157,11 +176,12 @@ class GenerateCareerRequest(BaseSchema):
 
 class GenerateCareerDetailsRequest(BaseSchema):
     user_profile: UserProfile
-    career_title: str
-    career_summary: str
+    # Limit career context length
+    career_title: str = Field(..., max_length=200)
+    career_summary: str = Field(..., max_length=1000)
 
 class GenerateImagesRequest(BaseSchema):
-    career_title: str
+    career_title: str = Field(..., max_length=200)
     prompts: List[str]
     user_context: Optional[UserProfile] = None
     future_age: Optional[int] = 25
@@ -187,35 +207,26 @@ async def verify_token(authorization: str = Header(None)):
         logger.error(f"Auth error: {e}")
         raise HTTPException(status_code=401, detail="Authentication failed")
 
+# SECURE ATOMIC QUOTA CHECK
 def increment_and_verify_quota(client: Client, user_id: str, count_col: str, date_col: str, limit: int, error_msg: str = None):
     try:
-        res = client.table("profiles").select(f"{count_col}, {date_col}").eq("id", user_id).single().execute()
-        if not res.data: raise HTTPException(status_code=404, detail="Profile not found")
+        # Calls the Postgres RPC function defined in database.txt for atomic updates
+        response = client.rpc('check_and_increment_quota', {
+            'p_user_id': user_id,
+            'p_count_field': count_col,
+            'p_date_field': date_col,
+            'p_limit': limit
+        }).execute()
         
-        data = res.data
-        count = data.get(count_col, 0)
-        last_date_str = data.get(date_col)
-        now = datetime.now(timezone.utc)
-
-        if last_date_str:
-            try:
-                last_date = datetime.fromisoformat(last_date_str.replace('Z', '+00:00'))
-            except ValueError: last_date = now
-            
-            if now.date() > last_date.date():
-                client.table("profiles").update({count_col: 0, date_col: now.isoformat()}).eq("id", user_id).execute()
-                count = 0
-        
-        if count >= limit:
-            msg = error_msg or f"Daily limit of {limit} reached."
-            raise HTTPException(status_code=429, detail=msg)
-            
-        client.rpc('increment_field', {'table_name': 'profiles', 'field_name': count_col, 'row_id': user_id, 'increment_val': 1}).execute()
-        client.table("profiles").update({date_col: now.isoformat()}).eq("id", user_id).execute()
-
+        # True means success, False means quota exceeded
+        if not response.data:
+             msg = error_msg or f"Daily limit of {limit} reached."
+             raise HTTPException(status_code=429, detail=msg)
+             
     except HTTPException as he: raise he
     except Exception as e:
         logger.error(f"Quota error: {e}")
+        # Fail safe: if DB error, do not allow generation to protect resources
         raise HTTPException(status_code=500, detail="Quota verification failed")
 
 @app.post("/api/auth/signup")
@@ -243,9 +254,16 @@ async def reset_password(req: PasswordResetRequest):
     return {"status": "success"}
 
 @app.post("/api/auth/update-password")
-async def update_password(req: UpdatePasswordRequest, user = Depends(verify_token)):
-    try: supabase.auth.update_user({ "password": req.password })
-    except Exception: raise HTTPException(status_code=500, detail="Failed")
+async def update_password(req: UpdatePasswordRequest, authorization: str = Header(None), user = Depends(verify_token)):
+    # FIX: Use authenticated client to update the user context
+    token = authorization.split(" ")[1]
+    client = get_user_client(token)
+    try: 
+        res = client.auth.update_user({ "password": req.password })
+        if not res.user: raise Exception("Update failed")
+    except Exception as e: 
+        logger.error(f"Pwd update error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to update password")
     return {"status": "success"}
 
 @app.get("/api/auth/me")
@@ -289,9 +307,11 @@ async def generate_domain(req: GenerateDomainRequest, authorization: str = Heade
     client = get_user_client(token)
     increment_and_verify_quota(client, user.id, "daily_general_quiz_count", "last_career_generation_date", DAILY_GENERAL_QUIZ_LIMIT, "You have taken the general quiz too many times today.")
     try:
-        prompt = f"Analyze quiz answers: {sanitize_quiz_answers(req.quiz_answers)}. Suggest domain: 'science', 'commerce', or 'arts'. Output JSON: {{ \"suggested_domain\": \"name\" }}"
+        # Prompt hardening: Truncate inputs and use strict token limits
+        clean_answers = sanitize_quiz_answers(req.quiz_answers)[:500] 
+        prompt = f"Analyze quiz answers: {clean_answers}. Suggest domain: 'science', 'commerce', or 'arts'. Output JSON: {{ \"suggested_domain\": \"name\" }}"
         model = genai.GenerativeModel(TEXT_MODEL_NAME)
-        response = await model.generate_content_async(prompt, generation_config={"response_mime_type": "application/json"})
+        response = await model.generate_content_async(prompt, generation_config={"response_mime_type": "application/json", "max_output_tokens": 100})
         return json.loads(response.text)
     except Exception: return {"suggested_domain": "general"}
 
@@ -301,16 +321,73 @@ async def generate_career(req: GenerateCareerRequest, authorization: str = Heade
     client = get_user_client(token)
     increment_and_verify_quota(client, user.id, "daily_career_generations_count", "last_career_generation_date", DAILY_CAREER_LIMIT)
     try:
+        user_p = req.user_profile
+        safe_specialization = sanitize_input(user_p.specialization)
+        safe_full_name = sanitize_input(user_p.full_name)
+        clean_answers = sanitize_quiz_answers(req.quiz_answers) 
+        
+        # PROMPT HARDENING: Wrap inputs in XML tags
         prompt = f"""
-        Act as an expert Career Counselor.
-        Profile: {req.user_profile.age}y/o, {req.user_profile.education_level} in {req.user_profile.specialization}.
-        Residence: {req.user_profile.residence_country}, Target: {req.user_profile.preferred_work_country}.
-        Traits: {sanitize_quiz_answers(req.quiz_answers)}.
-        Task: Identify {CAREERS_PER_GENERATION} personalized career paths. Strict Eligibility (No Science for Arts students). Provide only high-level details (title, summary, salary, growth, tags). No roadmaps yet.
-        OUTPUT FORMAT: STRICT JSON as {{ "recommendations": [ ... ] }}
-        """
+Act as an experienced Career Counselor with expertise in global job markets.
+
+USER PROFILE:
+<profile>
+Age: {user_p.age}
+Education: {user_p.education_level}
+Specialization: {safe_specialization}
+Location: {user_p.residence_country} -> {user_p.preferred_work_country}
+Name: {safe_full_name}
+</profile>
+
+ASSESSMENT RESULTS:
+<answers>
+{clean_answers}
+</answers>
+
+TASK: Recommend {CAREERS_PER_GENERATION} realistic career paths that match this profile.
+
+EVALUATION CRITERIA for each career:
+1. ACCESSIBILITY: Can someone with this exact background realistically enter this field within 2-5 years?
+2. ALIGNMENT: How well do the assessment results indicate aptitude and interest?
+3. MARKET REALITY: Consider actual job availability in both residence and target countries.
+4. PROGRESSION: Is there a clear, achievable path from current position to this career?
+
+MATCH SCORE GUIDELINES:
+- 90-100: Near-perfect fit, minimal additional training needed
+- 75-89: Strong fit, some skill development or certification required
+- 60-74: Moderate fit, significant but achievable transition needed
+- Below 60: Do not include - too much of a stretch
+
+STRICT ELIGIBILITY: Do not suggest careers that fundamentally require a different educational background (e.g., no Quantum Physics for Arts students). However, if there's a realistic bridge path, consider it.
+
+For salaryRange, provide realistic figures for the TARGET COUNTRY ({user_p.preferred_work_country}) in local currency or USD.
+
+Address the user as "you" throughout. Do NOT use their name.
+
+OUTPUT FORMAT: Strict JSON
+{{
+  "recommendations": [
+    {{
+      "id": "uuid-placeholder",
+      "title": "Specific Job Title (not generic)",
+      "matchScore": 75,
+      "summary": "2-3 sentences explaining WHY this fits based on their specific profile and assessment answers. Be concrete and honest about both the fit and any gaps.",
+      "salaryRange": "Realistic entry to mid-level range for target country",
+      "growth": "Low/Moderate/High/Very High - based on actual market trends",
+      "tags": ["Relevant", "Specific", "Skills"],
+      "entryBarriers": "Brief note on what stands between user and this career",
+      "roadmap": [],
+      "dayInLifePrompts": []
+    }}
+  ]
+}}
+"""
         model = genai.GenerativeModel(TEXT_MODEL_NAME)
-        response = await model.generate_content_async(prompt, generation_config={"response_mime_type": "application/json"})
+        # Limit output tokens to prevent cost spikes from injection attacks
+        response = await model.generate_content_async(
+            prompt, 
+            generation_config={"response_mime_type": "application/json", "max_output_tokens": 2000}
+        )
         result_json = json.loads(response.text)
         for rec in result_json.get("recommendations", []):
             if not rec.get("id"): rec["id"] = str(uuid.uuid4())
@@ -327,16 +404,73 @@ async def generate_career_details(req: GenerateCareerDetailsRequest, authorizati
     client = get_user_client(token)
     increment_and_verify_quota(client, user.id, "daily_details_view_count", "last_career_generation_date", DAILY_DETAILS_VIEW_LIMIT, "Usage limit reached for career details generation.")
     try:
+        user_p = req.user_profile
+        safe_title = sanitize_input(req.career_title)
+        safe_summary = sanitize_input(req.career_summary)
+        
+        # PROMPT HARDENING: Wrap inputs in XML tags
         prompt = f"""
-        Act as a visionary Career Coach. Goal: {sanitize_input(req.career_title)}. Context: {req.career_summary}.
-        Task:
-        1. Roadmap (3-4 steps). Address user as 'You'.
-        2. Pivot Analysis (1-2 sentences).
-        3. {SLIDESHOW_IMAGE_COUNT} Glorified 'Day in Life' image prompts (No names).
-        OUTPUT FORMAT: STRICT JSON {{ "isPivot": boolean, "pivotAnalysis": "...", "roadmap": [], "dayInLifePrompts": [] }}
-        """
+Act as a practical Career Advisor providing honest, grounded guidance.
+
+USER CONTEXT:
+<context>
+Career: {safe_title}
+Summary: {safe_summary}
+User Edu: {user_p.education_level} in {sanitize_input(user_p.specialization)}
+Location: {user_p.residence_country} -> {user_p.preferred_work_country}
+</context>
+
+TASK 1 - REALISTIC ROADMAP:
+Create a 3-4 step educational and professional roadmap to reach {safe_title}.
+- Be specific about certifications, degrees, or experience needed
+- Include realistic timeframes (not overly optimistic)
+- If residence ({user_p.residence_country}) and target ({user_p.preferred_work_country}) countries differ, note where each step is best completed using localPath and targetPath
+- Mention potential obstacles or challenges at each step in the "challenges" field
+- Address the user as "you" - do NOT use their name
+
+TASK 2 - TRANSITION ANALYSIS:
+Evaluate the difficulty of this career transition:
+- "Natural Progression": Builds directly on current education/skills (isPivot: false)
+- "Moderate Pivot": Related field, requires meaningful reskilling (isPivot: true)
+- "Major Pivot": Substantially different, requires extensive retraining (isPivot: true)
+Explain in 1-2 sentences what makes this transition easier or harder for this specific user.
+
+TASK 3 - REALISTIC DAY-IN-THE-LIFE SCENARIOS:
+Generate {SLIDESHOW_IMAGE_COUNT} image prompts showing TYPICAL, EVERYDAY work scenarios.
+Guidelines:
+- Show common daily tasks, NOT rare highlights or prestigious moments
+- Include realistic settings (normal offices, standard equipment, typical environments)
+- Represent the routine 80% of the job, not the glamorous 20%
+- Focus on authentic, relatable moments
+- Do NOT use names - use "A professional" or "A [job title]"
+
+Good examples: "Reviewing spreadsheets at a desk with morning coffee", "In a casual team standup meeting", "Troubleshooting an issue while chatting with a colleague", "Taking notes during a video call", "Organizing files and planning the week ahead"
+
+Bad examples (avoid these): "Addressing a global summit", "Making a breakthrough discovery", "Closing a million-dollar deal", "Accepting an award"
+
+OUTPUT FORMAT: Strict JSON
+{{
+    "isPivot": boolean,
+    "pivotAnalysis": "Honest 1-2 sentence analysis of transition difficulty for this specific user...",
+    "roadmap": [
+        {{
+            "title": "Step Name",
+            "description": "Specific details with realistic expectations, addressing user as 'you'...",
+            "localPath": "How to accomplish this in {user_p.residence_country} (or null if same as target)",
+            "targetPath": "How to accomplish this in {user_p.preferred_work_country} (or null if same as local)",
+            "duration": "Realistic duration (e.g., '6-12 months', '2-3 years')",
+            "challenges": "Potential obstacles to anticipate at this step"
+        }}
+    ],
+    "dayInLifePrompts": ["Realistic everyday prompt 1", "Realistic everyday prompt 2", "Realistic everyday prompt 3"]
+}}
+"""
         model = genai.GenerativeModel(TEXT_MODEL_NAME)
-        response = await model.generate_content_async(prompt, generation_config={"response_mime_type": "application/json"})
+        # Limit output tokens
+        response = await model.generate_content_async(
+            prompt, 
+            generation_config={"response_mime_type": "application/json", "max_output_tokens": 1500}
+        )
         return json.loads(response.text)
     except Exception as e:
         logger.error(f"Career Details Gen Error: {e}")
@@ -348,22 +482,44 @@ async def generate_images(req: GenerateImagesRequest, authorization: str = Heade
     client = get_user_client(token)
     increment_and_verify_quota(client, user.id, "daily_image_generations_count", "last_image_generation_date", DAILY_IMAGE_LIMIT)
     try:
-        safe_title = sanitize_input(req.career_title)
-        subject = f"a professional"
-        if req.user_context: subject = f"a {req.future_age}yo {req.user_context.gender} {req.user_context.residence_country} national"
+        # Enforce strict prompt limits for images
+        safe_title = sanitize_input(req.career_title)[:100]
+        subject = "a professional"
+        if req.user_context:
+            age = req.future_age or (req.user_context.age + 5)
+            subject = f"a {age} year old {req.user_context.gender} {req.user_context.residence_country} professional"
         async def gen_one(p):
-            prompt = f"Cinematic shot of {subject} working as {safe_title}. Scene: {sanitize_input(p)}. Photorealistic 4k. Negative: text, words."
+            safe_prompt = sanitize_input(p)[:200] # Limit prompt length
+            context = random.choice(REALISM_CONTEXTS)
+            prompt = f"""
+Realistic photograph of {subject} working as a {safe_title} {context}.
+Scene: {safe_prompt}.
+Style: Natural lighting, authentic workplace environment, candid moment, documentary photography style.
+Show genuine work conditions - normal office or workspace, everyday equipment, realistic professional attire.
+NOT glamorized or cinematic - capture the real, everyday nature of this work.
+Mood: Focused, professional, relatable.
+Negative: text, words, watermarks, logos, unrealistic lighting, overly dramatic poses.
+"""
             for i in range(2):
                 try:
                     model = genai.GenerativeModel(IMAGE_MODEL_NAME)
                     res = await model.generate_content_async(prompt)
-                    if res.candidates[0].content.parts[0].inline_data:
-                        return f"data:{res.candidates[0].content.parts[0].inline_data.mime_type};base64,{base64.b64encode(res.candidates[0].content.parts[0].inline_data.data).decode('utf-8')}"
-                except: await asyncio.sleep(1.5)
+                    if res.candidates and res.candidates[0].content.parts:
+                        part = res.candidates[0].content.parts[0]
+                        if hasattr(part, 'inline_data') and part.inline_data:
+                            return f"data:{part.inline_data.mime_type};base64,{base64.b64encode(part.inline_data.data).decode('utf-8')}"
+                except Exception as img_err:
+                    logger.warning(f"Image generation attempt {i+1} failed: {img_err}")
+                    await asyncio.sleep(1.5)
             return None
-        tasks = [gen_one(p) for p in req.prompts]
+        
+        # Limit number of images requested to config
+        safe_prompts = req.prompts[:SLIDESHOW_IMAGE_COUNT]
+        tasks = [gen_one(p) for p in safe_prompts]
         return {"images": await asyncio.gather(*tasks)}
-    except Exception: return {"images": [None]*len(req.prompts)}
+    except Exception as e:
+        logger.error(f"Image Gen Error: {e}")
+        return {"images": [None]*len(req.prompts)}
 
 @app.get("/api/saved-careers")
 async def get_saved_careers(authorization: str = Header(None), user = Depends(verify_token)):
@@ -404,8 +560,19 @@ async def upload_career_images(req: SaveCareerImageRequest, authorization: str =
                 uploaded.append(img)
                 continue
             try:
-                ext = "png"
-                if "," in img: ext = img.split(";")[0].split("/")[1]
+                # Basic Magic Number Validation
+                header = img.split(",")[0]
+                if "image/png" in header: ext = "png"
+                elif "image/jpeg" in header: ext = "jpg"
+                else: 
+                     uploaded.append(None)
+                     continue
+
+                # Verify payload size approx (Base64 is ~1.33x larger)
+                if len(img) > 5 * 1024 * 1024 * 1.33: # 5MB limit
+                     uploaded.append(None)
+                     continue
+
                 url = f"{SUPABASE_URL}/storage/v1/object/career_slideshows/{user.id}/{req.career_uid}/slide_{i}.{ext}"
                 data = base64.b64decode(img.split(",")[1] if "," in img else img)
                 await client.post(url, content=data, headers={"Authorization": authorization, "apikey": SUPABASE_KEY, "Content-Type": f"image/{ext}", "x-upsert": "true"})
