@@ -175,6 +175,7 @@ class CareerRecommendation(BaseSchema):
     roadmap: Optional[List[CareerRoadmapStep]] = []
     day_in_life_prompts: Optional[List[str]] = []
     slide_images: Optional[List[Optional[str]]] = []
+    skills: Optional[List[str]] = []
 
 class GenerateCareerResponse(BaseSchema):
     recommendations: List[CareerRecommendation]
@@ -398,6 +399,7 @@ IMPORTANT: Do NOT include 'roadmap' or 'dayInLifePrompts' in this response. They
             if not rec.get("id"): rec["id"] = str(uuid.uuid4())
             rec["roadmap"] = []
             rec["dayInLifePrompts"] = []
+            rec["skills"] = []
         return {"recommendations": result_json["recommendations"]}
     except Exception as e:
         logger.error(f"Career Gen Error: {e}")
@@ -441,7 +443,11 @@ Evaluate the difficulty of this career transition:
 - "Major Pivot": Substantially different, requires extensive retraining (isPivot: true)
 Explain in 1-2 sentences what makes this transition easier or harder for this specific user.
 
-TASK 3 - REALISTIC DAY-IN-THE-LIFE SCENARIOS:
+TASK 3 - SKILLS ANALYSIS:
+List 5-7 specific hard and soft skills required for this role in the target market. 
+Mix technical tools (software, languages, etc.) and interpersonal/cognitive abilities.
+
+TASK 4 - REALISTIC DAY-IN-THE-LIFE SCENARIOS:
 Generate {SLIDESHOW_IMAGE_COUNT} image prompts showing TYPICAL, EVERYDAY work scenarios.
 Guidelines:
 - Show common daily tasks, NOT rare highlights or prestigious moments
@@ -458,6 +464,7 @@ OUTPUT FORMAT: Strict JSON
 {{
     "isPivot": boolean,
     "pivotAnalysis": "Honest 1-2 sentence analysis of transition difficulty for this specific user...",
+    "skills": ["Skill 1", "Skill 2", "Skill 3", "Skill 4", "Skill 5"],
     "roadmap": [
         {{
             "title": "Step Name",

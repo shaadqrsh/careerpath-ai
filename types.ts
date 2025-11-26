@@ -64,6 +64,7 @@ export interface CareerRecommendation {
   roadmap?: CareerRoadmapStep[];
   dayInLifePrompts?: string[];
   slideImages?: string[];
+  skills?: string[];
 }
 
 export interface Slide {

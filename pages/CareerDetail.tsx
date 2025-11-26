@@ -183,13 +183,22 @@ export const CareerDetail: React.FC = () => {
                 <div className="flex flex-col gap-6">
                     <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm h-full animate-fade-in-up opacity-0" style={{ animationDelay: '400ms' }}>
                         <h3 className="text-lg font-bold mb-4 text-slate-800 dark:text-slate-200">Key Skills Required</h3>
-                        <div className="flex flex-wrap gap-2">
-                            {['Strategic Thinking', 'Data Analysis', 'Communication', 'Project Management', 'Technical Proficiency'].map(skill => (
-                                <Badge key={skill} variant="slate" className="px-3 py-2 text-sm">
-                                    {skill}
-                                </Badge>
-                            ))}
-                        </div>
+                        {selectedCareer.skills && selectedCareer.skills.length > 0 ? (
+                            <div className="flex flex-wrap gap-2">
+                                {selectedCareer.skills.map(skill => (
+                                    <Badge key={skill} variant="slate" className="px-3 py-2 text-sm">
+                                        {skill}
+                                    </Badge>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="flex flex-wrap gap-2 animate-pulse">
+                                {[1,2,3,4,5].map(i => (
+                                     <div key={i} className="h-8 bg-slate-200 dark:bg-slate-700 rounded-lg w-24"></div>
+                                ))}
+                            </div>
+                        )}
+                        
                         <p className="mt-4 text-sm text-slate-500">
                             * Based on current market requirements in {targetCountryDisplay}.
                         </p>

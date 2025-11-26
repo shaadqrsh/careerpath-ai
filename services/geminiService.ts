@@ -127,6 +127,7 @@ export const generateCareerDetails = async (
             pivotAnalysis: data.pivotAnalysis,
             roadmap: data.roadmap,
             dayInLifePrompts: data.dayInLifePrompts,
+            skills: data.skills,
             detailsLoaded: true
         };
 

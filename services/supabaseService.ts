@@ -94,7 +94,8 @@ const toDbCareer = (c: CareerRecommendation) => ({
     pivot_analysis: c.pivotAnalysis,
     roadmap: c.roadmap, 
     day_in_life_prompts: c.dayInLifePrompts,
-    slide_images: c.slideImages
+    slide_images: c.slideImages,
+    skills: c.skills 
 });
 
 const fromDbCareer = (d: any): CareerRecommendation => {
@@ -123,6 +124,7 @@ const fromDbCareer = (d: any): CareerRecommendation => {
         roadmap: roadmap,
         dayInLifePrompts: d.day_in_life_prompts || [],
         slideImages: d.slide_images || [],
+        skills: d.skills || [],
         detailsLoaded: detailsLoaded
     };
 };
