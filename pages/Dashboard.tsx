@@ -1,3 +1,5 @@
+--- START OF FILE Dashboard.tsx ---
+
 import React, { useEffect, useState } from 'react';
 import { useAppStore } from '../store';
 import { AppView, CareerDomain } from '../types';
@@ -82,7 +84,7 @@ export const Dashboard: React.FC = () => {
      if (current === 0) {
          return "bg-red-50 dark:bg-red-900/20 border-red-100 dark:border-red-800 text-red-700 dark:text-red-400";
      }
-     return "bg-purple-50 dark:bg-purple-900/20 border-purple-100 dark:border-purple-800 text-purple-700 dark:text-purple-300";
+     return "bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-700 text-yellow-700 dark:text-yellow-400";
   };
 
   const displayCareerLimit = user?.limits?.dailyCareerLimit ?? 5;

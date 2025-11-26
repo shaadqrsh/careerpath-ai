@@ -252,70 +252,9 @@ export const QUESTIONS: QuizQuestion[] = [
   }
 ];
 
-export const MOCK_CAREERS = [
-  {
-    id: "c1",
-    title: "Data Scientist",
-    matchScore: 95,
-    summary: "Leverage mathematics and computer science to analyze complex datasets and drive business decisions.",
-    salaryRange: "$95k - $160k",
-    growth: "High (25% over 10 years)",
-    tags: ["Tech", "Math", "Analytical"],
-    roadmap: [
-      { title: "Bachelor's Degree", description: "Computer Science or Statistics", duration: "4 Years" },
-      { title: "Master's Degree", description: "Data Science or AI specialization", duration: "2 Years" },
-      { title: "Junior Analyst", description: "Entry level position", duration: "1-2 Years" }
-    ]
-  },
-  {
-    id: "c2",
-    title: "UX Designer",
-    matchScore: 88,
-    summary: "Design intuitive digital experiences by understanding user behavior and aesthetics.",
-    salaryRange: "$75k - $130k",
-    growth: "Moderate (15% over 10 years)",
-    tags: ["Creative", "Tech", "Psychology"],
-    roadmap: [
-      { title: "Bachelor's Degree", description: "HCI, Design, or Psychology", duration: "4 Years" },
-      { title: "Portfolio Building", description: "Freelance projects and bootcamps", duration: "6 Months" },
-      { title: "Junior Designer", description: "Agency or In-house role", duration: "1-3 Years" }
-    ]
-  },
-  {
-    id: "c3",
-    title: "Financial Analyst",
-    matchScore: 92,
-    summary: "Guide businesses and individuals in making investment decisions by assessing performance of stocks and bonds.",
-    salaryRange: "$70k - $110k",
-    growth: "Steady (9% over 10 years)",
-    tags: ["Finance", "Math", "Business"],
-    roadmap: [
-      { title: "Bachelor's Degree", description: "Finance, Economics, or Accounting", duration: "4 Years" },
-      { title: "CFA Certification", description: "Chartered Financial Analyst exams", duration: "1-2 Years" },
-      { title: "Associate Analyst", description: "Investment firm entry role", duration: "2 Years" }
-    ]
-  }
+export const FALLBACK_COUNTRIES = [
+    "Australia", "Brazil", "Canada", "China", "France", "Germany", 
+    "India", "Italy", "Japan", "Netherlands", "Singapore", 
+    "South Korea", "Spain", "Sweden", "Switzerland", 
+    "United Arab Emirates", "United Kingdom", "United States"
 ];
-
-export const FALLBACK_LOCATIONS: Record<string, string[]> = {
-  "United States": ["New York", "Los Angeles", "Chicago", "Houston", "Phoenix", "San Francisco", "Seattle", "Austin", "Boston", "Miami"],
-  "United Kingdom": ["London", "Manchester", "Birmingham", "Glasgow", "Liverpool", "Edinburgh", "Bristol"],
-  "Canada": ["Toronto", "Vancouver", "Montreal", "Calgary", "Ottawa", "Edmonton"],
-  "Australia": ["Sydney", "Melbourne", "Brisbane", "Perth", "Adelaide", "Gold Coast"],
-  "Germany": ["Berlin", "Munich", "Hamburg", "Frankfurt", "Cologne", "Stuttgart"],
-  "India": ["Mumbai", "Delhi", "Bangalore", "Hyderabad", "Chennai", "Kolkata", "Pune"],
-  "France": ["Paris", "Marseille", "Lyon", "Toulouse", "Nice"],
-  "Japan": ["Tokyo", "Osaka", "Kyoto", "Yokohama", "Nagoya"],
-  "Singapore": ["Singapore"],
-  "China": ["Shanghai", "Beijing", "Shenzhen", "Guangzhou"],
-  "Brazil": ["São Paulo", "Rio de Janeiro", "Brasília", "Salvador"],
-  "United Arab Emirates": ["Dubai", "Abu Dhabi", "Sharjah"],
-  "Netherlands": ["Amsterdam", "Rotterdam", "The Hague"],
-  "Sweden": ["Stockholm", "Gothenburg", "Malmö"],
-  "Spain": ["Madrid", "Barcelona", "Valencia", "Seville"],
-  "Italy": ["Rome", "Milan", "Naples", "Turin"],
-  "South Korea": ["Seoul", "Busan", "Incheon"],
-  "Switzerland": ["Zurich", "Geneva", "Basel"]
-};
-
-export const FALLBACK_COUNTRIES = Object.keys(FALLBACK_LOCATIONS).sort();

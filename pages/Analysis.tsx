@@ -3,7 +3,7 @@ import { useAppStore } from '../store';
 import { AppView } from '../types';
 import { generateCareerRecommendations } from '../services/geminiService';
 import { getUserProfile } from '../services/supabaseService';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertOctagon } from 'lucide-react';
 
 const generateUUID = () => {
     if (typeof crypto !== 'undefined' && crypto.randomUUID) {
@@ -16,7 +16,7 @@ const generateUUID = () => {
 };
 
 export const Analysis: React.FC = () => {
-  const { user, setUser, quizAnswers, setRecommendations, setView, savedCareers, showToast } = useAppStore();
+  const { user, setUser, quizAnswers, setRecommendations, setView, savedCareers, showToast, showModal, hideModal } = useAppStore();
   const [loadingText, setLoadingText] = useState("Initializing neural networks...");
   
   const [displayLog, setDisplayLog] = useState<string[]>([]);
@@ -126,12 +126,27 @@ export const Analysis: React.FC = () => {
             hasStartedAnalysis.current = false;
             if (e.message === "QUOTA_EXCEEDED") {
                 const limit = user.limits?.dailyCareerLimit ?? 5;
-                showToast(`Daily limit reached (${limit} paths/day). Try again tomorrow.`);
-                setView(AppView.DASHBOARD);
+                showModal({
+                    icon: <AlertOctagon className="w-16 h-16 text-red-500 mx-auto mb-6" />,
+                    title: "Daily Limit Reached",
+                    description: `You've reached your daily limit of ${limit} career assessments. Please return in 24 hours to explore more paths.`,
+                    buttonText: "Return to Dashboard",
+                    onButtonClick: () => {
+                        hideModal();
+                        setView(AppView.DASHBOARD);
+                    }
+                });
             } else {
-                console.error("Failed to generate", e);
-                showToast("An error occurred during analysis. Please try again.");
-                setView(AppView.DASHBOARD);
+                showModal({
+                    icon: <AlertOctagon className="w-16 h-16 text-amber-500 mx-auto mb-6" />,
+                    title: "Analysis Failed",
+                    description: "We encountered an issue while generating your career path. Please try again.",
+                    buttonText: "Return to Dashboard",
+                    onButtonClick: () => {
+                        hideModal();
+                        setView(AppView.DASHBOARD);
+                    }
+                });
             }
         }
       }
@@ -147,7 +162,7 @@ export const Analysis: React.FC = () => {
         clearInterval(interval);
         clearTimeout(startDelay);
     };
-  }, [user, quizAnswers, setRecommendations, setView, savedCareers, showToast, setUser]);
+  }, [user, quizAnswers, setRecommendations, setView, savedCareers, showToast, setUser, showModal, hideModal]);
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col items-center justify-center p-4 transition-colors duration-300">

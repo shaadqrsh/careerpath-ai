@@ -1,6 +1,6 @@
 import React from 'react';
 import { UserProfile, QuizAnswer, CareerRecommendation, Slide, CareerRoadmapStep, CareerDomain } from "../types";
-import { MOCK_CAREERS, API_BASE_URL } from "../constants";
+import { API_BASE_URL } from "../constants";
 import { useAppStore } from '../store';
 import { AlertOctagon } from 'lucide-react';
 
@@ -97,10 +97,8 @@ export const generateCareerRecommendations = async (
     return data.recommendations;
 
   } catch (error: any) {
-    if (error.message === "QUOTA_EXCEEDED") throw error;
-    
     console.error("Career Generation Error:", error);
-    return MOCK_CAREERS;
+    throw error;
   }
 };
 

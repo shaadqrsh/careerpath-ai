@@ -8,7 +8,7 @@ import { FALLBACK_COUNTRIES } from '../constants';
 import { upsertUserProfile, getCurrentUser } from '../services/supabaseService';
 
 export const Onboarding: React.FC = () => {
-  const { setView, setUser, logout } = useAppStore();
+  const { setView, setUser, logout, showToast } = useAppStore();
   const [saving, setSaving] = useState(false);
   const [isVerifyingSession, setIsVerifyingSession] = useState(true);
   
@@ -72,7 +72,7 @@ export const Onboarding: React.FC = () => {
         const authUser = await getCurrentUser();
         
         if (!authUser) {
-            alert("Session expired. Please log in again.");
+            showToast("Session expired. Please log in again.");
             setView(AppView.AUTH);
             return;
         }
@@ -87,7 +87,7 @@ export const Onboarding: React.FC = () => {
         setUser(finalProfile);
         setView(AppView.DASHBOARD);
     } catch (err: any) {
-        alert(`Failed to save profile: ${err.message}.`);
+        showToast(`Failed to save profile: ${err.message}.`);
     } finally {
         setSaving(false);
     }

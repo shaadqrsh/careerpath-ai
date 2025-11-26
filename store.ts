@@ -33,7 +33,8 @@ interface AppState {
   pendingDeleteCareer: CareerRecommendation | null;
   showPasswordResetModal: boolean;
   modal: ModalConfig | null;
-  toast: { show: boolean; message: string };
+  
+  toast: { show: boolean; message: string; type: 'success' | 'error' };
 
   showModal: (config: Omit<ModalConfig, 'isOpen'>) => void;
   hideModal: () => void;
@@ -54,7 +55,9 @@ interface AppState {
   confirmDeleteCareer: () => Promise<void>; 
   cancelDeleteCareer: () => void;
   setShowPasswordResetModal: (show: boolean) => void;
-  showToast: (message: string) => void;
+  
+  showToast: (message: string, type?: 'success' | 'error') => void;
+  
   hideToast: () => void;
   setLoading: (loading: boolean) => void;
   logout: () => Promise<void>;
@@ -80,7 +83,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   pendingDeleteCareer: null,
   showPasswordResetModal: false,
   modal: null,
-  toast: { show: false, message: '' },
+  
+  toast: { show: false, message: '', type: 'success' },
 
   showModal: (config) => set({ modal: { ...config, isOpen: true } }),
   hideModal: () => set(state => ({ modal: state.modal ? { ...state.modal, isOpen: false } : null })),
@@ -140,13 +144,16 @@ export const useAppStore = create<AppState>((set, get) => ({
     };
   }),
   cancelDeleteCareer: () => set({ pendingDeleteCareer: null }),
-  showToast: (message) => {
-      set({ toast: { show: true, message } });
+  
+  showToast: (message, type = 'success') => {
+      set({ toast: { show: true, message, type } });
       setTimeout(() => {
-          set({ toast: { show: false, message: '' } });
+          set({ toast: { show: false, message: '', type: 'success' } });
       }, 3000);
   },
-  hideToast: () => set({ toast: { show: false, message: '' } }),
+  
+  hideToast: () => set({ toast: { show: false, message: '', type: 'success' } }),
+  
   confirmDeleteCareer: async () => {
       const state = get();
       const career = state.pendingDeleteCareer;
@@ -170,7 +177,7 @@ export const useAppStore = create<AppState>((set, get) => ({
             recommendations: newRecommendations,
             pendingDeleteCareer: null 
         });
-        state.showToast("Career deleted successfully");
+        state.showToast("Career deleted successfully", 'success');
         if (state.currentView === AppView.CAREER_DETAIL && state.selectedCareer?.id === career.id) {
             if (state.careerOrigin === 'saved') {
                  set({ currentView: AppView.SAVED_PATHS });
@@ -178,7 +185,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         }
       } catch (e) {
         console.error("Error deleting from DB", e);
-        alert("Failed to delete career. Please try again.");
+        state.showToast("Failed to delete career. Please try again.", 'error');
         set({ pendingDeleteCareer: null });
       } finally {
         set({ isDeletingCareer: false });
@@ -219,10 +226,10 @@ export const useAppStore = create<AppState>((set, get) => ({
                 hasViewedSavedPaths: false 
             };
         });
-        state.showToast("Career saved successfully");
+        state.showToast("Career saved successfully", 'success');
     } catch (e) {
         console.error("Error saving career:", e);
-        alert("There was an error saving the career. Please try again.");
+        state.showToast("Error saving career. Please try again.", 'error');
     } finally {
         set({ isSavingCareer: false });
     }

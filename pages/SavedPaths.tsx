@@ -34,12 +34,12 @@ export const SavedPaths: React.FC = () => {
         const saved = await getSavedCareers(user.id);
         setSavedCareers(saved);
         if (saved.length > 0) {
-            showToast("Careers refreshed");
+            // showToast("Careers refreshed", 'success');
         } else {
-            showToast("No saved careers found");
+            // showToast("No saved careers found", 'success');
         }
     } catch(e) {
-        showToast("Failed to refresh careers");
+        // showToast("Failed to refresh careers", 'error');
     } finally {
         setIsRefreshing(false);
     }

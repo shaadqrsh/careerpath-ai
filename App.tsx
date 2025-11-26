@@ -88,7 +88,7 @@ const App: React.FC = () => {
                 const errorDesc = params.get('error_description');
                 if (errorDesc) {
                     window.history.replaceState(null, '', window.location.pathname);
-                    showToast(errorDesc.replace(/\+/g, ' '));
+                    showToast(errorDesc.replace(/\+/g, ' '), 'error');
                     setView(AppView.AUTH);
                     setIsInitializing(false);
                     return;
@@ -200,6 +200,8 @@ const App: React.FC = () => {
       );
   }
 
+  const toastBgColor = toast.type === 'error' ? 'bg-red-600' : 'bg-emerald-600';
+
   return (
     <div className="min-h-screen transition-colors duration-300 bg-slate-50 text-slate-900 dark:bg-slate-900 dark:text-slate-50 relative">
       {renderView()}
@@ -215,11 +217,11 @@ const App: React.FC = () => {
       )}
 
       {toast.show && (
-        <div className="fixed top-24 left-1/2 -translate-x-1/2 bg-slate-800 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 animate-[fadeIn_0.3s_ease-out] z-[150]">
-            {toast.message.toLowerCase().includes('failed') || toast.message.toLowerCase().includes('error') || toast.message.toLowerCase().includes('expired') ? (
-               <XCircle className="text-red-400 shrink-0" />
+        <div className={`fixed top-24 left-1/2 -translate-x-1/2 ${toastBgColor} text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 animate-[fadeIn_0.3s_ease-out] z-[150]`}>
+            {toast.type === 'error' ? (
+               <XCircle className="text-white shrink-0" />
             ) : (
-               <CheckCircle className="text-green-400 shrink-0" />
+               <CheckCircle className="text-white shrink-0" />
             )}
             <div>
                 <p className="font-bold">{toast.message}</p>

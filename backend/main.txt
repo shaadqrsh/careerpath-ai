@@ -35,12 +35,6 @@ CAREERS_PER_GENERATION = 5
 TEXT_MODEL_NAME = "gemini-2.5-flash"
 IMAGE_MODEL_NAME = "gemini-2.5-flash-image" 
 
-# API Keys and URLs
-SUPABASE_URL = os.environ.get("SUPABASE_URL", "").strip()
-SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "").strip()
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "").strip()
-FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:3000")
-
 # Realism contexts for grounded image generation
 REALISM_CONTEXTS = [
     "during a typical Monday morning",
@@ -52,6 +46,12 @@ REALISM_CONTEXTS = [
     "reviewing work at their desk",
     "in a casual team discussion"
 ]
+
+# API Keys and URLs
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "").strip()
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "").strip()
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "").strip()
+FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:3000")
 # --- CONFIGURATION ENDS ---
 
 logging.basicConfig(level=logging.INFO)
@@ -86,7 +86,6 @@ else:
 
 def sanitize_input(text: str) -> str:
     if not isinstance(text, str): return str(text)
-    # Remove XML-like tags to prevent injection within our prompt structure
     text = re.sub(r'<[^>]*>', '', text)
     return re.sub(r'[^\w\s.,!?-]', '', text).strip()
 
@@ -176,7 +175,6 @@ class GenerateCareerRequest(BaseSchema):
 
 class GenerateCareerDetailsRequest(BaseSchema):
     user_profile: UserProfile
-    # Limit career context length
     career_title: str = Field(..., max_length=200)
     career_summary: str = Field(..., max_length=1000)
 
@@ -207,10 +205,8 @@ async def verify_token(authorization: str = Header(None)):
         logger.error(f"Auth error: {e}")
         raise HTTPException(status_code=401, detail="Authentication failed")
 
-# SECURE ATOMIC QUOTA CHECK
 def increment_and_verify_quota(client: Client, user_id: str, count_col: str, date_col: str, limit: int, error_msg: str = None):
     try:
-        # Calls the Postgres RPC function defined in database.txt for atomic updates
         response = client.rpc('check_and_increment_quota', {
             'p_user_id': user_id,
             'p_count_field': count_col,
@@ -218,7 +214,6 @@ def increment_and_verify_quota(client: Client, user_id: str, count_col: str, dat
             'p_limit': limit
         }).execute()
         
-        # True means success, False means quota exceeded
         if not response.data:
              msg = error_msg or f"Daily limit of {limit} reached."
              raise HTTPException(status_code=429, detail=msg)
@@ -226,7 +221,6 @@ def increment_and_verify_quota(client: Client, user_id: str, count_col: str, dat
     except HTTPException as he: raise he
     except Exception as e:
         logger.error(f"Quota error: {e}")
-        # Fail safe: if DB error, do not allow generation to protect resources
         raise HTTPException(status_code=500, detail="Quota verification failed")
 
 @app.post("/api/auth/signup")
@@ -255,7 +249,6 @@ async def reset_password(req: PasswordResetRequest):
 
 @app.post("/api/auth/update-password")
 async def update_password(req: UpdatePasswordRequest, authorization: str = Header(None), user = Depends(verify_token)):
-    # FIX: Use authenticated client to update the user context
     token = authorization.split(" ")[1]
     client = get_user_client(token)
     try: 
@@ -307,7 +300,6 @@ async def generate_domain(req: GenerateDomainRequest, authorization: str = Heade
     client = get_user_client(token)
     increment_and_verify_quota(client, user.id, "daily_general_quiz_count", "last_career_generation_date", DAILY_GENERAL_QUIZ_LIMIT, "You have taken the general quiz too many times today.")
     try:
-        # Prompt hardening: Truncate inputs and use strict token limits
         clean_answers = sanitize_quiz_answers(req.quiz_answers)[:500] 
         prompt = f"Analyze quiz answers: {clean_answers}. Suggest domain: 'science', 'commerce', or 'arts'. Output JSON: {{ \"suggested_domain\": \"name\" }}"
         model = genai.GenerativeModel(TEXT_MODEL_NAME)
@@ -326,7 +318,6 @@ async def generate_career(req: GenerateCareerRequest, authorization: str = Heade
         safe_full_name = sanitize_input(user_p.full_name)
         clean_answers = sanitize_quiz_answers(req.quiz_answers) 
         
-        # PROMPT HARDENING: Wrap inputs in XML tags
         prompt = f"""
 Act as an experienced Career Counselor with expertise in global job markets.
 
@@ -383,7 +374,6 @@ OUTPUT FORMAT: Strict JSON
 }}
 """
         model = genai.GenerativeModel(TEXT_MODEL_NAME)
-        # Limit output tokens to prevent cost spikes from injection attacks
         response = await model.generate_content_async(
             prompt, 
             generation_config={"response_mime_type": "application/json", "max_output_tokens": 2000}
@@ -407,8 +397,6 @@ async def generate_career_details(req: GenerateCareerDetailsRequest, authorizati
         user_p = req.user_profile
         safe_title = sanitize_input(req.career_title)
         safe_summary = sanitize_input(req.career_summary)
-        
-        # PROMPT HARDENING: Wrap inputs in XML tags
         prompt = f"""
 Act as a practical Career Advisor providing honest, grounded guidance.
 
@@ -466,7 +454,6 @@ OUTPUT FORMAT: Strict JSON
 }}
 """
         model = genai.GenerativeModel(TEXT_MODEL_NAME)
-        # Limit output tokens
         response = await model.generate_content_async(
             prompt, 
             generation_config={"response_mime_type": "application/json", "max_output_tokens": 1500}
@@ -482,14 +469,13 @@ async def generate_images(req: GenerateImagesRequest, authorization: str = Heade
     client = get_user_client(token)
     increment_and_verify_quota(client, user.id, "daily_image_generations_count", "last_image_generation_date", DAILY_IMAGE_LIMIT)
     try:
-        # Enforce strict prompt limits for images
         safe_title = sanitize_input(req.career_title)[:100]
         subject = "a professional"
         if req.user_context:
             age = req.future_age or (req.user_context.age + 5)
             subject = f"a {age} year old {req.user_context.gender} {req.user_context.residence_country} professional"
         async def gen_one(p):
-            safe_prompt = sanitize_input(p)[:200] # Limit prompt length
+            safe_prompt = sanitize_input(p)[:200]
             context = random.choice(REALISM_CONTEXTS)
             prompt = f"""
 Realistic photograph of {subject} working as a {safe_title} {context}.
@@ -513,7 +499,6 @@ Negative: text, words, watermarks, logos, unrealistic lighting, overly dramatic 
                     await asyncio.sleep(1.5)
             return None
         
-        # Limit number of images requested to config
         safe_prompts = req.prompts[:SLIDESHOW_IMAGE_COUNT]
         tasks = [gen_one(p) for p in safe_prompts]
         return {"images": await asyncio.gather(*tasks)}
@@ -560,7 +545,6 @@ async def upload_career_images(req: SaveCareerImageRequest, authorization: str =
                 uploaded.append(img)
                 continue
             try:
-                # Basic Magic Number Validation
                 header = img.split(",")[0]
                 if "image/png" in header: ext = "png"
                 elif "image/jpeg" in header: ext = "jpg"
@@ -568,8 +552,7 @@ async def upload_career_images(req: SaveCareerImageRequest, authorization: str =
                      uploaded.append(None)
                      continue
 
-                # Verify payload size approx (Base64 is ~1.33x larger)
-                if len(img) > 5 * 1024 * 1024 * 1.33: # 5MB limit
+                if len(img) > 5 * 1024 * 1024 * 1.33:
                      uploaded.append(None)
                      continue
 

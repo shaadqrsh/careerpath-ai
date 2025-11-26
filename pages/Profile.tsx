@@ -113,7 +113,7 @@ export const Profile: React.FC = () => {
         showToast("Profile Updated Successfully!");
     } catch (error: any) {
         console.error("Failed to update profile", error);
-        alert(`Failed to save changes: ${error.message || "Unknown error"}`);
+        showToast(`Failed to save changes: ${error.message || "Unknown error"}`);
     } finally {
         setIsSaving(false);
     }
@@ -127,10 +127,10 @@ export const Profile: React.FC = () => {
               await sendPasswordResetEmail(authUser.email);
               showToast(`Email sent successfully to ${authUser.email}`);
           } else {
-              alert("Could not determine your email address.");
+              showToast("Could not determine your email address.");
           }
       } catch (e) {
-          alert("Failed to send reset email.");
+          showToast("Failed to send reset email.");
       }
   };
 

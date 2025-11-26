@@ -35,7 +35,7 @@ export const CareerDetail: React.FC = () => {
                         }
                     });
                 } else {
-                    showToast("Failed to load in-depth details. Please try refreshing.");
+                    showToast("Failed to load in-depth details. Please try refreshing.", 'error');
                 }
             } finally {
                 if (isMounted) setLoadingDetails(false);
