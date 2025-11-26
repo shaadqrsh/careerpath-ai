@@ -1,7 +1,7 @@
 import React from 'react';
-import { CareerRecommendation, UserProfile, CareerRoadmapStep } from '../types';
+import { CareerRecommendation, UserProfile } from '../types';
 import { API_BASE_URL } from '../constants';
-import { useAppStore } from './store';
+import { useAppStore } from '../store';
 import { AlertOctagon } from 'lucide-react';
 
 const getToken = () => localStorage.getItem('access_token');
@@ -13,7 +13,7 @@ const handleAuthError = () => {
     if (useAppStore.getState().modal?.isOpen) return;
 
     showModal({
-        icon: <AlertOctagon className="w-16 h-16 text-red-500 mx-auto mb-6" />,
+        icon: React.createElement(AlertOctagon, { className: "w-16 h-16 text-red-500 mx-auto mb-6" }),
         title: "Session Expired",
         description: "Your session has expired. Please log in again to continue.",
         buttonText: "Okay, Log In",
@@ -49,7 +49,7 @@ const toDbProfile = (p: UserProfile) => ({
     age: p.age || 0,
     education_level: p.educationLevel || '',
     specialization: p.specialization || '',
-    residence_country: p.residence_country || '',
+    residence_country: p.residenceCountry || '',
     preferred_work_country: p.preferredWorkCountry || ''
 });
 
@@ -59,7 +59,7 @@ const fromDbProfile = (d: any): UserProfile => {
         dailyCareerLimit: d.limits.daily_career_limit,
         dailyGeneralQuizLimit: d.limits.daily_general_quiz_limit,
         dailyDetailsViewLimit: d.limits.daily_details_view_limit,
-        slideshowImageCount: d.limits.slideshow_image_count // <-- ADDED
+        slideshowImageCount: d.limits.slideshow_image_count
     } : undefined;
 
     return {

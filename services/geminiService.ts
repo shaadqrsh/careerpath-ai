@@ -9,7 +9,7 @@ const handleAuthError = () => {
     if (useAppStore.getState().modal?.isOpen) return;
 
     showModal({
-        icon: <AlertOctagon className="w-16 h-16 text-red-500 mx-auto mb-6" />,
+        icon: React.createElement(AlertOctagon, { className: "w-16 h-16 text-red-500 mx-auto mb-6" }),
         title: "Session Expired",
         description: "Your session has expired. Please log in again to continue.",
         buttonText: "Okay, Log In",
