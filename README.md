@@ -51,9 +51,9 @@ Follow these steps in order to deploy the application to the cloud.
     *   `backend/requirements.txt` &rarr; Keep as `requirements.txt`
 3.  Go to **Settings** -> **Variables and secrets** and add the following secrets:
     *   `SUPABASE_URL`: Your Supabase Project URL.
-    *   `SUPABASE_KEY`: Your Supabase **Service Role** Key.
+    *   `SUPABASE_KEY`: Your Supabase **Public Anon** Key.
     *   `GEMINI_API_KEY`: Your Google Gemini API Key.
-    *   `FRONTEND_URL`: The URL of your Vercel Frontend (e.g., `https://my-career-app.vercel.app`).
+    *   `FRONTEND_URL`: The URL of your Vercel Frontend
         *   *Note: Do not add a trailing slash `/`.*
 
 ### 3. Frontend Deployment (Vercel)

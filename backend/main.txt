@@ -303,7 +303,7 @@ async def generate_domain(req: GenerateDomainRequest, authorization: str = Heade
         clean_answers = sanitize_quiz_answers(req.quiz_answers)[:500] 
         prompt = f"Analyze quiz answers: {clean_answers}. Suggest domain: 'science', 'commerce', or 'arts'. Output JSON: {{ \"suggested_domain\": \"name\" }}"
         model = genai.GenerativeModel(TEXT_MODEL_NAME)
-        response = await model.generate_content_async(prompt, generation_config={"response_mime_type": "application/json", "max_output_tokens": 100})
+        response = await model.generate_content_async(prompt, generation_config={"response_mime_type": "application/json", "max_output_tokens": 500})
         return json.loads(response.text)
     except Exception: return {"suggested_domain": "general"}
 
@@ -376,7 +376,7 @@ OUTPUT FORMAT: Strict JSON
         model = genai.GenerativeModel(TEXT_MODEL_NAME)
         response = await model.generate_content_async(
             prompt, 
-            generation_config={"response_mime_type": "application/json", "max_output_tokens": 2000}
+            generation_config={"response_mime_type": "application/json", "max_output_tokens": 8192}
         )
         result_json = json.loads(response.text)
         for rec in result_json.get("recommendations", []):
@@ -456,7 +456,7 @@ OUTPUT FORMAT: Strict JSON
         model = genai.GenerativeModel(TEXT_MODEL_NAME)
         response = await model.generate_content_async(
             prompt, 
-            generation_config={"response_mime_type": "application/json", "max_output_tokens": 1500}
+            generation_config={"response_mime_type": "application/json", "max_output_tokens": 5000}
         )
         return json.loads(response.text)
     except Exception as e:
@@ -475,7 +475,7 @@ async def generate_images(req: GenerateImagesRequest, authorization: str = Heade
             age = req.future_age or (req.user_context.age + 5)
             subject = f"a {age} year old {req.user_context.gender} {req.user_context.residence_country} professional"
         async def gen_one(p):
-            safe_prompt = sanitize_input(p)[:200]
+            safe_prompt = sanitize_input(p)[:500]
             context = random.choice(REALISM_CONTEXTS)
             prompt = f"""
 Realistic photograph of {subject} working as a {safe_title} {context}.
