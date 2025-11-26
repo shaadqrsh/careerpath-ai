@@ -46,26 +46,33 @@ const toDbCareer = (c: CareerRecommendation) => ({
     slide_images: c.slideImages
 });
 
-const fromDbCareer = (d: any): CareerRecommendation => ({
-    id: d.career_uid, 
-    title: d.title,
-    matchScore: d.match_score,
-    summary: d.summary,
-    salaryRange: d.salary_range,
-    growth: d.growth,
-    tags: d.tags || [],
-    isPivot: d.is_pivot,
-    pivotAnalysis: d.pivot_analysis,
-    roadmap: (d.roadmap || []).map((step: any) => ({
+const fromDbCareer = (d: any): CareerRecommendation => {
+    const roadmap = (d.roadmap || []).map((step: any) => ({
         title: step.title,
         description: step.description,
         localPath: step.local_path || step.localPath,
         targetPath: step.target_path || step.targetPath,
         duration: step.duration
-    })),
-    dayInLifePrompts: d.day_in_life_prompts || [],
-    slideImages: d.slide_images || []
-});
+    }));
+    
+    const detailsLoaded = roadmap.length > 0;
+
+    return {
+        id: d.career_uid, 
+        title: d.title,
+        matchScore: d.match_score,
+        summary: d.summary,
+        salaryRange: d.salary_range,
+        growth: d.growth,
+        tags: d.tags || [],
+        isPivot: d.is_pivot,
+        pivotAnalysis: d.pivot_analysis,
+        roadmap: roadmap,
+        dayInLifePrompts: d.day_in_life_prompts || [],
+        slideImages: d.slide_images || [],
+        detailsLoaded: detailsLoaded
+    };
+};
 
 export interface AuthUser {
     id: string;

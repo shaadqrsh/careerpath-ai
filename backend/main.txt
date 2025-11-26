@@ -128,13 +128,18 @@ class CareerRecommendation(BaseSchema):
     tags: List[str]
     is_pivot: Optional[bool] = False
     pivot_analysis: Optional[str] = None
-    roadmap: List[CareerRoadmapStep]
+    roadmap: Optional[List[CareerRoadmapStep]] = []
     day_in_life_prompts: Optional[List[str]] = []
     slide_images: Optional[List[Optional[str]]] = []
 
 class GenerateCareerRequest(BaseSchema):
     user_profile: UserProfile
     quiz_answers: List[Dict[str, Any]]
+
+class GenerateCareerDetailsRequest(BaseSchema):
+    user_profile: UserProfile
+    career_title: str
+    career_summary: str
 
 class GenerateImagesRequest(BaseSchema):
     career_title: str
@@ -349,8 +354,6 @@ async def generate_career(req: GenerateCareerRequest, authorization: str = Heade
         safe_full_name = sanitize_input(user_p.full_name)
         safe_specialization = sanitize_input(user_p.specialization)
 
-        prompts_list_example = ", ".join([f'"Scene {i+1} description"' for i in range(SLIDESHOW_IMAGE_COUNT)])
-        
         prompt = f"""
         Act as an expert Career Counselor.
         Profile: {safe_full_name}, {user_p.age}y/o, {user_p.education_level} in {safe_specialization}.
@@ -359,13 +362,8 @@ async def generate_career(req: GenerateCareerRequest, authorization: str = Heade
         
         Task:
         1. Identify {CAREERS_PER_GENERATION} personalized career paths.
-        2. STRICT ELIGIBILITY CHECK: If user is Arts, no Science. If Pivot, verify realistic paths.
-        3. PIVOT ANALYSIS: Is this a "Natural Progression" or "Major Pivot"?
-        4. ROADMAP: Split into 'localPath' ({user_p.residence_country}) and 'targetPath' ({user_p.preferred_work_country}) if different.
-        5. DATA INTEGRITY: Ensure 'salaryRange', 'growth', and 'roadmap' are FILLED for every recommendation. Do not leave null.
-        6. Do not refer to the user by name in the output text. Use 'You' or 'Your'.
-        7. IMPORTANT: Do not mention specific question numbers or quote exact answers. Synthesize the user's responses into general traits (e.g., "Given your interest in visual problem solving...").
-        8. GENERATE {SLIDESHOW_IMAGE_COUNT} DAY IN A LIFE PROMPTS per career.
+        2. STRICT ELIGIBILITY CHECK: If user is Arts, no Science.
+        3. Provide only high-level details. Do NOT generate roadmaps or pivot analysis yet.
         
         OUTPUT FORMAT: STRICT JSON.
         {{
@@ -374,16 +372,12 @@ async def generate_career(req: GenerateCareerRequest, authorization: str = Heade
               "id": "uuid-placeholder",
               "title": "Job Title",
               "matchScore": 85,
-              "summary": "Summary...",
+              "summary": "2-3 sentence summary of why this fits.",
               "salaryRange": "$50k - $80k",
               "growth": "High",
               "tags": ["Tag1", "Tag2"],
-              "isPivot": false,
-              "pivotAnalysis": "Analysis string...",
-              "roadmap": [
-                 {{ "title": "Step 1", "description": "...", "localPath": "...", "targetPath": "...", "duration": "1 Year" }}
-              ],
-              "dayInLifePrompts": [{prompts_list_example}]
+              "roadmap": [],
+              "dayInLifePrompts": []
             }}
           ]
         }}
@@ -394,6 +388,8 @@ async def generate_career(req: GenerateCareerRequest, authorization: str = Heade
         
         for rec in result_json.get("recommendations", []):
             if not rec.get("id"): rec["id"] = str(uuid.uuid4())
+            rec["roadmap"] = []
+            rec["dayInLifePrompts"] = []
             
         update_quota(client, user.id, "daily_career_generations_count", current_count + 1)
         
@@ -401,6 +397,48 @@ async def generate_career(req: GenerateCareerRequest, authorization: str = Heade
     except Exception as e:
         logger.error(f"Career Gen Error: {e}")
         raise HTTPException(status_code=500, detail="AI generation failed")
+
+@app.post("/api/generate-career-details")
+async def generate_career_details(req: GenerateCareerDetailsRequest, authorization: str = Header(None), user = Depends(verify_token)):    
+    try:
+        user_p = req.user_profile
+        safe_title = sanitize_input(req.career_title)
+        
+        prompts_count = SLIDESHOW_IMAGE_COUNT
+        
+        prompt = f"""
+        Act as a visionary Career Coach.
+        User: {user_p.education_level} in {user_p.specialization}.
+        Goal Career: {safe_title}.
+        Context: {req.career_summary}.
+        
+        Task:
+        1. Create a detailed Education Roadmap (3-4 steps) to get from current state to {safe_title}.
+           - Split into 'localPath' ({user_p.residence_country}) and 'targetPath' ({user_p.preferred_work_country}) if different.
+        2. Pivot Analysis: Is this a "Natural Progression" or "Major Pivot"? Explain briefly.
+        3. Generate {prompts_count} 'Day in the Life' image prompts.
+           - GLORIFY THE JOB. Make it sound prestigious, cinematic, high-impact, and inspiring.
+           - Examples: "Addressing a global summit," "Designing a futuristic city," "Making a breakthrough discovery."
+           - Do not use names. Use "A professional..."
+        
+        OUTPUT FORMAT: STRICT JSON.
+        {{
+            "isPivot": boolean,
+            "pivotAnalysis": "string",
+            "roadmap": [
+                 {{ "title": "Step Name", "description": "Details...", "localPath": "...", "targetPath": "...", "duration": "Duration" }}
+            ],
+            "dayInLifePrompts": ["Glorified prompt 1", "Glorified prompt 2", "Glorified prompt 3"]
+        }}
+        """
+        model = genai.GenerativeModel(TEXT_MODEL_NAME)
+        response = await model.generate_content_async(prompt, generation_config={"response_mime_type": "application/json"})
+        result_json = json.loads(response.text)
+        
+        return result_json
+    except Exception as e:
+        logger.error(f"Career Details Gen Error: {e}")
+        raise HTTPException(status_code=500, detail="AI details generation failed")
 
 @app.post("/api/generate-images")
 async def generate_images(req: GenerateImagesRequest, authorization: str = Header(None), user = Depends(verify_token)):
@@ -420,7 +458,7 @@ async def generate_images(req: GenerateImagesRequest, authorization: str = Heade
 
         async def generate_single_image(prompt_text):
             safe_prompt = sanitize_input(prompt_text)
-            full_prompt = f"Cinematic shot of {subject_desc} working as a {safe_career_title}. Scene: {safe_prompt}. Style: Photorealistic, 4k, dramatic lighting."
+            full_prompt = f"Cinematic shot of {subject_desc} working as a {safe_career_title}. Scene: {safe_prompt}. Style: Photorealistic, 4k, dramatic lighting, inspiring, prestigious atmosphere."
             
             try:
                 model = genai.GenerativeModel(IMAGE_MODEL_NAME)
@@ -496,6 +534,9 @@ async def save_career(career: CareerRecommendation, authorization: str = Header(
                 else:
                     cleaned_images.append(img)
             data['slide_images'] = cleaned_images
+            
+        if 'roadmap' not in data or data['roadmap'] is None: data['roadmap'] = []
+        if 'day_in_life_prompts' not in data or data['day_in_life_prompts'] is None: data['day_in_life_prompts'] = []
 
         client.table("saved_careers").upsert(data, on_conflict="user_id,career_uid").execute()
         return {"status": "success"}

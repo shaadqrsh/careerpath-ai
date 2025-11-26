@@ -2,6 +2,7 @@ import { UserProfile, QuizAnswer, CareerRecommendation, Slide, CareerRoadmapStep
 import { MOCK_CAREERS, API_BASE_URL, SLIDESHOW_IMAGE_COUNT } from "../constants";
 
 export const calculateRoadmapDurationYears = (roadmap: CareerRoadmapStep[]): number => {
+    if (!roadmap) return 3;
     let totalYears = 0;
     roadmap.forEach(step => {
         const lowerDuration = step.duration.toLowerCase();
@@ -83,6 +84,44 @@ export const generateCareerRecommendations = async (
   }
 };
 
+export const generateCareerDetails = async (
+    user: UserProfile,
+    career: CareerRecommendation
+): Promise<Partial<CareerRecommendation>> => {
+    try {
+        const token = localStorage.getItem('access_token');
+        if (!token) throw new Error("User not authenticated");
+
+        const response = await fetch(`${API_BASE_URL}/api/generate-career-details`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                user_profile: user,
+                career_title: career.title,
+                career_summary: career.summary
+            })
+        });
+
+        if (!response.ok) throw new Error("Backend Detail API Failed");
+
+        const data = await response.json();
+        return {
+            isPivot: data.isPivot,
+            pivotAnalysis: data.pivotAnalysis,
+            roadmap: data.roadmap,
+            dayInLifePrompts: data.dayInLifePrompts,
+            detailsLoaded: true
+        };
+
+    } catch (error) {
+        console.error("Career Details Error:", error);
+        throw error;
+    }
+}
+
 export const generateCareerImages = async (
     careerTitle: string, 
     prompts: string[], 
@@ -148,7 +187,7 @@ export const generateStorySlides = async (career: CareerRecommendation, user?: U
         }));
     }
 
-    const durationYears = calculateRoadmapDurationYears(career.roadmap);
+    const durationYears = career.roadmap ? calculateRoadmapDurationYears(career.roadmap) : 3;
     const futureAge = user ? user.age + durationYears : 25;
 
     try {

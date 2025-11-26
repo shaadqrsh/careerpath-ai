@@ -43,6 +43,8 @@ interface AppState {
   
   setRecommendations: (recs: CareerRecommendation[]) => void;
   setSelectedCareer: (career: CareerRecommendation) => void;
+  updateCareerDetails: (id: string, details: Partial<CareerRecommendation>) => void;
+  
   setSavedCareers: (careers: CareerRecommendation[]) => void;
   updateCareerImages: (careerId: string, images: (string | null)[]) => void;
   
@@ -121,6 +123,17 @@ export const useAppStore = create<AppState>((set, get) => ({
   
   setRecommendations: (recs) => set({ recommendations: recs }),
   setSelectedCareer: (career) => set({ selectedCareer: career }),
+
+  updateCareerDetails: (id, details) => set((state) => {
+    const update = (c: CareerRecommendation) => (c.id === id ? { ...c, ...details } : c);
+
+    return {
+        recommendations: state.recommendations.map(update),
+        savedCareers: state.savedCareers.map(update),
+        selectedCareer: state.selectedCareer?.id === id ? { ...state.selectedCareer, ...details } : state.selectedCareer
+    };
+  }),
+
   setSavedCareers: (careers) => set({ savedCareers: careers }),
   
   updateCareerImages: (careerId, images) => set((state) => {
@@ -204,20 +217,19 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   toggleSavedCareer: async (career) => {
     const state = get();
+    const currentCareerState = state.selectedCareer?.id === career.id ? state.selectedCareer : career;
+
     const exists = state.savedCareers.find(c => c.id === career.id);
 
     if (exists) {
-      set({ pendingDeleteCareer: career });
+      set({ pendingDeleteCareer: exists });
       return;
     }
 
     set({ isSavingCareer: true });
     
     try {
-        let currentVersion = { ...career };
-        if (state.selectedCareer?.id === career.id) {
-            currentVersion = { ...state.selectedCareer };
-        }
+        let currentVersion = { ...currentCareerState };
         
         if (state.user) {
             const hasRawImages = currentVersion.slideImages && currentVersion.slideImages.some(img => img && img.startsWith('data:'));

@@ -1,12 +1,39 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAppStore } from '../store';
 import { AppView } from '../types';
 import { Button } from '../components/Button';
 import { ChevronLeft, PlayCircle, Heart, MapPin, Briefcase, GraduationCap, Loader2, ArrowRightCircle, Shuffle, Star, DollarSign, TrendingUp } from 'lucide-react';
+import { generateCareerDetails } from '../services/geminiService';
 
 export const CareerDetail: React.FC = () => {
-  const { selectedCareer, setView, careerOrigin, user, toggleSavedCareer, savedCareers, isSavingCareer, recommendations } = useAppStore();
+  const { selectedCareer, setView, careerOrigin, user, toggleSavedCareer, savedCareers, isSavingCareer, recommendations, updateCareerDetails, showToast } = useAppStore();
   
+  const [loadingDetails, setLoadingDetails] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    
+    if (selectedCareer && !selectedCareer.detailsLoaded && user) {
+        const fetchDetails = async () => {
+            if (isMounted) setLoadingDetails(true);
+            try {
+                const details = await generateCareerDetails(user, selectedCareer);
+                if (isMounted) {
+                    updateCareerDetails(selectedCareer.id, details);
+                }
+            } catch (error) {
+                console.error("Failed to load career details", error);
+                showToast("Failed to load in-depth details. Please try refreshing.");
+            } finally {
+                if (isMounted) setLoadingDetails(false);
+            }
+        };
+        fetchDetails();
+    }
+
+    return () => { isMounted = false; };
+  }, [selectedCareer, user, updateCareerDetails, showToast]);
+
   if (!selectedCareer) {
     setView(AppView.DASHBOARD);
     return null;
@@ -81,7 +108,7 @@ export const CareerDetail: React.FC = () => {
                 <div className="flex gap-3 shrink-0">
                      <button 
                         onClick={handleSave}
-                        disabled={isSavingCareer}
+                        disabled={isSavingCareer || loadingDetails}
                         className={`p-3 rounded-full backdrop-blur border transition-all duration-300 group hover:scale-110 active:scale-95 ${
                             isSaved 
                             ? 'bg-pink-500/20 border-pink-500/50 text-pink-500' 
@@ -99,7 +126,7 @@ export const CareerDetail: React.FC = () => {
                      </button>
                      <Button 
                         onClick={() => setView(AppView.SLIDESHOW)}
-                        disabled={isSavingCareer} 
+                        disabled={isSavingCareer || loadingDetails} 
                         className="shadow-xl shadow-blue-900/50 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                         title="View a day in life visualization"
                      >
@@ -159,63 +186,71 @@ export const CareerDetail: React.FC = () => {
                 <h2 className="text-2xl font-bold">Your Education Roadmap</h2>
             </div>
             
-            <div className="space-y-8 relative pl-8 border-l-2 border-slate-200 dark:border-slate-800 ml-4">
-                
-                <div className={`mb-6 p-4 rounded-lg border flex gap-4 animate-fade-in-up opacity-0 ${
-                    selectedCareer.isPivot 
-                    ? 'bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/20 text-amber-900 dark:text-amber-100' 
-                    : 'bg-green-50 dark:bg-green-500/10 border-green-200 dark:border-green-500/20 text-green-900 dark:text-green-100'
-                }`} style={{ animationDelay: '600ms' }}>
-                    <div className="shrink-0 mt-1">
-                        {selectedCareer.isPivot ? <Shuffle size={20} /> : <ArrowRightCircle size={20} />}
-                    </div>
-                    <div>
-                        <h4 className="font-bold mb-1">
-                            {selectedCareer.isPivot ? "Major Pivot Detected" : "Natural Progression"}
-                        </h4>
-                        <p className="text-sm opacity-90">
-                            {selectedCareer.pivotAnalysis || `This roadmap guides you from your background in ${user?.specialization || 'General Studies'} directly to your goal.`}
-                        </p>
-                    </div>
+            {loadingDetails ? (
+                <div className="space-y-4 animate-pulse">
+                    <div className="h-20 bg-slate-200 dark:bg-slate-800 rounded-xl"></div>
+                    <div className="h-40 bg-slate-200 dark:bg-slate-800 rounded-xl"></div>
+                    <div className="h-40 bg-slate-200 dark:bg-slate-800 rounded-xl"></div>
                 </div>
-
-                {selectedCareer.roadmap.map((step, idx) => (
-                    <div key={idx} className="relative group animate-fade-in-up opacity-0" style={{ animationDelay: `${700 + (idx * 150)}ms` }}>
-                        <div className="absolute -left-[46px] top-6 w-6 h-6 rounded-full bg-white dark:bg-slate-800 border-2 border-green-500 group-hover:bg-green-500 transition-colors z-10"></div>
-                        <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
-                            <span className="text-xs font-bold text-green-600 dark:text-green-400 tracking-wider uppercase mb-1 block">{step.duration}</span>
-                            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">{step.title}</h3>
-                            <p className="text-slate-600 dark:text-slate-400 mb-6 text-lg">{step.description}</p>
-                            
-                            <div className={`grid grid-cols-1 ${!isSameLocation && step.targetPath && step.targetPath !== 'NA' ? 'md:grid-cols-2' : ''} gap-4 border-t border-slate-200 dark:border-slate-700 pt-4`}>
-                                {step.localPath && step.localPath !== 'NA' && (
-                                    <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-lg border border-slate-200 dark:border-slate-700/50">
-                                        <div className="flex items-center gap-2 mb-2">
-                                            <MapPin size={14} className="text-blue-500" />
-                                            <span className="text-xs font-bold uppercase tracking-wide text-blue-600 dark:text-blue-400">
-                                                {isSameLocation ? `Path in ${user?.residenceCountry}` : `Option in ${user?.residenceCountry}`}
-                                            </span>
-                                        </div>
-                                        <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">{step.localPath}</p>
-                                    </div>
-                                )}
-                                
-                                {!isSameLocation && step.targetPath && step.targetPath !== 'NA' && (
-                                    <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-lg border border-slate-200 dark:border-slate-700/50">
-                                        <div className="flex items-center gap-2 mb-2">
-                                            <MapPin size={14} className="text-green-500" />
-                                            <span className="text-xs font-bold uppercase tracking-wide text-green-600 dark:text-green-400">
-                                                Option in {targetCountryDisplay}
-                                            </span>
-                                        </div>
-                                        <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">{step.targetPath}</p>
-                                    </div>
-                                )}
-                            </div>
+            ) : (
+                <div className="space-y-8 relative pl-8 border-l-2 border-slate-200 dark:border-slate-800 ml-4">
+                    
+                    <div className={`mb-6 p-4 rounded-lg border flex gap-4 animate-fade-in-up opacity-0 ${
+                        selectedCareer.isPivot 
+                        ? 'bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/20 text-amber-900 dark:text-amber-100' 
+                        : 'bg-green-50 dark:bg-green-500/10 border-green-200 dark:border-green-500/20 text-green-900 dark:text-green-100'
+                    }`} style={{ animationDelay: '600ms' }}>
+                        <div className="shrink-0 mt-1">
+                            {selectedCareer.isPivot ? <Shuffle size={20} /> : <ArrowRightCircle size={20} />}
+                        </div>
+                        <div>
+                            <h4 className="font-bold mb-1">
+                                {selectedCareer.isPivot ? "Major Pivot Detected" : "Natural Progression"}
+                            </h4>
+                            <p className="text-sm opacity-90">
+                                {selectedCareer.pivotAnalysis || `This roadmap guides you from your background in ${user?.specialization || 'General Studies'} directly to your goal.`}
+                            </p>
                         </div>
                     </div>
-                ))}
-            </div>
+
+                    {selectedCareer.roadmap?.map((step, idx) => (
+                        <div key={idx} className="relative group animate-fade-in-up opacity-0" style={{ animationDelay: `${700 + (idx * 150)}ms` }}>
+                            <div className="absolute -left-[46px] top-6 w-6 h-6 rounded-full bg-white dark:bg-slate-800 border-2 border-green-500 group-hover:bg-green-500 transition-colors z-10"></div>
+                            <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
+                                <span className="text-xs font-bold text-green-600 dark:text-green-400 tracking-wider uppercase mb-1 block">{step.duration}</span>
+                                <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">{step.title}</h3>
+                                <p className="text-slate-600 dark:text-slate-400 mb-6 text-lg">{step.description}</p>
+                                
+                                <div className={`grid grid-cols-1 ${!isSameLocation && step.targetPath && step.targetPath !== 'NA' ? 'md:grid-cols-2' : ''} gap-4 border-t border-slate-200 dark:border-slate-700 pt-4`}>
+                                    {step.localPath && step.localPath !== 'NA' && (
+                                        <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-lg border border-slate-200 dark:border-slate-700/50">
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <MapPin size={14} className="text-blue-500" />
+                                                <span className="text-xs font-bold uppercase tracking-wide text-blue-600 dark:text-blue-400">
+                                                    {isSameLocation ? `Path in ${user?.residenceCountry}` : `Option in ${user?.residenceCountry}`}
+                                                </span>
+                                            </div>
+                                            <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">{step.localPath}</p>
+                                        </div>
+                                    )}
+                                    
+                                    {!isSameLocation && step.targetPath && step.targetPath !== 'NA' && (
+                                        <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-lg border border-slate-200 dark:border-slate-700/50">
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <MapPin size={14} className="text-green-500" />
+                                                <span className="text-xs font-bold uppercase tracking-wide text-green-600 dark:text-green-400">
+                                                    Option in {targetCountryDisplay}
+                                                </span>
+                                            </div>
+                                            <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">{step.targetPath}</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
         </section>
       </main>
     </div>

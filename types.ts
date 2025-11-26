@@ -45,9 +45,10 @@ export interface CareerRecommendation {
   salaryRange: string;
   growth: string;
   tags: string[];
+  detailsLoaded?: boolean;
   isPivot?: boolean;
   pivotAnalysis?: string;
-  roadmap: CareerRoadmapStep[];
+  roadmap?: CareerRoadmapStep[];
   dayInLifePrompts?: string[];
   slideImages?: string[];
 }
