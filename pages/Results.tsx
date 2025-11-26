@@ -3,6 +3,7 @@ import { useAppStore } from '../store';
 import { AppView, CareerRecommendation } from '../types';
 import { TrendingUp, DollarSign, ArrowRight, ArrowLeft, Heart, Star, AlertOctagon } from 'lucide-react';
 import { ConfirmModal } from '../components/ConfirmModal';
+import { Badge } from '../components/Badge';
 
 export const Results: React.FC = () => {
   const { recommendations, setSelectedCareer, setView, savedCareers, setCareerOrigin, user, showModal, hideModal } = useAppStore();
@@ -118,7 +119,9 @@ export const Results: React.FC = () => {
                         <div className="flex-grow relative z-10">
                             <div className="flex flex-wrap gap-2 mb-2">
                                 {career.tags.map(t => (
-                                    <span key={t} className="px-2 py-1 text-xs font-medium rounded bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 group-hover:bg-blue-100 dark:group-hover:bg-blue-900/30 group-hover:text-blue-700 dark:group-hover:text-blue-300 transition-colors">{t}</span>
+                                    <Badge key={t} variant={isBestMatch ? 'blue' : 'slate'} className="group-hover:bg-blue-100 dark:group-hover:bg-blue-900/30 group-hover:text-blue-700 dark:group-hover:text-blue-300 transition-colors">
+                                        {t}
+                                    </Badge>
                                 ))}
                             </div>
                             <div className="flex items-center gap-3">

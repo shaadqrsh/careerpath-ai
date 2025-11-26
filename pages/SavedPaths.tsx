@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAppStore } from '../store';
 import { AppView, CareerRecommendation } from '../types';
 import { Button } from '../components/Button';
+import { Badge } from '../components/Badge';
 import { ArrowLeft, Trash2, ArrowRight, TrendingUp, DollarSign, RefreshCw, Loader2, AlertOctagon } from 'lucide-react';
 import { getSavedCareers } from '../services/supabaseService';
 
@@ -79,7 +80,9 @@ export const SavedPaths: React.FC = () => {
                          <div className="flex-grow relative z-10">
                             <div className="flex flex-wrap gap-2 mb-2">
                                 {career.tags.map(t => (
-                                    <span key={t} className="px-2 py-1 text-xs font-medium rounded bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 group-hover:bg-blue-100 dark:group-hover:bg-blue-900/30 group-hover:text-blue-700 dark:group-hover:text-blue-300 transition-colors">{t}</span>
+                                    <Badge key={t} variant="slate" className="group-hover:bg-blue-100 dark:group-hover:bg-blue-900/30 group-hover:text-blue-700 dark:group-hover:text-blue-300 transition-colors">
+                                        {t}
+                                    </Badge>
                                 ))}
                             </div>
                             <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{career.title}</h3>

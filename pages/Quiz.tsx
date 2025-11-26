@@ -3,7 +3,8 @@ import { useAppStore } from '../store';
 import { AppView, CareerDomain } from '../types';
 import { QUESTIONS } from '../constants';
 import { Button } from '../components/Button';
-import { CheckCircle2, ChevronRight, Loader2, AlertOctagon } from 'lucide-react';
+import { CheckCircle2, ChevronRight, AlertOctagon } from 'lucide-react';
+import { FullScreenLoader } from '../components/FullScreenLoader';
 import { generateDomainSuggestion } from '../services/geminiService';
 import { ConfirmModal } from '../components/ConfirmModal';
 
@@ -144,12 +145,7 @@ export const Quiz: React.FC = () => {
   }
 
   if (isCalculating) {
-      return (
-        <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col items-center justify-center transition-colors duration-300">
-             <Loader2 className="w-10 h-10 animate-spin text-blue-500 mb-4" />
-             <p className="text-slate-600 dark:text-slate-300 text-lg animate-pulse">Analyzing your preferences...</p>
-        </div>
-      );
+      return <FullScreenLoader text="Analyzing your preferences..." />;
   }
 
   if (showGeneralResult && suggestedDomain) {

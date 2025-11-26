@@ -2,11 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { useAppStore } from './store';
 import { AppView } from './types';
 import { getUserProfile, getSavedCareers, getCurrentUser } from './services/supabaseService';
-import { Loader2 } from 'lucide-react';
 import { APP_NAME } from './constants';
 import { ConfirmModal } from './components/ConfirmModal';
 import { AlertModal } from './components/AlertModal';
 import { Toast } from './components/Toast';
+import { FullScreenLoader } from './components/FullScreenLoader';
 
 import { Landing } from './pages/Landing';
 import { Auth } from './pages/Auth';
@@ -175,11 +175,7 @@ const App: React.FC = () => {
   };
 
   if (isInitializing) {
-      return (
-        <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 transition-colors">
-            <Loader2 className="w-10 h-10 animate-spin text-blue-500" />
-        </div>
-      );
+      return <FullScreenLoader />;
   }
 
   return (

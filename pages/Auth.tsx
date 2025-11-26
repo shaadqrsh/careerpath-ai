@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { useAppStore } from '../store';
 import { AppView } from '../types';
 import { Button } from '../components/Button';
-import { Mail, Lock, AlertCircle, CheckCircle, ArrowLeft, Eye, EyeOff } from 'lucide-react';
+import { Input } from '../components/Input';
+import { Mail, Lock, AlertCircle, CheckCircle, ArrowLeft } from 'lucide-react';
 import { signInWithEmail, signUpWithEmail, getCurrentUser, getUserProfile, sendPasswordResetEmail, getSavedCareers } from '../services/supabaseService';
 
 export const Auth: React.FC = () => {
@@ -12,7 +13,6 @@ export const Auth: React.FC = () => {
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -130,20 +130,15 @@ export const Auth: React.FC = () => {
 
         {isForgotPassword ? (
             <form onSubmit={handleForgotPassword} className="space-y-6">
-                <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Email</label>
-                    <div className="relative">
-                    <Mail className="absolute left-3 top-3.5 text-slate-400 dark:text-slate-500 w-5 h-5" />
-                    <input 
-                        type="email"
-                        required
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className="w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-600 rounded-xl py-3 pl-10 pr-4 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-                        placeholder="you@example.com"
-                    />
-                    </div>
-                </div>
+                <Input
+                    label="Email"
+                    icon={<Mail />}
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@example.com"
+                />
                 <Button type="submit" fullWidth disabled={loading}>
                     {loading ? 'Sending Link...' : 'Send Reset Link'}
                 </Button>
@@ -159,20 +154,15 @@ export const Auth: React.FC = () => {
             </form>
         ) : (
             <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Email</label>
-                <div className="relative">
-                <Mail className="absolute left-3 top-3.5 text-slate-400 dark:text-slate-500 w-5 h-5" />
-                <input 
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-600 rounded-xl py-3 pl-10 pr-4 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-                    placeholder={isLogin ? "you@example.com" : "Enter new email"}
-                />
-                </div>
-            </div>
+            <Input
+                label="Email"
+                icon={<Mail />}
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder={isLogin ? "you@example.com" : "Enter new email"}
+            />
             <div>
                 <div className="flex justify-between mb-2">
                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Password</label>
@@ -187,23 +177,15 @@ export const Auth: React.FC = () => {
                     )}
                 </div>
                 <div className="relative">
-                    <Lock className="absolute left-3 top-3.5 text-slate-400 dark:text-slate-500 w-5 h-5" />
-                    <input 
-                        type={showPassword ? "text" : "password"}
+                    <Input
+                        icon={<Lock />}
+                        type="password"
                         required
                         minLength={6}
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className="w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-600 rounded-xl py-3 pl-10 pr-12 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
                         placeholder={isLogin ? "••••••••" : "Create new password"}
                     />
-                    <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
-                    >
-                        {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                    </button>
                 </div>
             </div>
 
