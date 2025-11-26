@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useAppStore } from '../store';
 import { AppView } from '../types';
 import { Button } from '../components/Button';
-import { ChevronLeft, PlayCircle, Heart, MapPin, Briefcase, GraduationCap, Loader2, ArrowRightCircle, Shuffle, Star, DollarSign, TrendingUp, AlertOctagon } from 'lucide-react';
+import { ChevronLeft, PlayCircle, Heart, MapPin, Briefcase, GraduationCap, Loader2, ArrowRightCircle, Shuffle, Star, DollarSign, TrendingUp, AlertOctagon, AlertTriangle, ShieldAlert } from 'lucide-react';
 import { generateCareerDetails } from '../services/geminiService';
 
 export const CareerDetail: React.FC = () => {
@@ -160,24 +160,38 @@ export const CareerDetail: React.FC = () => {
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col animate-fade-in-up opacity-0" style={{ animationDelay: '300ms' }}>
-                    <h3 className="text-lg font-bold mb-4 text-slate-800 dark:text-slate-200">Why this fits you</h3>
-                    
-                    <div className="mb-4">
-                        <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Best suited for profiles with:</p>
-                        <div className="flex flex-wrap gap-2">
-                             {selectedCareer.tags.map(t => (
-                                <span key={t} className="px-2 py-1 text-xs font-medium rounded bg-blue-100 dark:bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-500/20">{t}</span>
-                             ))}
+                <div className="flex flex-col gap-6">
+                    <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col h-full animate-fade-in-up opacity-0" style={{ animationDelay: '300ms' }}>
+                        <h3 className="text-lg font-bold mb-4 text-slate-800 dark:text-slate-200">Why this fits you</h3>
+                        
+                        <div className="mb-4">
+                            <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Best suited for profiles with:</p>
+                            <div className="flex flex-wrap gap-2">
+                                {selectedCareer.tags.map(t => (
+                                    <span key={t} className="px-2 py-1 text-xs font-medium rounded bg-blue-100 dark:bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-500/20">{t}</span>
+                                ))}
+                            </div>
                         </div>
+
+                        <p className="text-slate-600 dark:text-slate-400 leading-relaxed text-lg border-t border-slate-200 dark:border-slate-700 pt-4 mt-auto">
+                            {selectedCareer.summary}
+                        </p>
                     </div>
 
-                    <p className="text-slate-600 dark:text-slate-400 leading-relaxed text-lg border-t border-slate-200 dark:border-slate-700 pt-4 mt-auto">
-                        {selectedCareer.summary}
-                    </p>
+                    {selectedCareer.entryBarriers && (
+                        <div className="bg-amber-50 dark:bg-amber-900/10 rounded-xl p-6 border border-amber-200 dark:border-amber-800 shadow-sm animate-fade-in-up opacity-0" style={{ animationDelay: '350ms' }}>
+                             <div className="flex items-center gap-2 mb-3 text-amber-700 dark:text-amber-500">
+                                <ShieldAlert size={20} />
+                                <h3 className="font-bold uppercase tracking-wide text-sm">Potential Barriers</h3>
+                             </div>
+                             <p className="text-amber-800 dark:text-amber-200 text-sm leading-relaxed">
+                                {selectedCareer.entryBarriers}
+                             </p>
+                        </div>
+                    )}
                 </div>
 
-                <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm animate-fade-in-up opacity-0" style={{ animationDelay: '400ms' }}>
+                <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm h-full animate-fade-in-up opacity-0" style={{ animationDelay: '400ms' }}>
                     <h3 className="text-lg font-bold mb-4 text-slate-800 dark:text-slate-200">Key Skills Required</h3>
                     <div className="flex flex-wrap gap-2">
                         {['Strategic Thinking', 'Data Analysis', 'Communication', 'Project Management', 'Technical Proficiency'].map(skill => (
@@ -232,8 +246,18 @@ export const CareerDetail: React.FC = () => {
                             <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
                                 <span className="text-xs font-bold text-green-600 dark:text-green-400 tracking-wider uppercase mb-1 block">{step.duration}</span>
                                 <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">{step.title}</h3>
-                                <p className="text-slate-600 dark:text-slate-400 mb-6 text-lg">{step.description}</p>
+                                <p className="text-slate-600 dark:text-slate-400 mb-4 text-lg">{step.description}</p>
                                 
+                                {step.challenges && (
+                                    <div className="mb-6 p-3 bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-800 rounded-lg flex gap-3">
+                                        <AlertTriangle className="text-red-500 shrink-0 w-5 h-5" />
+                                        <div>
+                                            <span className="block text-xs font-bold text-red-600 dark:text-red-400 uppercase tracking-wide">Potential Challenge</span>
+                                            <p className="text-sm text-red-700 dark:text-red-300 mt-1">{step.challenges}</p>
+                                        </div>
+                                    </div>
+                                )}
+
                                 <div className={`grid grid-cols-1 ${!isSameLocation && step.targetPath && step.targetPath !== 'NA' ? 'md:grid-cols-2' : ''} gap-4 border-t border-slate-200 dark:border-slate-700 pt-4`}>
                                     {step.localPath && step.localPath !== 'NA' && (
                                         <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-lg border border-slate-200 dark:border-slate-700/50">

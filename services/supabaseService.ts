@@ -89,6 +89,7 @@ const toDbCareer = (c: CareerRecommendation) => ({
     salary_range: c.salaryRange,
     growth: c.growth,
     tags: c.tags,
+    entry_barriers: c.entryBarriers,
     is_pivot: c.isPivot,
     pivot_analysis: c.pivotAnalysis,
     roadmap: c.roadmap, 
@@ -102,7 +103,8 @@ const fromDbCareer = (d: any): CareerRecommendation => {
         description: step.description,
         localPath: step.local_path || step.localPath,
         targetPath: step.target_path || step.targetPath,
-        duration: step.duration
+        duration: step.duration,
+        challenges: step.challenges
     }));
     
     const detailsLoaded = roadmap.length > 0;
@@ -115,6 +117,7 @@ const fromDbCareer = (d: any): CareerRecommendation => {
         salaryRange: d.salary_range,
         growth: d.growth,
         tags: d.tags || [],
+        entryBarriers: d.entry_barriers,
         isPivot: d.is_pivot,
         pivotAnalysis: d.pivot_analysis,
         roadmap: roadmap,

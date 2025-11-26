@@ -46,6 +46,7 @@ export interface CareerRoadmapStep {
   localPath?: string;
   targetPath?: string;
   duration: string;
+  challenges?: string;
 }
 
 export interface CareerRecommendation {
@@ -56,6 +57,7 @@ export interface CareerRecommendation {
   salaryRange: string;
   growth: string;
   tags: string[];
+  entryBarriers?: string;
   detailsLoaded?: boolean; 
   isPivot?: boolean;
   pivotAnalysis?: string;
