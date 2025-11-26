@@ -1,5 +1,5 @@
 import { UserProfile, QuizAnswer, CareerRecommendation, Slide, CareerRoadmapStep, CareerDomain } from "../types";
-import { MOCK_CAREERS, API_BASE_URL, SLIDESHOW_IMAGE_COUNT, DAILY_CAREER_LIMIT, DAILY_IMAGE_LIMIT } from "../constants";
+import { MOCK_CAREERS, API_BASE_URL, SLIDESHOW_IMAGE_COUNT } from "../constants";
 
 export const calculateRoadmapDurationYears = (roadmap: CareerRoadmapStep[]): number => {
     let totalYears = 0;
@@ -155,10 +155,11 @@ export const generateStorySlides = async (career: CareerRecommendation, user?: U
         const generatedResults = await generateCareerImages(career.title, promptsToGenerate, user, futureAge);
         
         const finalImages = [...currentImages];
+        
         while(finalImages.length < SLIDESHOW_IMAGE_COUNT) finalImages.push(null);
 
-        missingIndices.forEach((targetIndex, i) => {
-            finalImages[targetIndex] = generatedResults[i];
+        missingIndices.forEach((originalIndex, i) => {
+            finalImages[originalIndex] = generatedResults[i];
         });
 
         return prompts.map((text, index) => ({
@@ -171,6 +172,7 @@ export const generateStorySlides = async (career: CareerRecommendation, user?: U
         if (e.message === "QUOTA_EXCEEDED") throw e;
         
         console.error("Partial generation failed:", e);
+        
         const finalImages = [...currentImages];
         while(finalImages.length < SLIDESHOW_IMAGE_COUNT) finalImages.push(null);
         

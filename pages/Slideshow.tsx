@@ -3,7 +3,7 @@ import { useAppStore } from '../store';
 import { AppView, Slide } from '../types';
 import { generateStorySlides } from '../services/geminiService';
 import { uploadCareerImages, saveCareerToDb, getUserProfile } from '../services/supabaseService';
-import { X, ChevronLeft, ChevronRight, Loader2, ImageOff, AlertOctagon, ArrowLeft, ArrowRight } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Loader2, ImageOff, AlertOctagon, ArrowLeft, ArrowRight, Image as ImageIcon } from 'lucide-react';
 import { DAILY_IMAGE_LIMIT, SLIDESHOW_IMAGE_COUNT } from '../constants';
 
 const BananaIcon = ({ className }: { className?: string }) => (
@@ -37,10 +37,11 @@ export const Slideshow: React.FC = () => {
   const [loadedIndices, setLoadedIndices] = useState<Set<number>>(new Set());
   
   const [loading, setLoading] = useState(true);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [quotaError, setQuotaError] = useState(false);
   const [allFailed, setAllFailed] = useState(false);
   
-  const [loadingText, setLoadingText] = useState("Dreaming up possibilities...");
+  const [loadingText, setLoadingText] = useState("Initializing...");
 
   const touchStartX = useRef<number | null>(null);
   const touchEndX = useRef<number | null>(null);
@@ -56,12 +57,18 @@ export const Slideshow: React.FC = () => {
         "Adding final touches..."
     ];
     let i = 0;
-    const interval = setInterval(() => {
-        i = (i + 1) % texts.length;
-        setLoadingText(texts[i]);
-    }, 2500);
-    return () => clearInterval(interval);
-  }, []);
+    
+    if (isGenerating) {
+        setLoadingText(texts[0]);
+        const interval = setInterval(() => {
+            i = (i + 1) % texts.length;
+            setLoadingText(texts[i]);
+        }, 2500);
+        return () => clearInterval(interval);
+    } else {
+        setLoadingText("Loading images...");
+    }
+  }, [isGenerating]);
 
   useEffect(() => {
     if (slides.length > 0) {
@@ -115,11 +122,13 @@ export const Slideshow: React.FC = () => {
             }
         }
 
+        if (isMounted) {
+            setIsGenerating(needsGeneration);
+        }
+
         hasStartedRef.current = true;
         
         try {
-            console.log("Loading slides for:", selectedCareer.title);
-            
             const generatedSlides = await generateStorySlides(selectedCareer, user);
             const imageUrls = generatedSlides.map(s => s.imageUrl || null);
             const validGeneratedCount = generatedSlides.filter(s => s.imageUrl && s.imageUrl.length > 5).length;
@@ -136,14 +145,14 @@ export const Slideshow: React.FC = () => {
                 setSlides(generatedSlides);
             }
             
-            if (user) {
+            if (needsGeneration && user) {
                 getUserProfile(user.id).then(u => {
                     if (u) setUser(u);
                 });
             }
 
             const isSaved = savedCareers.some(c => c.id === selectedCareer.id);
-            if (isSaved && user) {
+            if (isSaved && user && needsGeneration) {
                  uploadCareerImages(user.id, selectedCareer.id, imageUrls).then(async (processedUrls) => {
                      updateCareerImages(selectedCareer.id, processedUrls);
                      const updatedCareer = { ...selectedCareer, slideImages: processedUrls };
@@ -279,13 +288,21 @@ export const Slideshow: React.FC = () => {
   }
 
   const allImagesLoaded = slides.length > 0 && slides.every((s, i) => !s.imageUrl || loadedIndices.has(i));
+  const showLoadingScreen = loading || !allImagesLoaded;
 
-  if (loading || !allImagesLoaded) {
+  if (showLoadingScreen) {
     return (
       <div className="fixed inset-0 bg-black/95 z-[60] flex flex-col items-center justify-center animate-fade-in">
         <div className="relative animate-fade-in-up opacity-0" style={{ animationDelay: '0ms' }}>
-            <div className="absolute inset-0 bg-blue-500 blur-xl opacity-20 animate-pulse"></div>
-            <Loader2 className="w-12 h-12 text-blue-500 animate-spin relative z-10" />
+            {isGenerating ? (
+               <div className="absolute inset-0 bg-blue-500 blur-xl opacity-20 animate-pulse"></div>
+            ) : null}
+            
+            {isGenerating ? (
+               <Loader2 className="w-12 h-12 text-blue-500 animate-spin relative z-10" />
+            ) : (
+               <ImageIcon className="w-12 h-12 text-slate-500 animate-pulse relative z-10" />
+            )}
         </div>
         
         <div className="mt-8 flex flex-col items-center animate-fade-in-up opacity-0" style={{ animationDelay: '100ms' }}>
@@ -293,12 +310,14 @@ export const Slideshow: React.FC = () => {
                 {loadingText}
             </p>
             
-            <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-yellow-400/10 border border-yellow-400/20 backdrop-blur-md">
-                <BananaIcon className="w-4 h-4 text-yellow-400" />
-                <span className="text-xs font-bold text-yellow-400 tracking-wide">
-                    Powered by Nano Banana
-                </span>
-            </div>
+            {isGenerating && (
+                <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-yellow-400/10 border border-yellow-400/20 backdrop-blur-md">
+                    <BananaIcon className="w-4 h-4 text-yellow-400" />
+                    <span className="text-xs font-bold text-yellow-400 tracking-wide">
+                        Powered by Nano Banana
+                    </span>
+                </div>
+            )}
         </div>
       </div>
     );
@@ -328,7 +347,7 @@ export const Slideshow: React.FC = () => {
 
   return (
     <div 
-        className="fixed inset-0 bg-black z-[60] flex items-center justify-center overflow-hidden animate-fade-in px-0 md:px-4 md:py-8 touch-none"
+        className={`fixed inset-0 bg-black z-[60] flex items-center justify-center overflow-hidden px-0 md:px-4 md:py-8 touch-none transition-opacity duration-700 ease-out ${showLoadingScreen ? 'opacity-0' : 'opacity-100'}`}
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
