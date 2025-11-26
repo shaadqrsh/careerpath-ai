@@ -3,10 +3,10 @@ import { useAppStore } from '../store';
 import { AppView } from '../types';
 import { Button } from '../components/Button';
 import { Lock, CheckCircle, Eye, EyeOff } from 'lucide-react';
-import { updateUserPassword } from '../services/supabaseService';
+import { updateUserPassword, getCurrentUser, getUserProfile, getSavedCareers } from '../services/supabaseService';
 
 export const UpdatePassword: React.FC = () => {
-  const { setView } = useAppStore();
+  const { setView, setUser, setSavedCareers } = useAppStore();
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -26,6 +26,25 @@ export const UpdatePassword: React.FC = () => {
 
     try {
       await updateUserPassword(password);
+      
+      try {
+          const authUser = await getCurrentUser();
+          if (authUser) {
+              const profile = await getUserProfile(authUser.id);
+              if (profile) {
+                  setUser(profile);
+                  try {
+                      const saved = await getSavedCareers(authUser.id);
+                      setSavedCareers(saved);
+                  } catch (e) {
+                      console.warn("Failed to load saved careers after reset", e);
+                  }
+              }
+          }
+      } catch (hydrationError) {
+          console.warn("State hydration failed after password reset", hydrationError);
+      }
+
       setSuccess(true);
       setTimeout(() => {
         setView(AppView.DASHBOARD);

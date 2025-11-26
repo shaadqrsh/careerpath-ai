@@ -74,13 +74,13 @@ app.add_middleware(
 )
 
 if not SUPABASE_URL or not SUPABASE_KEY:
-    logger.warning("Supabase credentials missing. Auth/DB will fail.")
+    logger.warning("Supabase credentials missing.")
     supabase: Client = None
 else:
     supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 if not GEMINI_API_KEY:
-    logger.warning("Gemini API Key missing. AI generation will fail.")
+    logger.warning("Gemini API Key missing.")
 else:
     genai.configure(api_key=GEMINI_API_KEY)
 
@@ -96,6 +96,16 @@ def sanitize_quiz_answers(answers: List[Dict[str, Any]]) -> str:
         ans = sanitize_input(str(a.get("answer", "")))[:200]
         clean_text.append(f"Q{q_id}: {ans}")
     return "; ".join(clean_text)
+
+def clean_json_text(text: str) -> str:
+    text = text.strip()
+    if text.startswith("```json"):
+        text = text[7:]
+    if text.startswith("```"):
+        text = text[3:]
+    if text.endswith("```"):
+        text = text[:-3]
+    return text.strip()
 
 def get_user_client(token: str) -> Client:
     client = create_client(SUPABASE_URL, SUPABASE_KEY)
@@ -202,7 +212,6 @@ async def verify_token(authorization: str = Header(None)):
         if not user: raise HTTPException(status_code=401, detail="Invalid token")
         return user.user
     except Exception as e:
-        logger.error(f"Auth error: {e}")
         raise HTTPException(status_code=401, detail="Authentication failed")
 
 def increment_and_verify_quota(client: Client, user_id: str, count_col: str, date_col: str, limit: int, error_msg: str = None):
@@ -259,9 +268,7 @@ async def update_password(req: UpdatePasswordRequest, authorization: str = Heade
     
     async with httpx.AsyncClient() as client:
         response = await client.put(url, json={"password": req.password}, headers=headers)
-        
         if response.status_code != 200:
-            logger.error(f"Pwd update failed: {response.text}")
             raise HTTPException(status_code=500, detail="Failed to update password")
             
     return {"status": "success"}
@@ -300,7 +307,6 @@ async def upsert_profile(profile: UserProfile, authorization: str = Header(None)
         return {"status": "success"}
     except Exception: raise HTTPException(status_code=500)
 
-
 @app.post("/api/generate-domain")
 async def generate_domain(req: GenerateDomainRequest, authorization: str = Header(None), user = Depends(verify_token)):
     token = authorization.split(" ")[1]
@@ -311,7 +317,8 @@ async def generate_domain(req: GenerateDomainRequest, authorization: str = Heade
         prompt = f"Analyze quiz answers: {clean_answers}. Suggest domain: 'science', 'commerce', or 'arts'. Output JSON: {{ \"suggested_domain\": \"name\" }}"
         model = genai.GenerativeModel(TEXT_MODEL_NAME)
         response = await model.generate_content_async(prompt, generation_config={"response_mime_type": "application/json", "max_output_tokens": 500})
-        return json.loads(response.text)
+        text = clean_json_text(response.text)
+        return json.loads(text)
     except Exception: return {"suggested_domain": "general"}
 
 @app.post("/api/generate-career", response_model=GenerateCareerResponse)
@@ -385,7 +392,8 @@ IMPORTANT: Do NOT include 'roadmap' or 'dayInLifePrompts' in this response. They
             prompt, 
             generation_config={"response_mime_type": "application/json", "max_output_tokens": 8192}
         )
-        result_json = json.loads(response.text)
+        text = clean_json_text(response.text)
+        result_json = json.loads(text)
         for rec in result_json.get("recommendations", []):
             if not rec.get("id"): rec["id"] = str(uuid.uuid4())
             rec["roadmap"] = []
@@ -411,18 +419,19 @@ USER CONTEXT:
 <context>
 Career: {safe_title}
 Summary: {safe_summary}
-User Edu: {user_p.education_level} in {sanitize_input(user_p.specialization)}
-Location: {user_p.residence_country} -> {user_p.preferred_work_country}
+User Education: {user_p.education_level} in {sanitize_input(user_p.specialization)}
+Current Residence: {user_p.residence_country}
+Target Residence: {user_p.preferred_work_country}
 </context>
 
 TASK 1 - REALISTIC ROADMAP:
 Create a 3-4 step educational and professional roadmap to reach {safe_title}.
 - Be specific about certifications, degrees, or experience needed
 - Include realistic timeframes (not overly optimistic)
-- If residence ({user_p.residence_country}) and target ({user_p.preferred_work_country}) countries differ, note where each step is best completed using localPath and targetPath
+- If Current Residence and Target Residence countries differ, note where each step is best completed using localPath and targetPath. Atleast one of these two (localPath and targetPath) should be generated for each step.
 - Address the user as "you" - do NOT use their name
 - The description of the step shouldn't be more than in 2-3 short sentences.
-- REQUIRED FIELDS: title, description, duration, localPath, targetPath
+- REQUIRED FIELDS: title, description, duration, localPath, targetPath.
 - OPTIONAL FIELD: challenges (Only include if there is a significant, non-obvious hurdle at this step. Otherwise return null.)
 
 TASK 2 - TRANSITION ANALYSIS:
@@ -453,8 +462,8 @@ OUTPUT FORMAT: Strict JSON
         {{
             "title": "Step Name",
             "description": "Specific details with realistic expectations, addressing user as 'you'...",
-            "localPath": "How to accomplish this in {user_p.residence_country} (or null if same as target)",
-            "targetPath": "How to accomplish this in {user_p.preferred_work_country} (or null if same as local)",
+            "localPath": "How to accomplish this in {user_p.residence_country}",
+            "targetPath": "How to accomplish this in {user_p.preferred_work_country}",
             "duration": "Realistic duration (e.g., '6-12 months', '2-3 years')",
             "challenges": "Specific obstacle (or null)"
         }}
@@ -467,7 +476,8 @@ OUTPUT FORMAT: Strict JSON
             prompt, 
             generation_config={"response_mime_type": "application/json", "max_output_tokens": 5000}
         )
-        return json.loads(response.text)
+        text = clean_json_text(response.text)
+        return json.loads(text)
     except Exception as e:
         logger.error(f"Career Details Gen Error: {e}")
         raise HTTPException(status_code=500, detail="AI details generation failed")
@@ -478,22 +488,21 @@ async def generate_images(req: GenerateImagesRequest, authorization: str = Heade
     client = get_user_client(token)
     increment_and_verify_quota(client, user.id, "daily_image_generations_count", "last_image_generation_date", DAILY_IMAGE_LIMIT)
     try:
-        safe_title = sanitize_input(req.career_title)[:100]
+        safe_title = sanitize_input(req.career_title)
         subject = "a professional"
         if req.user_context:
             age = req.future_age or (req.user_context.age + 5)
-            subject = f"a {age}yo {req.user_context.gender} professional"
+            subject = f"a {age}yo {req.user_context.gender} professional from {req.user_context.residence_country}"
 
         safe_prompts = req.prompts[:SLIDESHOW_IMAGE_COUNT]
-        results = []
-
         model = genai.GenerativeModel(IMAGE_MODEL_NAME)
 
-        for index, p in enumerate(safe_prompts):
-            safe_prompt = sanitize_input(p)[:300] 
+        async def gen_one_image(prompt_text, idx):
+            await asyncio.sleep(idx * 1.5)
+            safe_prompt = sanitize_input(prompt_text)
             context = random.choice(REALISM_CONTEXTS)
             prompt = f"""
-Realistic photograph of {subject} working as a {safe_title} {context}.
+Generate a realistic image of {subject} working as a {safe_title} {context}. Only generate a high quality image and no text before or after the image.
 Scene: {safe_prompt}.
 Style: Natural lighting, authentic workplace environment, candid moment, documentary photography style.
 Show genuine work conditions - normal office or workspace, everyday equipment, realistic professional attire.
@@ -501,33 +510,26 @@ NOT glamorized or cinematic - capture the real, everyday nature of this work.
 Mood: Focused, professional, relatable.
 Negative: text, words, watermarks, logos, unrealistic lighting, overly dramatic poses.
 """
-            image_result = None
             for attempt in range(3):
                 try:
                     res = await model.generate_content_async(prompt)
                     if res.candidates and res.candidates[0].content.parts:
                         part = res.candidates[0].content.parts[0]
                         if hasattr(part, 'inline_data') and part.inline_data:
-                            image_result = f"data:{part.inline_data.mime_type};base64,{base64.b64encode(part.inline_data.data).decode('utf-8')}"
-                            break
+                            return f"data:{part.inline_data.mime_type};base64,{base64.b64encode(part.inline_data.data).decode('utf-8')}"
                 except Exception as e:
                     err_str = str(e)
                     if "429" in err_str or "ResourceExhausted" in err_str or "Quota" in err_str:
-                        wait_time = (attempt + 1) * 4
-                        logger.warning(f"Image Quota hit (img {index}, att {attempt}). Waiting {wait_time}s...")
-                        await asyncio.sleep(wait_time)
+                        await asyncio.sleep((attempt + 1) * 3)
                     else:
-                        logger.warning(f"Image Gen Error (img {index}, att {attempt}): {e}")
-                        await asyncio.sleep(1.5)
+                        await asyncio.sleep(1.0)
+            return None
 
-            results.append(image_result)
-            
-            if image_result and index < len(safe_prompts) - 1:
-                await asyncio.sleep(2.0)
-            
+        tasks = [gen_one_image(p, i) for i, p in enumerate(safe_prompts)]
+        results = await asyncio.gather(*tasks)
         return {"images": results}
     except Exception as e:
-        logger.error(f"Image Gen Error: {e}")
+        logger.error(f"Global Image Gen Error: {e}")
         return {"images": [None]*len(req.prompts)}
 
 @app.get("/api/saved-careers")
@@ -558,10 +560,8 @@ async def delete_career(career_uid: str, authorization: str = Header(None), user
         try:
             files_to_remove = [f"{user.id}/{career_uid}/slide_{i}.png" for i in range(5)]
             files_to_remove += [f"{user.id}/{career_uid}/slide_{i}.jpg" for i in range(5)]
-            
             client.storage.from_('career_slideshows').remove(files_to_remove)
-        except Exception as storage_err:
-            logger.warning(f"Failed to cleanup storage for {career_uid}: {storage_err}")
+        except Exception: pass
 
         client.table("saved_careers").delete().eq("user_id", user.id).eq("career_uid", career_uid).execute()
         return {"status": "success"}
