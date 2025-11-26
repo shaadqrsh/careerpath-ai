@@ -1,5 +1,3 @@
---- START OF FILE Dashboard.tsx ---
-
 import React, { useEffect, useState } from 'react';
 import { useAppStore } from '../store';
 import { AppView, CareerDomain } from '../types';
