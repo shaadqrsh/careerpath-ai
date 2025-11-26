@@ -362,9 +362,10 @@ async def generate_career(req: GenerateCareerRequest, authorization: str = Heade
         
         Task:
         1. Identify {CAREERS_PER_GENERATION} personalized career paths.
-        2. STRICT ELIGIBILITY CHECK: If user is Arts, no Science.
+        2. STRICT ELIGIBILITY CHECK: If user is Arts, then don't suggest Quantum Physics, but if there is a realistic path the user can take to a career in their field of choice, then consider it.
         3. Provide only high-level details. Do NOT generate roadmaps or pivot analysis yet.
-        
+        4. Address the user as "You" or "Your". Do NOT use their name.
+
         OUTPUT FORMAT: STRICT JSON.
         {{
           "recommendations": [
