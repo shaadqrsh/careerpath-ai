@@ -323,11 +323,12 @@ Act as an experienced Career Counselor with expertise in global job markets.
 
 USER PROFILE:
 <profile>
+Name: {safe_full_name}
 Age: {user_p.age}
 Education: {user_p.education_level}
 Specialization: {safe_specialization}
-Location: {user_p.residence_country} -> {user_p.preferred_work_country}
-Name: {safe_full_name}
+Current Residence: {user_p.residence_country}
+Target Residence: {user_p.preferred_work_country}
 </profile>
 
 ASSESSMENT RESULTS:
@@ -364,14 +365,13 @@ OUTPUT FORMAT: Strict JSON
       "matchScore": 75,
       "summary": "2-3 sentences explaining WHY this fits based on their specific profile and assessment answers. Be concrete and honest about both the fit and any gaps.",
       "salaryRange": "Realistic entry to mid-level range for target country",
-      "growth": "Low/Moderate/High/Very High - based on actual market trends",
+      "growth": "Low/Moderate/High/Very High - based on actual market trends, along with a percentage value and a target as well. Eg: High Growth (50% by 2030)",
       "tags": ["Relevant", "Specific", "Skills"],
-      "entryBarriers": "Brief note on what stands between user and this career",
-      "roadmap": [],
-      "dayInLifePrompts": []
+      "entryBarriers": "Optional. Only include if there is a specific, significant barrier (e.g., 'Requires PhD', 'Strict licensing') or if the user needs a certain skill which may not be offered by their current specialization. Return null if generally accessible.",
     }}
   ]
 }}
+IMPORTANT: Do NOT include 'roadmap' or 'dayInLifePrompts' in this response. They will be generated later.
 """
         model = genai.GenerativeModel(TEXT_MODEL_NAME)
         response = await model.generate_content_async(
@@ -413,8 +413,9 @@ Create a 3-4 step educational and professional roadmap to reach {safe_title}.
 - Be specific about certifications, degrees, or experience needed
 - Include realistic timeframes (not overly optimistic)
 - If residence ({user_p.residence_country}) and target ({user_p.preferred_work_country}) countries differ, note where each step is best completed using localPath and targetPath
-- Mention potential obstacles or challenges at each step in the "challenges" field
 - Address the user as "you" - do NOT use their name
+- REQUIRED FIELDS: title, description, duration, localPath, targetPath
+- OPTIONAL FIELD: challenges (Only include if there is a significant, non-obvious hurdle at this step. Otherwise return null.)
 
 TASK 2 - TRANSITION ANALYSIS:
 Evaluate the difficulty of this career transition:
@@ -447,7 +448,7 @@ OUTPUT FORMAT: Strict JSON
             "localPath": "How to accomplish this in {user_p.residence_country} (or null if same as target)",
             "targetPath": "How to accomplish this in {user_p.preferred_work_country} (or null if same as local)",
             "duration": "Realistic duration (e.g., '6-12 months', '2-3 years')",
-            "challenges": "Potential obstacles to anticipate at this step"
+            "challenges": "Specific obstacle (or null)"
         }}
     ],
     "dayInLifePrompts": ["Realistic everyday prompt 1", "Realistic everyday prompt 2", "Realistic everyday prompt 3"]
@@ -500,8 +501,13 @@ Negative: text, words, watermarks, logos, unrealistic lighting, overly dramatic 
             return None
         
         safe_prompts = req.prompts[:SLIDESHOW_IMAGE_COUNT]
-        tasks = [gen_one(p) for p in safe_prompts]
-        return {"images": await asyncio.gather(*tasks)}
+        results = []
+        for p in safe_prompts:
+            res = await gen_one(p)
+            results.append(res)
+            await asyncio.sleep(1.0) 
+            
+        return {"images": results}
     except Exception as e:
         logger.error(f"Image Gen Error: {e}")
         return {"images": [None]*len(req.prompts)}
@@ -531,6 +537,14 @@ async def delete_career(career_uid: str, authorization: str = Header(None), user
     token = authorization.split(" ")[1]
     client = get_user_client(token)
     try:
+        try:
+            files_to_remove = [f"{user.id}/{career_uid}/slide_{i}.png" for i in range(5)]
+            files_to_remove += [f"{user.id}/{career_uid}/slide_{i}.jpg" for i in range(5)]
+            
+            client.storage.from_('career_slideshows').remove(files_to_remove)
+        except Exception as storage_err:
+            logger.warning(f"Failed to cleanup storage for {career_uid}: {storage_err}")
+
         client.table("saved_careers").delete().eq("user_id", user.id).eq("career_uid", career_uid).execute()
         return {"status": "success"}
     except Exception as e: raise HTTPException(status_code=500, detail=str(e))

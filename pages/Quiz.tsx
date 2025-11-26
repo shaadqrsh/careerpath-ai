@@ -73,7 +73,7 @@ export const Quiz: React.FC = () => {
         setSuggestedDomain(domain);
     } catch (e) {
         console.error("Failed to get suggestion", e);
-        setSuggestedDomain('general'); // Fallback
+        setSuggestedDomain('general');
     } finally {
         setIsCalculating(false);
         setShowGeneralResult(true);

@@ -177,9 +177,25 @@ export const CareerDetail: React.FC = () => {
                             {selectedCareer.summary}
                         </p>
                     </div>
+                </div>
+
+                <div className="flex flex-col gap-6">
+                    <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm h-full animate-fade-in-up opacity-0" style={{ animationDelay: '400ms' }}>
+                        <h3 className="text-lg font-bold mb-4 text-slate-800 dark:text-slate-200">Key Skills Required</h3>
+                        <div className="flex flex-wrap gap-2">
+                            {['Strategic Thinking', 'Data Analysis', 'Communication', 'Project Management', 'Technical Proficiency'].map(skill => (
+                                <span key={skill} className="bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-3 py-2 rounded-lg text-sm text-slate-600 dark:text-slate-300">
+                                    {skill}
+                                </span>
+                            ))}
+                        </div>
+                        <p className="mt-4 text-sm text-slate-500">
+                            * Based on current market requirements in {targetCountryDisplay}.
+                        </p>
+                    </div>
 
                     {selectedCareer.entryBarriers && (
-                        <div className="bg-amber-50 dark:bg-amber-900/10 rounded-xl p-6 border border-amber-200 dark:border-amber-800 shadow-sm animate-fade-in-up opacity-0" style={{ animationDelay: '350ms' }}>
+                        <div className="bg-amber-50 dark:bg-amber-900/10 rounded-xl p-6 border border-amber-200 dark:border-amber-800 shadow-sm animate-fade-in-up opacity-0" style={{ animationDelay: '450ms' }}>
                              <div className="flex items-center gap-2 mb-3 text-amber-700 dark:text-amber-500">
                                 <ShieldAlert size={20} />
                                 <h3 className="font-bold uppercase tracking-wide text-sm">Potential Barriers</h3>
@@ -189,20 +205,6 @@ export const CareerDetail: React.FC = () => {
                              </p>
                         </div>
                     )}
-                </div>
-
-                <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm h-full animate-fade-in-up opacity-0" style={{ animationDelay: '400ms' }}>
-                    <h3 className="text-lg font-bold mb-4 text-slate-800 dark:text-slate-200">Key Skills Required</h3>
-                    <div className="flex flex-wrap gap-2">
-                        {['Strategic Thinking', 'Data Analysis', 'Communication', 'Project Management', 'Technical Proficiency'].map(skill => (
-                            <span key={skill} className="bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-3 py-2 rounded-lg text-sm text-slate-600 dark:text-slate-300">
-                                {skill}
-                            </span>
-                        ))}
-                    </div>
-                    <p className="mt-4 text-sm text-slate-500">
-                        * Based on current market requirements in {targetCountryDisplay}.
-                    </p>
                 </div>
             </div>
         </section>
@@ -248,16 +250,6 @@ export const CareerDetail: React.FC = () => {
                                 <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">{step.title}</h3>
                                 <p className="text-slate-600 dark:text-slate-400 mb-4 text-lg">{step.description}</p>
                                 
-                                {step.challenges && (
-                                    <div className="mb-6 p-3 bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-800 rounded-lg flex gap-3">
-                                        <AlertTriangle className="text-red-500 shrink-0 w-5 h-5" />
-                                        <div>
-                                            <span className="block text-xs font-bold text-red-600 dark:text-red-400 uppercase tracking-wide">Potential Challenge</span>
-                                            <p className="text-sm text-red-700 dark:text-red-300 mt-1">{step.challenges}</p>
-                                        </div>
-                                    </div>
-                                )}
-
                                 <div className={`grid grid-cols-1 ${!isSameLocation && step.targetPath && step.targetPath !== 'NA' ? 'md:grid-cols-2' : ''} gap-4 border-t border-slate-200 dark:border-slate-700 pt-4`}>
                                     {step.localPath && step.localPath !== 'NA' && (
                                         <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-lg border border-slate-200 dark:border-slate-700/50">
@@ -283,6 +275,16 @@ export const CareerDetail: React.FC = () => {
                                         </div>
                                     )}
                                 </div>
+
+                                {step.challenges && (
+                                    <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-800 rounded-lg flex gap-3">
+                                        <AlertTriangle className="text-red-500 shrink-0 w-5 h-5" />
+                                        <div>
+                                            <span className="block text-xs font-bold text-red-600 dark:text-red-400 uppercase tracking-wide">Potential Challenge</span>
+                                            <p className="text-sm text-red-700 dark:text-red-300 mt-1">{step.challenges}</p>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     ))}
