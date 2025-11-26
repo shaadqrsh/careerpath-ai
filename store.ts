@@ -10,8 +10,19 @@ interface ModalConfig {
     title: string;
     description: React.ReactNode;
     icon?: React.ReactNode;
-    buttonText: string;
-    onButtonClick: () => void;
+    buttonText?: string;
+    onButtonClick?: () => void;
+}
+
+interface ConfirmConfig {
+    isOpen: boolean;
+    title: string;
+    description: React.ReactNode;
+    confirmText?: string;
+    cancelText?: string;
+    variant?: 'danger' | 'info';
+    onConfirm: () => void | Promise<void>;
+    isLoading?: boolean;
 }
 
 interface AppState {
@@ -29,21 +40,28 @@ interface AppState {
   hasViewedSavedPaths: boolean; 
   isLoading: boolean;
   isSavingCareer: boolean;
-  isDeletingCareer: boolean;
-  pendingDeleteCareer: CareerRecommendation | null;
   showPasswordResetModal: boolean;
-  modal: ModalConfig | null;
   
+  // Global UI States
+  modal: ModalConfig | null;
+  confirmation: ConfirmConfig | null;
   toast: { show: boolean; message: string; type: 'success' | 'error' };
 
+  // Actions
   showModal: (config: Omit<ModalConfig, 'isOpen'>) => void;
   hideModal: () => void;
+  
+  showConfirm: (config: Omit<ConfirmConfig, 'isOpen'>) => void;
+  hideConfirm: () => void;
+  
+  showToast: (message: string, type?: 'success' | 'error') => void;
+  hideToast: () => void;
+
   setView: (view: AppView) => void;
   setCareerOrigin: (origin: 'results' | 'saved') => void;
   setUser: (user: UserProfile) => void;
   setTheme: (theme: AppTheme) => void;
   setDomain: (domain: CareerDomain) => void;
-  setDebugImageGeneration: (enabled: boolean) => void;
   addQuizAnswer: (answer: QuizAnswer) => void;
   resetQuiz: () => void;
   setRecommendations: (recs: CareerRecommendation[]) => void;
@@ -51,14 +69,11 @@ interface AppState {
   updateCareerDetails: (id: string, details: Partial<CareerRecommendation>) => void;
   setSavedCareers: (careers: CareerRecommendation[]) => void;
   updateCareerImages: (careerId: string, images: (string | null)[]) => void;
+  
   toggleSavedCareer: (career: CareerRecommendation) => Promise<void>;
-  confirmDeleteCareer: () => Promise<void>; 
-  cancelDeleteCareer: () => void;
+  executeDeleteCareer: (career: CareerRecommendation) => Promise<void>;
+  
   setShowPasswordResetModal: (show: boolean) => void;
-  
-  showToast: (message: string, type?: 'success' | 'error') => void;
-  
-  hideToast: () => void;
   setLoading: (loading: boolean) => void;
   logout: () => Promise<void>;
   clearState: () => void;
@@ -79,15 +94,25 @@ export const useAppStore = create<AppState>((set, get) => ({
   hasViewedSavedPaths: localStorage.getItem('hasViewedSavedPaths') === 'true',
   isLoading: false,
   isSavingCareer: false,
-  isDeletingCareer: false,
-  pendingDeleteCareer: null,
   showPasswordResetModal: false,
-  modal: null,
   
+  modal: null,
+  confirmation: null,
   toast: { show: false, message: '', type: 'success' },
 
   showModal: (config) => set({ modal: { ...config, isOpen: true } }),
   hideModal: () => set(state => ({ modal: state.modal ? { ...state.modal, isOpen: false } : null })),
+
+  showConfirm: (config) => set({ confirmation: { ...config, isOpen: true } }),
+  hideConfirm: () => set({ confirmation: null }),
+
+  showToast: (message, type = 'success') => {
+      set({ toast: { show: true, message, type } });
+      setTimeout(() => {
+          set({ toast: { show: false, message: '', type: 'success' } });
+      }, 3000);
+  },
+  hideToast: () => set({ toast: { show: false, message: '', type: 'success' } }),
 
   setView: (view) => {
     window.scrollTo(0, 0);
@@ -107,10 +132,6 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({ theme });
   },
   setDomain: (domain) => set({ selectedDomain: domain }),
-  setDebugImageGeneration: (enabled) => {
-      localStorage.setItem('debug_image_gen', enabled.toString());
-      set({ debugImageGenerationEnabled: enabled });
-  },
   addQuizAnswer: (answer) => set((state) => {
     const filtered = state.quizAnswers.filter(a => a.questionId !== answer.questionId);
     return { quizAnswers: [...filtered, answer] };
@@ -143,60 +164,24 @@ export const useAppStore = create<AppState>((set, get) => ({
         savedCareers: newSaved
     };
   }),
-  cancelDeleteCareer: () => set({ pendingDeleteCareer: null }),
   
-  showToast: (message, type = 'success') => {
-      set({ toast: { show: true, message, type } });
-      setTimeout(() => {
-          set({ toast: { show: false, message: '', type: 'success' } });
-      }, 3000);
-  },
-  
-  hideToast: () => set({ toast: { show: false, message: '', type: 'success' } }),
-  
-  confirmDeleteCareer: async () => {
-      const state = get();
-      const career = state.pendingDeleteCareer;
-      if (!career) return;
-      if (!state.user) return;
-      set({ isDeletingCareer: true });
-      try {
-        await deleteCareerFromDb(state.user.id, career.id);
-        const newSaved = state.savedCareers.filter(c => c.id !== career.id);
-        const cleanedCareer = { ...career, slideImages: [] };
-        let newSelected = state.selectedCareer;
-        if (state.selectedCareer?.id === career.id) {
-             newSelected = cleanedCareer;
-        }
-        const newRecommendations = state.recommendations.map(c => 
-             c.id === career.id ? cleanedCareer : c
-        );
-        set({ 
-            savedCareers: newSaved,
-            selectedCareer: newSelected,
-            recommendations: newRecommendations,
-            pendingDeleteCareer: null 
-        });
-        state.showToast("Career deleted successfully", 'success');
-        if (state.currentView === AppView.CAREER_DETAIL && state.selectedCareer?.id === career.id) {
-            if (state.careerOrigin === 'saved') {
-                 set({ currentView: AppView.SAVED_PATHS });
-            }
-        }
-      } catch (e) {
-        console.error("Error deleting from DB", e);
-        state.showToast("Failed to delete career. Please try again.", 'error');
-        set({ pendingDeleteCareer: null });
-      } finally {
-        set({ isDeletingCareer: false });
-      }
-  },
   toggleSavedCareer: async (career) => {
     const state = get();
     const currentCareerState = state.selectedCareer?.id === career.id ? state.selectedCareer : career;
     const exists = state.savedCareers.find(c => c.id === career.id);
+    
     if (exists) {
-      set({ pendingDeleteCareer: exists });
+      state.showConfirm({
+          title: "Unsave Career?",
+          description: React.createElement("p", {}, 
+              "Are you sure you want to remove ", 
+              React.createElement("strong", {}, career.title), 
+              " from your saved paths? This action cannot be undone."
+          ),
+          confirmText: "Yes, Remove It",
+          variant: 'danger',
+          onConfirm: () => state.executeDeleteCareer(exists)
+      });
       return;
     }
     set({ isSavingCareer: true });
@@ -234,6 +219,49 @@ export const useAppStore = create<AppState>((set, get) => ({
         set({ isSavingCareer: false });
     }
   },
+
+  executeDeleteCareer: async (career) => {
+      const state = get();
+      if (!state.user) return;
+      
+      if (state.confirmation) {
+          set({ confirmation: { ...state.confirmation, isLoading: true } });
+      }
+
+      try {
+        await deleteCareerFromDb(state.user.id, career.id);
+        const newSaved = state.savedCareers.filter(c => c.id !== career.id);
+        const cleanedCareer = { ...career, slideImages: [] };
+        
+        let newSelected = state.selectedCareer;
+        if (state.selectedCareer?.id === career.id) {
+             newSelected = cleanedCareer;
+        }
+        const newRecommendations = state.recommendations.map(c => 
+             c.id === career.id ? cleanedCareer : c
+        );
+        
+        set({ 
+            savedCareers: newSaved,
+            selectedCareer: newSelected,
+            recommendations: newRecommendations,
+            confirmation: null // Close modal
+        });
+        
+        state.showToast("Career deleted successfully", 'success');
+        
+        if (state.currentView === AppView.CAREER_DETAIL && state.selectedCareer?.id === career.id) {
+            if (state.careerOrigin === 'saved') {
+                 set({ currentView: AppView.SAVED_PATHS });
+            }
+        }
+      } catch (e) {
+        console.error("Error deleting from DB", e);
+        state.showToast("Failed to delete career. Please try again.", 'error');
+        set({ confirmation: null });
+      }
+  },
+
   setShowPasswordResetModal: (show) => set({ showPasswordResetModal: show }),
   setLoading: (loading) => set({ isLoading: loading }),
   clearState: () => {
@@ -248,14 +276,13 @@ export const useAppStore = create<AppState>((set, get) => ({
         selectedCareer: null,
         savedCareers: [],
         hasViewedSavedPaths: false,
-        pendingDeleteCareer: null,
-        modal: null
+        modal: null,
+        confirmation: null
       });
       localStorage.removeItem('hasViewedSavedPaths');
   },
   logout: async () => {
       await serviceSignOut();
       get().clearState();
-      get().hideModal();
   }
 }));

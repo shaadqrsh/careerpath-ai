@@ -6,10 +6,21 @@ import { Button } from '../components/Button';
 import { CheckCircle2, ChevronRight, AlertOctagon } from 'lucide-react';
 import { FullScreenLoader } from '../components/FullScreenLoader';
 import { generateDomainSuggestion } from '../services/geminiService';
-import { ConfirmModal } from '../components/ConfirmModal';
 
 export const Quiz: React.FC = () => {
-  const { setView, addQuizAnswer, selectedDomain, setDomain, quizAnswers, user, showModal, hideModal, resetQuiz } = useAppStore();
+  const { 
+    setView, 
+    addQuizAnswer, 
+    selectedDomain, 
+    setDomain, 
+    quizAnswers, 
+    user, 
+    showModal, 
+    hideModal, 
+    showConfirm, 
+    resetQuiz 
+  } = useAppStore();
+  
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   
@@ -17,7 +28,6 @@ export const Quiz: React.FC = () => {
   const [suggestedDomain, setSuggestedDomain] = useState<CareerDomain | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
   const [quotaExceeded, setQuotaExceeded] = useState(false);
-  const [showExitConfirm, setShowExitConfirm] = useState(false);
 
   const domainQuestions = QUESTIONS.filter(q => q.domain === selectedDomain);
   
@@ -128,16 +138,21 @@ export const Quiz: React.FC = () => {
 
   const handleExit = () => {
     if (showGeneralResult || quizAnswers.length > 0) {
-        setShowExitConfirm(true);
+        showConfirm({
+            title: "Exit Assessment?",
+            description: "If you exit now, your quiz progress will be lost. This will not use up a career assessment credit.",
+            confirmText: "Yes, Exit",
+            cancelText: "Stay Here",
+            variant: "info",
+            onConfirm: () => {
+                resetQuiz();
+                setView(AppView.DASHBOARD);
+            }
+        });
     } else {
         resetQuiz();
         setView(AppView.DASHBOARD);
     }
-  };
-  
-  const confirmExit = () => {
-    resetQuiz();
-    setView(AppView.DASHBOARD);
   };
 
   if (quotaExceeded) {
@@ -150,37 +165,25 @@ export const Quiz: React.FC = () => {
 
   if (showGeneralResult && suggestedDomain) {
       return (
-        <>
-            <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center px-4 transition-colors duration-300">
-                <div className="max-w-lg w-full bg-white dark:bg-slate-800 rounded-2xl p-8 border border-slate-200 dark:border-slate-700 text-center animate-fade-in-up shadow-xl">
-                    <div className="w-16 h-16 rounded-full bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center mx-auto mb-6">
-                        <CheckCircle2 size={32} />
-                    </div>
-                    <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-4">Initial Analysis Complete</h2>
-                    <p className="text-slate-600 dark:text-slate-300 mb-8 text-lg">
-                        Based on your general preferences, AI suggests you explore <span className="text-blue-600 dark:text-blue-400 font-bold capitalize">{suggestedDomain}</span>.
-                    </p>
-                    <div className="space-y-4">
-                        <Button fullWidth size="lg" onClick={handleContinueToDomain}>
-                            Continue to {suggestedDomain.charAt(0).toUpperCase() + suggestedDomain.slice(1)} Quiz
-                        </Button>
-                        <Button fullWidth variant="outline" onClick={handleExit}>
-                            Back to Main Menu
-                        </Button>
-                    </div>
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center px-4 transition-colors duration-300">
+            <div className="max-w-lg w-full bg-white dark:bg-slate-800 rounded-2xl p-8 border border-slate-200 dark:border-slate-700 text-center animate-fade-in-up shadow-xl">
+                <div className="w-16 h-16 rounded-full bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center mx-auto mb-6">
+                    <CheckCircle2 size={32} />
+                </div>
+                <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-4">Initial Analysis Complete</h2>
+                <p className="text-slate-600 dark:text-slate-300 mb-8 text-lg">
+                    Based on your general preferences, AI suggests you explore <span className="text-blue-600 dark:text-blue-400 font-bold capitalize">{suggestedDomain}</span>.
+                </p>
+                <div className="space-y-4">
+                    <Button fullWidth size="lg" onClick={handleContinueToDomain}>
+                        Continue to {suggestedDomain.charAt(0).toUpperCase() + suggestedDomain.slice(1)} Quiz
+                    </Button>
+                    <Button fullWidth variant="outline" onClick={handleExit}>
+                        Back to Main Menu
+                    </Button>
                 </div>
             </div>
-            <ConfirmModal
-                isOpen={showExitConfirm}
-                onClose={() => setShowExitConfirm(false)}
-                onConfirm={confirmExit}
-                title="Exit Assessment?"
-                description="If you exit now, your quiz progress will be lost. This will not use up a career assessment credit."
-                confirmText="Yes, Exit"
-                cancelText="Stay Here"
-                variant="info"
-            />
-        </>
+        </div>
       );
   }
 

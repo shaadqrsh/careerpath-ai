@@ -28,11 +28,9 @@ const App: React.FC = () => {
     setView, 
     setUser, 
     setSavedCareers, 
-    pendingDeleteCareer, 
-    confirmDeleteCareer, 
-    cancelDeleteCareer, 
+    confirmation,
+    hideConfirm, 
     toast, 
-    isDeletingCareer, 
     showToast, 
     logout, 
     modal 
@@ -213,17 +211,15 @@ const App: React.FC = () => {
       />
 
       <ConfirmModal
-        isOpen={!!pendingDeleteCareer}
-        onClose={cancelDeleteCareer}
-        onConfirm={confirmDeleteCareer}
-        title="Unsave Career?"
-        description={
-          <p>
-            Are you sure you want to remove <strong>{pendingDeleteCareer?.title}</strong> from your saved paths? This action cannot be undone.
-          </p>
-        }
-        confirmText="Yes, Remove It"
-        isLoading={isDeletingCareer}
+        isOpen={!!confirmation && confirmation.isOpen}
+        onClose={hideConfirm}
+        onConfirm={confirmation?.onConfirm || (() => {})}
+        title={confirmation?.title || ''}
+        description={confirmation?.description}
+        confirmText={confirmation?.confirmText}
+        cancelText={confirmation?.cancelText}
+        variant={confirmation?.variant}
+        isLoading={confirmation?.isLoading}
       />
     </div>
   );

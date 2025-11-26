@@ -4,7 +4,6 @@ import { AppView, Slide } from '../types';
 import { generateStorySlides } from '../services/geminiService';
 import { uploadCareerImages, saveCareerToDb, getUserProfile } from '../services/supabaseService';
 import { X, ChevronLeft, ChevronRight, Loader2, ImageOff, AlertOctagon, ArrowLeft, ArrowRight, Image as ImageIcon } from 'lucide-react';
-import { AlertModal } from '../components/AlertModal';
 
 const BananaIcon = ({ className }: { className?: string }) => (
     <svg 
@@ -64,6 +63,21 @@ export const Slideshow: React.FC = () => {
         });
     }
   }, [quotaError, showModal, hideModal, setView, user]);
+
+  useEffect(() => {
+      if (allFailed) {
+          showModal({
+            icon: <ImageOff className="w-12 h-12 text-slate-600 mx-auto mb-6" />,
+            title: "Visualizations are not available",
+            description: "We couldn't generate the scenes for this career right now. Please try again later.",
+            buttonText: "Close",
+            onButtonClick: () => {
+                hideModal();
+                setView(AppView.CAREER_DETAIL);
+            }
+          });
+      }
+  }, [allFailed, showModal, hideModal, setView]);
 
   useEffect(() => {
     const texts = [
@@ -294,7 +308,7 @@ export const Slideshow: React.FC = () => {
     }
   };
 
-  if (quotaError) {
+  if (quotaError || allFailed) {
       return null;
   }
 
@@ -332,19 +346,6 @@ export const Slideshow: React.FC = () => {
         </div>
       </div>
     );
-  }
-
-  if (allFailed || slides.length === 0) {
-      return (
-        <AlertModal
-            isOpen={true}
-            icon={<ImageOff className="w-12 h-12 text-slate-600 mx-auto mb-6" />}
-            title="Visualizations are not available"
-            description="We couldn't generate the scenes for this career right now. Please try again later."
-            buttonText="Close"
-            onButtonClick={() => setView(AppView.CAREER_DETAIL)}
-        />
-      );
   }
 
   const slide = slides[currentSlide];
