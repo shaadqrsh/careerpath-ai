@@ -249,14 +249,20 @@ async def reset_password(req: PasswordResetRequest):
 
 @app.post("/api/auth/update-password")
 async def update_password(req: UpdatePasswordRequest, authorization: str = Header(None), user = Depends(verify_token)):
-    token = authorization.split(" ")[1]
-    client = get_user_client(token)
-    try: 
-        res = client.auth.update_user({ "password": req.password })
-        if not res.user: raise Exception("Update failed")
-    except Exception as e: 
-        logger.error(f"Pwd update error: {e}")
-        raise HTTPException(status_code=500, detail="Failed to update password")
+    url = f"{SUPABASE_URL}/auth/v1/user"
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "apikey": SUPABASE_KEY,
+        "Content-Type": "application/json"
+    }
+    
+    async with httpx.AsyncClient() as client:
+        response = await client.put(url, json={"password": req.password}, headers=headers)
+        
+        if response.status_code != 200:
+            logger.error(f"Pwd update failed: {response.text}")
+            raise HTTPException(status_code=500, detail="Failed to update password")
+            
     return {"status": "success"}
 
 @app.get("/api/auth/me")
