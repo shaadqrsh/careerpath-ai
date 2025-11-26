@@ -399,7 +399,8 @@ async def generate_career(req: GenerateCareerRequest, authorization: str = Heade
         raise HTTPException(status_code=500, detail="AI generation failed")
 
 @app.post("/api/generate-career-details")
-async def generate_career_details(req: GenerateCareerDetailsRequest, authorization: str = Header(None), user = Depends(verify_token)):    
+async def generate_career_details(req: GenerateCareerDetailsRequest, authorization: str = Header(None), user = Depends(verify_token)):
+    
     try:
         user_p = req.user_profile
         safe_title = sanitize_input(req.career_title)
@@ -415,7 +416,10 @@ async def generate_career_details(req: GenerateCareerDetailsRequest, authorizati
         Task:
         1. Create a detailed Education Roadmap (3-4 steps) to get from current state to {safe_title}.
            - Split into 'localPath' ({user_p.residence_country}) and 'targetPath' ({user_p.preferred_work_country}) if different.
-        2. Pivot Analysis: Is this a "Natural Progression" or "Major Pivot"? Explain briefly.
+           - Address the user as "You" or "Your" in step descriptions. Do NOT use their name.
+        2. Pivot Analysis: Is this a "Natural Progression" or "Major Pivot"? 
+           - Explain briefly (1-2 sentences MAX).
+           - Address the user as "You" or "Your". Do NOT use their name.
         3. Generate {prompts_count} 'Day in the Life' image prompts.
            - GLORIFY THE JOB. Make it sound prestigious, cinematic, high-impact, and inspiring.
            - Examples: "Addressing a global summit," "Designing a futuristic city," "Making a breakthrough discovery."
@@ -424,9 +428,9 @@ async def generate_career_details(req: GenerateCareerDetailsRequest, authorizati
         OUTPUT FORMAT: STRICT JSON.
         {{
             "isPivot": boolean,
-            "pivotAnalysis": "string",
+            "pivotAnalysis": "Short 1-2 sentence analysis...",
             "roadmap": [
-                 {{ "title": "Step Name", "description": "Details...", "localPath": "...", "targetPath": "...", "duration": "Duration" }}
+                 {{ "title": "Step Name", "description": "Details using 'You'...", "localPath": "...", "targetPath": "...", "duration": "Duration" }}
             ],
             "dayInLifePrompts": ["Glorified prompt 1", "Glorified prompt 2", "Glorified prompt 3"]
         }}

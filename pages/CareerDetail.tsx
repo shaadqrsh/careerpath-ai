@@ -73,7 +73,7 @@ export const CareerDetail: React.FC = () => {
             <div className="flex justify-between items-center z-10 animate-fade-in-up opacity-0" style={{ animationDelay: '0ms' }}>
                 <button 
                     onClick={() => setView(backTarget)}
-                    disabled={isSavingCareer}
+                    disabled={isSavingCareer || loadingDetails}
                     className="text-white/80 hover:text-white flex items-center gap-2 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed bg-black/20 backdrop-blur-sm px-3 py-1.5 rounded-full"
                 >
                     <ChevronLeft size={20} /> {backLabel}
@@ -113,7 +113,7 @@ export const CareerDetail: React.FC = () => {
                             isSaved 
                             ? 'bg-pink-500/20 border-pink-500/50 text-pink-500' 
                             : 'bg-white/10 dark:bg-slate-800/50 border-white/20 dark:border-slate-600 hover:bg-white/20 dark:hover:bg-slate-700 text-white'
-                        }`}
+                        } disabled:opacity-50 disabled:cursor-not-allowed`}
                         title={isSaved ? "Unsave Career" : "Save Career"}
                      >
                         {isSavingCareer ? (
@@ -131,7 +131,7 @@ export const CareerDetail: React.FC = () => {
                         title="View a day in life visualization"
                      >
                         <PlayCircle className="w-5 h-5 mr-2" />
-                        {isSavingCareer ? "Saving..." : "View Day in Life"}
+                        {isSavingCareer ? "Saving..." : (loadingDetails ? "Generating Roadmap..." : "View Day in Life")}
                      </Button>
                 </div>
             </div>
