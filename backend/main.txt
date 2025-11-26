@@ -249,6 +249,7 @@ async def reset_password(req: PasswordResetRequest):
 
 @app.post("/api/auth/update-password")
 async def update_password(req: UpdatePasswordRequest, authorization: str = Header(None), user = Depends(verify_token)):
+    token = authorization.split(" ")[1]
     url = f"{SUPABASE_URL}/auth/v1/user"
     headers = {
         "Authorization": f"Bearer {token}",
@@ -360,7 +361,7 @@ STRICT ELIGIBILITY: Do not suggest careers that fundamentally require a differen
 
 For salaryRange, provide realistic figures for the TARGET COUNTRY ({user_p.preferred_work_country}) in local currency or USD.
 
-Address the user as "you" throughout. Do NOT use their name.
+Address the user as "you" throughout. Do NOT use their name. Do not mention the question numbers of the quiz answers anywhere in your response, just vaguely mention the answers the user gave if needed.
 
 OUTPUT FORMAT: Strict JSON
 {{
@@ -420,6 +421,7 @@ Create a 3-4 step educational and professional roadmap to reach {safe_title}.
 - Include realistic timeframes (not overly optimistic)
 - If residence ({user_p.residence_country}) and target ({user_p.preferred_work_country}) countries differ, note where each step is best completed using localPath and targetPath
 - Address the user as "you" - do NOT use their name
+- The description of the step shouldn't be more than in 2-3 short sentences.
 - REQUIRED FIELDS: title, description, duration, localPath, targetPath
 - OPTIONAL FIELD: challenges (Only include if there is a significant, non-obvious hurdle at this step. Otherwise return null.)
 
@@ -480,9 +482,15 @@ async def generate_images(req: GenerateImagesRequest, authorization: str = Heade
         subject = "a professional"
         if req.user_context:
             age = req.future_age or (req.user_context.age + 5)
-            subject = f"a {age} year old {req.user_context.gender} {req.user_context.residence_country} professional"
-        async def gen_one(p):
-            safe_prompt = sanitize_input(p)[:500]
+            subject = f"a {age}yo {req.user_context.gender} professional"
+
+        safe_prompts = req.prompts[:SLIDESHOW_IMAGE_COUNT]
+        results = []
+
+        model = genai.GenerativeModel(IMAGE_MODEL_NAME)
+
+        for index, p in enumerate(safe_prompts):
+            safe_prompt = sanitize_input(p)[:300] 
             context = random.choice(REALISM_CONTEXTS)
             prompt = f"""
 Realistic photograph of {subject} working as a {safe_title} {context}.
@@ -493,25 +501,29 @@ NOT glamorized or cinematic - capture the real, everyday nature of this work.
 Mood: Focused, professional, relatable.
 Negative: text, words, watermarks, logos, unrealistic lighting, overly dramatic poses.
 """
-            for i in range(2):
+            image_result = None
+            for attempt in range(3):
                 try:
-                    model = genai.GenerativeModel(IMAGE_MODEL_NAME)
                     res = await model.generate_content_async(prompt)
                     if res.candidates and res.candidates[0].content.parts:
                         part = res.candidates[0].content.parts[0]
                         if hasattr(part, 'inline_data') and part.inline_data:
-                            return f"data:{part.inline_data.mime_type};base64,{base64.b64encode(part.inline_data.data).decode('utf-8')}"
-                except Exception as img_err:
-                    logger.warning(f"Image generation attempt {i+1} failed: {img_err}")
-                    await asyncio.sleep(1.5)
-            return None
-        
-        safe_prompts = req.prompts[:SLIDESHOW_IMAGE_COUNT]
-        results = []
-        for p in safe_prompts:
-            res = await gen_one(p)
-            results.append(res)
-            await asyncio.sleep(1.0) 
+                            image_result = f"data:{part.inline_data.mime_type};base64,{base64.b64encode(part.inline_data.data).decode('utf-8')}"
+                            break
+                except Exception as e:
+                    err_str = str(e)
+                    if "429" in err_str or "ResourceExhausted" in err_str or "Quota" in err_str:
+                        wait_time = (attempt + 1) * 4
+                        logger.warning(f"Image Quota hit (img {index}, att {attempt}). Waiting {wait_time}s...")
+                        await asyncio.sleep(wait_time)
+                    else:
+                        logger.warning(f"Image Gen Error (img {index}, att {attempt}): {e}")
+                        await asyncio.sleep(1.5)
+
+            results.append(image_result)
+            
+            if image_result and index < len(safe_prompts) - 1:
+                await asyncio.sleep(2.0)
             
         return {"images": results}
     except Exception as e:
