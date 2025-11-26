@@ -4,6 +4,7 @@ import { AppView, Slide } from '../types';
 import { generateStorySlides } from '../services/geminiService';
 import { uploadCareerImages, saveCareerToDb, getUserProfile } from '../services/supabaseService';
 import { X, ChevronLeft, ChevronRight, Loader2, ImageOff, AlertOctagon, ArrowLeft, ArrowRight, Image as ImageIcon } from 'lucide-react';
+import { AlertModal } from '../components/AlertModal';
 
 const BananaIcon = ({ className }: { className?: string }) => (
     <svg 
@@ -335,21 +336,14 @@ export const Slideshow: React.FC = () => {
 
   if (allFailed || slides.length === 0) {
       return (
-        <div className="fixed inset-0 bg-black/95 z-[60] flex flex-col items-center justify-center text-white p-4 text-center animate-fade-in">
-            <div className="bg-slate-900 p-8 rounded-2xl border border-slate-800 max-w-md shadow-2xl animate-fade-in-up">
-                <ImageOff className="w-12 h-12 text-slate-600 mx-auto mb-6" />
-                <h3 className="text-xl font-bold mb-3">Visualizations are not available</h3>
-                <p className="text-slate-400 mb-8">
-                    We couldn't generate the scenes for this career right now. Please try again later.
-                </p>
-                <button 
-                    onClick={() => setView(AppView.CAREER_DETAIL)} 
-                    className="px-8 py-3 bg-white text-black hover:bg-slate-200 rounded-xl transition-colors font-bold"
-                >
-                    Close
-                </button>
-            </div>
-        </div>
+        <AlertModal
+            isOpen={true}
+            icon={<ImageOff className="w-12 h-12 text-slate-600 mx-auto mb-6" />}
+            title="Visualizations are not available"
+            description="We couldn't generate the scenes for this career right now. Please try again later."
+            buttonText="Close"
+            onButtonClick={() => setView(AppView.CAREER_DETAIL)}
+        />
       );
   }
 

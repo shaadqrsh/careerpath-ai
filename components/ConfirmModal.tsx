@@ -28,19 +28,19 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
+    <div className="fixed inset-0 z-[200] flex items-center justify-center px-4 animate-fade-in">
       <div 
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity" 
+        className="absolute inset-0 bg-black/95 transition-opacity" 
         onClick={!isLoading ? onClose : undefined}
       />
-      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-md w-full p-6 relative z-10 animate-[scaleIn_0.2s_ease-out] border border-slate-200 dark:border-slate-700">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-md w-full p-6 relative z-10 animate-fade-in-up border border-slate-200 dark:border-slate-700">
         
         <div className={`flex items-center gap-3 mb-4 ${variant === 'danger' ? 'text-amber-600 dark:text-amber-500' : 'text-blue-600 dark:text-blue-500'}`}>
           {variant === 'danger' ? <AlertTriangle size={28} /> : <HelpCircle size={28} />}
           <h3 className="text-xl font-bold text-slate-900 dark:text-white">{title}</h3>
         </div>
         
-        <div className="text-slate-600 dark:text-slate-300 mb-6">
+        <div className="text-slate-600 dark:text-slate-300 mb-6 leading-relaxed">
           {description}
         </div>
         

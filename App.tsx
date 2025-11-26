@@ -2,10 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { useAppStore } from './store';
 import { AppView } from './types';
 import { getUserProfile, getSavedCareers, getCurrentUser } from './services/supabaseService';
-import { Loader2, CheckCircle, XCircle } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { APP_NAME } from './constants';
 import { ConfirmModal } from './components/ConfirmModal';
-import { Button } from './components/Button';
+import { AlertModal } from './components/AlertModal';
+import { Toast } from './components/Toast';
 
 import { Landing } from './pages/Landing';
 import { Auth } from './pages/Auth';
@@ -19,25 +20,6 @@ import { Slideshow } from './pages/Slideshow';
 import { Profile } from './pages/Profile';
 import { SavedPaths } from './pages/SavedPaths';
 import { UpdatePassword } from './pages/UpdatePassword';
-
-const FullScreenInfoModal: React.FC<{
-  icon: React.ReactNode;
-  title: string;
-  description: React.ReactNode;
-  buttonText: string;
-  onButtonClick: () => void;
-}> = ({ icon, title, description, buttonText, onButtonClick }) => (
-  <div className="fixed inset-0 bg-black/95 z-[200] flex flex-col items-center justify-center text-white p-4 text-center animate-fade-in">
-    <div className="bg-slate-900 p-8 rounded-2xl border border-red-900/50 max-w-md shadow-2xl animate-fade-in-up">
-      {icon}
-      <h3 className="text-2xl font-bold mb-3">{title}</h3>
-      <p className="text-slate-400 mb-8 leading-relaxed">{description}</p>
-      <Button onClick={onButtonClick} className="px-8 py-3 bg-white text-black hover:bg-slate-200 rounded-xl transition-colors font-bold">
-        {buttonText}
-      </Button>
-    </div>
-  </div>
-);
 
 const App: React.FC = () => {
   const { currentView, theme, setView, setUser, setSavedCareers, pendingDeleteCareer, confirmDeleteCareer, cancelDeleteCareer, toast, isDeletingCareer, showToast, logout, modal } = useAppStore();
@@ -200,14 +182,13 @@ const App: React.FC = () => {
       );
   }
 
-  const toastBgColor = toast.type === 'error' ? 'bg-red-600' : 'bg-emerald-600';
-
   return (
     <div className="min-h-screen transition-colors duration-300 bg-slate-50 text-slate-900 dark:bg-slate-900 dark:text-slate-50 relative">
       {renderView()}
 
-      {modal && modal.isOpen && (
-        <FullScreenInfoModal
+      {modal && (
+        <AlertModal
+          isOpen={modal.isOpen}
           icon={modal.icon}
           title={modal.title}
           description={modal.description}
@@ -216,18 +197,11 @@ const App: React.FC = () => {
         />
       )}
 
-      {toast.show && (
-        <div className={`fixed top-24 left-1/2 -translate-x-1/2 ${toastBgColor} text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 animate-[fadeIn_0.3s_ease-out] z-[150]`}>
-            {toast.type === 'error' ? (
-               <XCircle className="text-white shrink-0" />
-            ) : (
-               <CheckCircle className="text-white shrink-0" />
-            )}
-            <div>
-                <p className="font-bold">{toast.message}</p>
-            </div>
-        </div>
-      )}
+      <Toast 
+        show={toast.show}
+        message={toast.message}
+        type={toast.type}
+      />
 
       <ConfirmModal
         isOpen={!!pendingDeleteCareer}
