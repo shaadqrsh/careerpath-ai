@@ -24,12 +24,15 @@ GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "").strip()
 
 FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:3000")
 
+# Visible Limits (User Facing)
 DAILY_IMAGE_LIMIT = 3
 DAILY_CAREER_LIMIT = 5
 
+# Hidden Anti-Abuse Limits (Backend Enforcement)
 DAILY_GENERAL_QUIZ_LIMIT = 20  
 DAILY_DETAILS_VIEW_LIMIT = 50 
 
+# Configuration Constants
 SLIDESHOW_IMAGE_COUNT = 3
 CAREERS_PER_GENERATION = 5
 
@@ -100,6 +103,13 @@ class PasswordResetRequest(BaseSchema):
 class UpdatePasswordRequest(BaseSchema):
     password: str
 
+class Limits(BaseSchema):
+    daily_image_limit: int = DAILY_IMAGE_LIMIT
+    daily_career_limit: int = DAILY_CAREER_LIMIT
+    daily_general_quiz_limit: int = DAILY_GENERAL_QUIZ_LIMIT
+    daily_details_view_limit: int = DAILY_DETAILS_VIEW_LIMIT
+    slideshow_image_count: int = SLIDESHOW_IMAGE_COUNT # <-- ADDED
+
 class UserProfile(BaseSchema):
     id: str
     full_name: str
@@ -115,6 +125,7 @@ class UserProfile(BaseSchema):
     daily_details_view_count: Optional[int] = 0
     last_image_generation_date: Optional[datetime] = None
     last_career_generation_date: Optional[datetime] = None
+    limits: Optional[Limits] = None 
 
 class CareerRoadmapStep(BaseSchema):
     title: str
@@ -247,7 +258,15 @@ async def get_profile(authorization: str = Header(None), user = Depends(verify_t
     try:
         res = client.table("profiles").select("*").eq("id", user.id).single().execute()
         if not res.data: raise HTTPException(status_code=404, detail="Profile not found")
-        return res.data
+        profile = res.data
+        profile['limits'] = {
+            'daily_image_limit': DAILY_IMAGE_LIMIT,
+            'daily_career_limit': DAILY_CAREER_LIMIT,
+            'daily_general_quiz_limit': DAILY_GENERAL_QUIZ_LIMIT,
+            'daily_details_view_limit': DAILY_DETAILS_VIEW_LIMIT,
+            'slideshow_image_count': SLIDESHOW_IMAGE_COUNT
+        }
+        return profile
     except Exception: raise HTTPException(status_code=500, detail="Database error")
 
 @app.post("/api/profile")
@@ -257,7 +276,7 @@ async def upsert_profile(profile: UserProfile, authorization: str = Header(None)
     client = get_user_client(token)
     try:
         data = profile.model_dump(by_alias=False)
-        keys = [k for k in data if 'count' in k or 'date' in k]
+        keys = [k for k in data if 'count' in k or 'date' in k or k == 'limits']
         for k in keys: del data[k]
         client.table("profiles").upsert(data).execute()
         return {"status": "success"}
@@ -268,9 +287,7 @@ async def upsert_profile(profile: UserProfile, authorization: str = Header(None)
 async def generate_domain(req: GenerateDomainRequest, authorization: str = Header(None), user = Depends(verify_token)):
     token = authorization.split(" ")[1]
     client = get_user_client(token)
-    
     increment_and_verify_quota(client, user.id, "daily_general_quiz_count", "last_career_generation_date", DAILY_GENERAL_QUIZ_LIMIT, "You have taken the general quiz too many times today.")
-
     try:
         prompt = f"Analyze quiz answers: {sanitize_quiz_answers(req.quiz_answers)}. Suggest domain: 'science', 'commerce', or 'arts'. Output JSON: {{ \"suggested_domain\": \"name\" }}"
         model = genai.GenerativeModel(TEXT_MODEL_NAME)
@@ -282,9 +299,7 @@ async def generate_domain(req: GenerateDomainRequest, authorization: str = Heade
 async def generate_career(req: GenerateCareerRequest, authorization: str = Header(None), user = Depends(verify_token)):
     token = authorization.split(" ")[1]
     client = get_user_client(token)
-
     increment_and_verify_quota(client, user.id, "daily_career_generations_count", "last_career_generation_date", DAILY_CAREER_LIMIT)
-
     try:
         prompt = f"""
         Act as an expert Career Counselor.
@@ -297,12 +312,10 @@ async def generate_career(req: GenerateCareerRequest, authorization: str = Heade
         model = genai.GenerativeModel(TEXT_MODEL_NAME)
         response = await model.generate_content_async(prompt, generation_config={"response_mime_type": "application/json"})
         result_json = json.loads(response.text)
-        
         for rec in result_json.get("recommendations", []):
             if not rec.get("id"): rec["id"] = str(uuid.uuid4())
             rec["roadmap"] = []
             rec["dayInLifePrompts"] = []
-            
         return {"recommendations": result_json["recommendations"]}
     except Exception as e:
         logger.error(f"Career Gen Error: {e}")
@@ -312,9 +325,7 @@ async def generate_career(req: GenerateCareerRequest, authorization: str = Heade
 async def generate_career_details(req: GenerateCareerDetailsRequest, authorization: str = Header(None), user = Depends(verify_token)):
     token = authorization.split(" ")[1]
     client = get_user_client(token)
-
-    increment_and_verify_quota(client, user.id, "daily_details_view_count", "last_career_generation_date", DAILY_DETAILS_VIEW_LIMIT, "You have viewed details too many times today.")
-
+    increment_and_verify_quota(client, user.id, "daily_details_view_count", "last_career_generation_date", DAILY_DETAILS_VIEW_LIMIT, "Usage limit reached for career details generation.")
     try:
         prompt = f"""
         Act as a visionary Career Coach. Goal: {sanitize_input(req.career_title)}. Context: {req.career_summary}.
@@ -340,7 +351,6 @@ async def generate_images(req: GenerateImagesRequest, authorization: str = Heade
         safe_title = sanitize_input(req.career_title)
         subject = f"a professional"
         if req.user_context: subject = f"a {req.future_age}yo {req.user_context.gender} {req.user_context.residence_country} national"
-        
         async def gen_one(p):
             prompt = f"Cinematic shot of {subject} working as {safe_title}. Scene: {sanitize_input(p)}. Photorealistic 4k. Negative: text, words."
             for i in range(2):
@@ -351,7 +361,6 @@ async def generate_images(req: GenerateImagesRequest, authorization: str = Heade
                         return f"data:{res.candidates[0].content.parts[0].inline_data.mime_type};base64,{base64.b64encode(res.candidates[0].content.parts[0].inline_data.data).decode('utf-8')}"
                 except: await asyncio.sleep(1.5)
             return None
-
         tasks = [gen_one(p) for p in req.prompts]
         return {"images": await asyncio.gather(*tasks)}
     except Exception: return {"images": [None]*len(req.prompts)}

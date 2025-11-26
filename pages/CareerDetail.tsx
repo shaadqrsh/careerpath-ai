@@ -2,11 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { useAppStore } from '../store';
 import { AppView } from '../types';
 import { Button } from '../components/Button';
-import { ChevronLeft, PlayCircle, Heart, MapPin, Briefcase, GraduationCap, Loader2, ArrowRightCircle, Shuffle, Star, DollarSign, TrendingUp } from 'lucide-react';
+import { ChevronLeft, PlayCircle, Heart, MapPin, Briefcase, GraduationCap, Loader2, ArrowRightCircle, Shuffle, Star, DollarSign, TrendingUp, AlertOctagon } from 'lucide-react';
 import { generateCareerDetails } from '../services/geminiService';
 
 export const CareerDetail: React.FC = () => {
-  const { selectedCareer, setView, careerOrigin, user, toggleSavedCareer, savedCareers, isSavingCareer, recommendations, updateCareerDetails, showToast } = useAppStore();
+  const { selectedCareer, setView, careerOrigin, user, toggleSavedCareer, savedCareers, isSavingCareer, recommendations, updateCareerDetails, showToast, showModal, hideModal } = useAppStore();
   
   const [loadingDetails, setLoadingDetails] = useState(false);
 
@@ -21,9 +21,22 @@ export const CareerDetail: React.FC = () => {
                 if (isMounted) {
                     updateCareerDetails(selectedCareer.id, details);
                 }
-            } catch (error) {
+            } catch (error: any) {
                 console.error("Failed to load career details", error);
-                showToast("Failed to load in-depth details. Please try refreshing.");
+                if (error.message && error.message.includes("Usage limit reached")) {
+                     showModal({
+                        icon: <AlertOctagon className="w-16 h-16 text-red-500 mx-auto mb-6" />,
+                        title: "Usage Limit Reached",
+                        description: "You have viewed too many career details today. Please come back tomorrow.",
+                        buttonText: "Back to Dashboard",
+                        onButtonClick: () => {
+                            hideModal();
+                            setView(AppView.DASHBOARD);
+                        }
+                    });
+                } else {
+                    showToast("Failed to load in-depth details. Please try refreshing.");
+                }
             } finally {
                 if (isMounted) setLoadingDetails(false);
             }
@@ -32,7 +45,7 @@ export const CareerDetail: React.FC = () => {
     }
 
     return () => { isMounted = false; };
-  }, [selectedCareer, user, updateCareerDetails, showToast]);
+  }, [selectedCareer, user, updateCareerDetails, showToast, showModal, hideModal, setView]);
 
   if (!selectedCareer) {
     setView(AppView.DASHBOARD);

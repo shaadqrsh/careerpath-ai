@@ -21,7 +21,7 @@
 This application uses a decoupled architecture for security and scalability:
 
 *   **Frontend**: React, TypeScript, Tailwind, Zustand (State Management).
-*   **Backend**: Python FastAPI (Handles Auth Proxy, Database Logic, and AI Generation).
+*   **Backend**: Python FastAPI (Handles Auth Proxy, Database Logic, AI Generation, and Rate Limiting).
 *   **Database**: Supabase (PostgreSQL + Auth).
 *   **AI Engine**: Google Gemini 2.5 Flash (Reasoning & Visualization).
 
@@ -72,21 +72,19 @@ Follow these steps in order to deploy the application to the cloud.
 
 ## ⚙️ Configuration & Customization
 
-You can customize the application logic, branding, and limits by editing the following files.
+### Backend Config (`backend/main.py`)
+All rate limits and model settings are now controlled centrally in the backend.
+*   **`DAILY_IMAGE_LIMIT`**: Max image generations per user/day.
+*   **`DAILY_CAREER_LIMIT`**: Max career assessments per user/day.
+*   **`DAILY_GENERAL_QUIZ_LIMIT`**: Max "free" general assessments (anti-abuse).
+*   **`DAILY_DETAILS_VIEW_LIMIT`**: Max "free" detail generations (anti-abuse).
+*   **`TEXT_MODEL_NAME`**: Change the Gemini model version.
+*   **`IMAGE_MODEL_NAME`**: Change the model used for visualization.
 
 ### Frontend Config (`constants.ts`)
-Located in the root (or `src/` if strictly structured) directory.
 *   **`APP_NAME`**: Change the display name of the application.
-*   **`DAILY_IMAGE_LIMIT` / `DAILY_CAREER_LIMIT`**: Set the visual UI limits for the user.
 *   **`QUESTIONS`**: Modify or add new questions to the personality/aptitude quiz.
 *   **`FALLBACK_LOCATIONS`**: Update the list of countries available in the onboarding dropdown.
-
-### Backend Config (`backend/main.py`)
-Located in the backend directory.
-*   **`TEXT_MODEL_NAME`**: Change the Gemini model version (e.g., `gemini-1.5-flash`, `gemini-1.5-pro`).
-*   **`IMAGE_MODEL_NAME`**: Change the model used for visualization.
-*   **`DAILY_..._LIMIT`**: Enforce server-side hard limits on generation to protect your API quota.
-*   **`CAREERS_PER_GENERATION`**: Control how many career paths are generated per request (Default: 5).
 
 ---
 

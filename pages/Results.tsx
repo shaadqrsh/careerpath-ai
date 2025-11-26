@@ -9,11 +9,12 @@ export const Results: React.FC = () => {
   const [showExitModal, setShowExitModal] = useState(false);
 
   const handleSelect = (career: CareerRecommendation) => {
-    if (!career.detailsLoaded && user && (user.dailyDetailsViewCount || 0) >= 50) {
+    const detailsLimit = user?.limits?.dailyDetailsViewLimit || 50;
+    if (!career.detailsLoaded && user && (user.dailyDetailsViewCount || 0) >= detailsLimit) {
         showModal({
             icon: <AlertOctagon className="w-16 h-16 text-red-500 mx-auto mb-6" />,
             title: "Usage Limit Reached",
-            description: "You have viewed too many career details today. Please stick to the careers you have already opened or come back tomorrow.",
+            description: "You have viewed too many new career details today. Please stick to the careers you have already opened or come back tomorrow.",
             buttonText: "Okay",
             onButtonClick: hideModal
         });

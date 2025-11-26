@@ -49,26 +49,37 @@ const toDbProfile = (p: UserProfile) => ({
     age: p.age || 0,
     education_level: p.educationLevel || '',
     specialization: p.specialization || '',
-    residence_country: p.residenceCountry || '',
+    residence_country: p.residence_country || '',
     preferred_work_country: p.preferredWorkCountry || ''
 });
 
-const fromDbProfile = (d: any): UserProfile => ({
-    id: d.id,
-    fullName: d.full_name,
-    gender: d.gender,
-    age: d.age,
-    educationLevel: d.education_level,
-    specialization: d.specialization,
-    residenceCountry: d.residence_country,
-    preferredWorkCountry: d.preferred_work_country,
-    dailyImageGenerationsCount: d.daily_image_generations_count,
-    lastImageGenerationDate: d.last_image_generation_date,
-    dailyCareerGenerationsCount: d.daily_career_generations_count,
-    lastCareerGenerationDate: d.last_career_generation_date,
-    dailyGeneralQuizCount: d.daily_general_quiz_count,
-    dailyDetailsViewCount: d.daily_details_view_count
-});
+const fromDbProfile = (d: any): UserProfile => {
+    const limits = d.limits ? {
+        dailyImageLimit: d.limits.daily_image_limit,
+        dailyCareerLimit: d.limits.daily_career_limit,
+        dailyGeneralQuizLimit: d.limits.daily_general_quiz_limit,
+        dailyDetailsViewLimit: d.limits.daily_details_view_limit,
+        slideshowImageCount: d.limits.slideshow_image_count // <-- ADDED
+    } : undefined;
+
+    return {
+        id: d.id,
+        fullName: d.full_name,
+        gender: d.gender,
+        age: d.age,
+        educationLevel: d.education_level,
+        specialization: d.specialization,
+        residenceCountry: d.residence_country,
+        preferredWorkCountry: d.preferred_work_country,
+        dailyImageGenerationsCount: d.daily_image_generations_count,
+        lastImageGenerationDate: d.last_image_generation_date,
+        dailyCareerGenerationsCount: d.daily_career_generations_count,
+        lastCareerGenerationDate: d.last_career_generation_date,
+        dailyGeneralQuizCount: d.daily_general_quiz_count,
+        dailyDetailsViewCount: d.daily_details_view_count,
+        limits: limits
+    };
+};
 
 const toDbCareer = (c: CareerRecommendation) => ({
     id: c.id,
@@ -124,11 +135,7 @@ export const signInWithEmail = async (email: string, password: string) => {
             method: 'POST',
             body: JSON.stringify({ email, password })
         });
-        
-        if (!response.ok) {
-           throw new Error("Login failed");
-        }
-        
+        if (!response.ok) throw new Error("Login failed");
         const data = await response.json();
         setToken(data.access_token);
         return { user: data.user, session: data };
@@ -144,11 +151,7 @@ export const signUpWithEmail = async (email: string, password: string) => {
             method: 'POST',
             body: JSON.stringify({ email, password })
         });
-
-        if (!response.ok) {
-            throw new Error("Signup failed");
-        }
-        
+        if (!response.ok) throw new Error("Signup failed");
         return await response.json();
     } catch (e) {
         console.error("Sign Up Error:", e);
@@ -162,7 +165,6 @@ export const sendPasswordResetEmail = async (email: string) => {
             method: 'POST',
             body: JSON.stringify({ email })
         });
-
         if (!response.ok) throw new Error("Failed to send reset email");
         return true;
     } catch (e) {
@@ -177,7 +179,6 @@ export const updateUserPassword = async (password: string) => {
             method: 'POST',
             body: JSON.stringify({ password })
         });
-
         if (!response.ok) throw new Error("Failed to update password");
         return true;
     } catch (e) {
@@ -193,26 +194,18 @@ export const signOut = async () => {
 export const getCurrentUser = async (): Promise<AuthUser | null> => {
     const token = getToken();
     if (!token) return null;
-
     try {
         const response = await apiFetch(`${API_BASE_URL}/api/auth/me`);
-        if (!response.ok) {
-            clearToken();
-            return null;
-        }
+        if (!response.ok) { clearToken(); return null; }
         return await response.json();
-    } catch (e) {
-        return null;
-    }
+    } catch (e) { return null; }
 };
 
 export const getUserProfile = async (userId: string): Promise<UserProfile | null> => {
     try {
         const response = await apiFetch(`${API_BASE_URL}/api/profile`);
-        
         if (response.status === 404) return null;
         if (!response.ok) throw new Error(`Profile fetch failed: ${response.status}`);
-
         const data = await response.json();
         return fromDbProfile(data);
     } catch (e) {
@@ -227,7 +220,6 @@ export const upsertUserProfile = async (profile: UserProfile) => {
             method: 'POST',
             body: JSON.stringify(toDbProfile(profile))
         });
-        
         if (!response.ok) throw new Error("Failed to save profile");
     } catch (e) {
         console.error("Error saving profile:", e);
@@ -235,23 +227,13 @@ export const upsertUserProfile = async (profile: UserProfile) => {
     }
 };
 
-export const uploadCareerImages = async (
-  userId: string, 
-  careerUid: string, 
-  images: string[]
-): Promise<string[]> => {
+export const uploadCareerImages = async (userId: string, careerUid: string, images: string[]): Promise<string[]> => {
     try {
         const response = await apiFetch(`${API_BASE_URL}/api/career-images`, {
             method: 'POST',
-            body: JSON.stringify({
-                user_id: userId,
-                career_uid: careerUid,
-                images: images
-            })
+            body: JSON.stringify({ user_id: userId, career_uid: careerUid, images: images })
         });
-
         if (!response.ok) throw new Error("Image upload failed");
-        
         const data = await response.json();
         return data.image_urls;
     } catch (e) {
@@ -263,9 +245,7 @@ export const uploadCareerImages = async (
 export const getSavedCareers = async (userId: string): Promise<CareerRecommendation[]> => {
     try {
         const response = await apiFetch(`${API_BASE_URL}/api/saved-careers`);
-        
         if (!response.ok) throw new Error("Failed to fetch saved careers");
-
         const data = await response.json();
         return data.map(fromDbCareer);
     } catch (e) {
@@ -280,7 +260,6 @@ export const saveCareerToDb = async (userId: string, career: CareerRecommendatio
             method: 'POST',
             body: JSON.stringify(toDbCareer(career))
         });
-        
         if (!response.ok) throw new Error("Failed to save career");
     } catch (e) {
         console.error("Error saving career:", e);
@@ -293,7 +272,6 @@ export const deleteCareerFromDb = async (userId: string, careerUid: string) => {
         const response = await apiFetch(`${API_BASE_URL}/api/saved-careers/${careerUid}`, {
             method: 'DELETE'
         });
-        
         if (!response.ok) throw new Error("Failed to delete career");
     } catch (e) {
         console.error("Error deleting career:", e);

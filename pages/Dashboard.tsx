@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useAppStore } from '../store';
 import { AppView, CareerDomain } from '../types';
 import { Beaker, Briefcase, Palette, LogOut, User, Heart, HelpCircle, ArrowRight, Zap, Image, Menu, X, AlertOctagon } from 'lucide-react';
-import { APP_NAME, DAILY_CAREER_LIMIT, DAILY_IMAGE_LIMIT } from '../constants';
+import { APP_NAME } from '../constants';
 
 export const Dashboard: React.FC = () => {
   const { setView, setDomain, savedCareers, hasViewedSavedPaths, user, logout, showModal, hideModal } = useAppStore();
@@ -25,8 +25,10 @@ export const Dashboard: React.FC = () => {
             return Math.max(0, limit - (count || 0));
         };
 
-        setCareerQuota(getRemaining(user.dailyCareerGenerationsCount, user.lastCareerGenerationDate, DAILY_CAREER_LIMIT));
-        setImageQuota(getRemaining(user.dailyImageGenerationsCount, user.lastImageGenerationDate, DAILY_IMAGE_LIMIT));
+        const careerLimit = user.limits?.dailyCareerLimit ?? 5;
+        const imageLimit = user.limits?.dailyImageLimit ?? 3;
+        setCareerQuota(getRemaining(user.dailyCareerGenerationsCount, user.lastCareerGenerationDate, careerLimit));
+        setImageQuota(getRemaining(user.dailyImageGenerationsCount, user.lastImageGenerationDate, imageLimit));
     }
   }, [user]);
 
@@ -42,7 +44,8 @@ export const Dashboard: React.FC = () => {
   }, [isMobileMenuOpen]);
 
   const handleStartQuiz = (domain: CareerDomain) => {
-    if (domain === 'general' && user && (user.dailyGeneralQuizCount || 0) >= 20) {
+    const generalQuizLimit = user?.limits?.dailyGeneralQuizLimit ?? 20;
+    if (domain === 'general' && user && (user.dailyGeneralQuizCount || 0) >= generalQuizLimit) {
         showModal({
             icon: <AlertOctagon className="w-16 h-16 text-red-500 mx-auto mb-6" />,
             title: "Usage Limit Reached",
@@ -82,6 +85,8 @@ export const Dashboard: React.FC = () => {
      return "bg-purple-50 dark:bg-purple-900/20 border-purple-100 dark:border-purple-800 text-purple-700 dark:text-purple-300";
   };
 
+  const displayCareerLimit = user?.limits?.dailyCareerLimit ?? 5;
+  const displayImageLimit = user?.limits?.dailyImageLimit ?? 3;
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white transition-colors duration-300">
       <nav className="border-b border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md sticky top-0 z-50 transition-colors">
@@ -106,12 +111,12 @@ export const Dashboard: React.FC = () => {
                  <div className={`flex items-center gap-1.5 px-2 py-1 rounded-md border text-xs font-medium ${getQuotaStyles(careerQuota)}`} title="Daily Career Assessments Remaining">
                     <Zap size={14} />
                     <span className="hidden sm:inline">Assessments:</span>
-                    <span>{careerQuota}/{DAILY_CAREER_LIMIT}</span>
+                    <span>{careerQuota}/{displayCareerLimit}</span>
                  </div>
                  <div className={`flex items-center gap-1.5 px-2 py-1 rounded-md border text-xs font-medium ${getImageQuotaStyles(imageQuota)}`} title="Daily Career Visualization Remaining">
                     <Image size={14} />
                     <span className="hidden sm:inline">Visualizations:</span>
-                    <span>{imageQuota}/{DAILY_IMAGE_LIMIT}</span>
+                    <span>{imageQuota}/{displayImageLimit}</span>
                  </div>
               </div>
 
@@ -204,14 +209,14 @@ export const Dashboard: React.FC = () => {
                             <Zap size={20} />
                             <span className="font-medium">Assessments</span>
                         </div>
-                        <span className="font-bold">{careerQuota}/{DAILY_CAREER_LIMIT}</span>
+                        <span className="font-bold">{careerQuota}/{displayCareerLimit}</span>
                     </div>
                     <div className={`flex items-center justify-between p-3 rounded-xl border ${getImageQuotaStyles(imageQuota)}`}>
                          <div className="flex items-center gap-3">
                             <Image size={20} />
                             <span className="font-medium">Visualizations</span>
                         </div>
-                        <span className="font-bold">{imageQuota}/{DAILY_IMAGE_LIMIT}</span>
+                        <span className="font-bold">{imageQuota}/{displayImageLimit}</span>
                     </div>
                 </div>
             </div>

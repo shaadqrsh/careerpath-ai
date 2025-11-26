@@ -1,6 +1,6 @@
 import React from 'react';
 import { UserProfile, QuizAnswer, CareerRecommendation, Slide, CareerRoadmapStep, CareerDomain } from "../types";
-import { MOCK_CAREERS, API_BASE_URL, SLIDESHOW_IMAGE_COUNT } from "../constants";
+import { MOCK_CAREERS, API_BASE_URL } from "../constants";
 import { useAppStore } from './store';
 import { AlertOctagon } from 'lucide-react';
 
@@ -163,22 +163,26 @@ export const generateCareerImages = async (
 }
 
 export const generateStorySlides = async (career: CareerRecommendation, user?: UserProfile | null): Promise<Slide[]> => {
+    const targetCount = user?.limits?.slideshowImageCount ?? 3;
     let prompts = career.dayInLifePrompts || [];
-    if (prompts.length < SLIDESHOW_IMAGE_COUNT) {
-        const missingCount = SLIDESHOW_IMAGE_COUNT - prompts.length;
+    if (prompts.length < targetCount) {
+        const missingCount = targetCount - prompts.length;
         const filler = [
             "Working focused on a key task in a professional environment",
             "Collaborating with colleagues in a meeting",
             "Achieving a successful outcome or milestone"
         ];
-        prompts = [...prompts, ...filler.slice(0, missingCount)];
+        while(prompts.length < targetCount) {
+            prompts.push(filler[prompts.length % filler.length]);
+        }
     }
+    prompts = prompts.slice(0, targetCount);
 
     const currentImages = career.slideImages || [];
     const missingIndices: number[] = [];
     const promptsToGenerate: string[] = [];
 
-    for (let i = 0; i < SLIDESHOW_IMAGE_COUNT; i++) {
+    for (let i = 0; i < targetCount; i++) {
         if (!currentImages[i] || currentImages[i] === "") { 
             missingIndices.push(i);
             promptsToGenerate.push(prompts[i]);
@@ -201,7 +205,7 @@ export const generateStorySlides = async (career: CareerRecommendation, user?: U
         
         const finalImages = [...currentImages];
         
-        while(finalImages.length < SLIDESHOW_IMAGE_COUNT) finalImages.push(null);
+        while(finalImages.length < targetCount) finalImages.push(null);
 
         missingIndices.forEach((originalIndex, i) => {
             finalImages[originalIndex] = generatedResults[i];
@@ -219,7 +223,7 @@ export const generateStorySlides = async (career: CareerRecommendation, user?: U
         console.error("Partial generation failed:", e);
         
         const finalImages = [...currentImages];
-        while(finalImages.length < SLIDESHOW_IMAGE_COUNT) finalImages.push(null);
+        while(finalImages.length < targetCount) finalImages.push(null);
         
         return prompts.map((text, index) => ({
             id: index,

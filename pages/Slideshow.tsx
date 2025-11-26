@@ -4,7 +4,6 @@ import { AppView, Slide } from '../types';
 import { generateStorySlides } from '../services/geminiService';
 import { uploadCareerImages, saveCareerToDb, getUserProfile } from '../services/supabaseService';
 import { X, ChevronLeft, ChevronRight, Loader2, ImageOff, AlertOctagon, ArrowLeft, ArrowRight, Image as ImageIcon } from 'lucide-react';
-import { DAILY_IMAGE_LIMIT, SLIDESHOW_IMAGE_COUNT } from '../constants';
 
 const BananaIcon = ({ className }: { className?: string }) => (
     <svg 
@@ -51,10 +50,11 @@ export const Slideshow: React.FC = () => {
 
   useEffect(() => {
     if (quotaError) {
+        const limit = user?.limits?.dailyImageLimit ?? 3;
         showModal({
             icon: <AlertOctagon className="w-16 h-16 text-red-500 mx-auto mb-6" />,
             title: "Daily Limit Reached",
-            description: <>You've used all <strong>{DAILY_IMAGE_LIMIT}</strong> free visualizations for today. Please return in 24 hours to generate more career scenes.</>,
+            description: <>You've used all <strong>{limit}</strong> free visualizations for today. Please return in 24 hours to generate more career scenes.</>,
             buttonText: "Return to Career",
             onButtonClick: () => {
                 hideModal();
@@ -62,7 +62,7 @@ export const Slideshow: React.FC = () => {
             }
         });
     }
-  }, [quotaError, showModal, hideModal, setView]);
+  }, [quotaError, showModal, hideModal, setView, user]);
 
   useEffect(() => {
     const texts = [
@@ -111,20 +111,22 @@ export const Slideshow: React.FC = () => {
     const loadSlides = async () => {
       if (selectedCareer && !hasStartedRef.current) {
         
+        const targetCount = user?.limits?.slideshowImageCount ?? 3;
         const existingImages = selectedCareer.slideImages || [];
         const validCount = existingImages.filter(img => img && img.length > 5).length;
-        const needsGeneration = validCount < SLIDESHOW_IMAGE_COUNT;
+        const needsGeneration = validCount < targetCount;
 
         if (needsGeneration && user) {
             const lastDateStr = user.lastImageGenerationDate;
-            let remaining = DAILY_IMAGE_LIMIT;
+            const dailyLimit = user.limits?.dailyImageLimit ?? 3;
+            let remaining = dailyLimit;
             
             if (lastDateStr) {
                 const lastDate = new Date(lastDateStr);
                 const now = new Date();
                 const isSameDay = lastDate.toISOString().split('T')[0] === now.toISOString().split('T')[0];
                 if (isSameDay) {
-                    remaining = Math.max(0, DAILY_IMAGE_LIMIT - (user.dailyImageGenerationsCount || 0));
+                    remaining = Math.max(0, dailyLimit - (user.dailyImageGenerationsCount || 0));
                 }
             }
             

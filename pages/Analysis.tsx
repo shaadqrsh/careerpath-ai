@@ -4,7 +4,6 @@ import { AppView } from '../types';
 import { generateCareerRecommendations } from '../services/geminiService';
 import { getUserProfile } from '../services/supabaseService';
 import { Loader2 } from 'lucide-react';
-import { DAILY_CAREER_LIMIT } from '../constants';
 
 const generateUUID = () => {
     if (typeof crypto !== 'undefined' && crypto.randomUUID) {
@@ -113,7 +112,7 @@ export const Analysis: React.FC = () => {
             });
 
             const sortedResults = [...mergedResults].sort((a, b) => b.matchScore - a.matchScore);
-            setRecommendations(sortedResults); 
+            setRecommendations(sortedResults);
             
             try {
                 const updatedProfile = await getUserProfile(user.id);
@@ -126,7 +125,8 @@ export const Analysis: React.FC = () => {
         } catch (e: any) {
             hasStartedAnalysis.current = false;
             if (e.message === "QUOTA_EXCEEDED") {
-                showToast(`Daily limit reached (${DAILY_CAREER_LIMIT} paths/day). Try again tomorrow.`);
+                const limit = user.limits?.dailyCareerLimit ?? 5;
+                showToast(`Daily limit reached (${limit} paths/day). Try again tomorrow.`);
                 setView(AppView.DASHBOARD);
             } else {
                 console.error("Failed to generate", e);

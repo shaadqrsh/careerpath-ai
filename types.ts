@@ -1,3 +1,11 @@
+export interface Limits {
+    dailyImageLimit: number;
+    dailyCareerLimit: number;
+    dailyGeneralQuizLimit: number;
+    dailyDetailsViewLimit: number;
+    slideshowImageCount: number;
+}
+
 export interface UserProfile {
   id: string;
   fullName: string;
@@ -13,6 +21,7 @@ export interface UserProfile {
   lastCareerGenerationDate?: string;
   dailyGeneralQuizCount?: number;
   dailyDetailsViewCount?: number;
+  limits?: Limits;
 }
 
 export type CareerDomain = 'science' | 'commerce' | 'arts' | 'general';
@@ -47,7 +56,7 @@ export interface CareerRecommendation {
   salaryRange: string;
   growth: string;
   tags: string[];
-  detailsLoaded?: boolean;
+  detailsLoaded?: boolean; 
   isPivot?: boolean;
   pivotAnalysis?: string;
   roadmap?: CareerRoadmapStep[];
