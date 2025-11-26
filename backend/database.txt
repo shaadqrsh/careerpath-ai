@@ -8,7 +8,6 @@ CREATE TABLE public.profiles (
   specialization TEXT,
   residence_country TEXT,
   preferred_work_country TEXT,
-  -- Quotas
   daily_image_generations_count INTEGER DEFAULT 0,
   last_image_generation_date TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
   daily_career_generations_count INTEGER DEFAULT 0,
@@ -35,6 +34,15 @@ CREATE TABLE public.saved_careers (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
   UNIQUE(user_id, career_uid)
 );
+
+CREATE OR REPLACE FUNCTION increment_field(table_name TEXT, field_name TEXT, row_id UUID, increment_val INT)
+RETURNS void AS $$
+BEGIN
+  EXECUTE format('UPDATE public.%I SET %I = %I + %s WHERE id = %L',
+                 table_name, field_name, field_name, increment_val, row_id);
+END;
+$$ LANGUAGE plpgsql;
+
 
 -- 3. Enable Row Level Security
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;

@@ -170,53 +170,41 @@ async def verify_token(authorization: str = Header(None)):
         logger.error(f"Auth error: {e}")
         raise HTTPException(status_code=401, detail="Authentication failed")
 
-def check_quota(client: Client, user_id: str, count_col: str, date_col: str, limit: int) -> int:
+def increment_and_verify_quota(client: Client, user_id: str, count_col: str, date_col: str, limit: int):
     try:
         res = client.table("profiles").select(f"{count_col}, {date_col}").eq("id", user_id).single().execute()
-        if not res.data: return 0 
+        
+        if not res.data:
+            raise HTTPException(status_code=404, detail="User profile not found for quota check.")
         
         data = res.data
         count = data.get(count_col, 0)
         last_date_str = data.get(date_col)
-        
         now = datetime.now(timezone.utc)
-        
+
         if last_date_str:
-            try:
-                last_date = datetime.fromisoformat(last_date_str.replace('Z', '+00:00'))
-            except ValueError:
-                last_date = now
-        else:
-            last_date = now
-        
-        if now.date() > last_date.date():
-            try:
-                client.table("profiles").update({
-                    count_col: 0,
-                    date_col: now.isoformat()
-                }).eq("id", user_id).execute()
+            last_date = datetime.fromisoformat(last_date_str.replace('Z', '+00:00'))
+            if now.date() > last_date.date():
+                client.table("profiles").update({count_col: 0, date_col: now.isoformat()}).eq("id", user_id).execute()
                 count = 0
-            except Exception as update_error:
-                logger.error(f"Failed to reset daily quota: {update_error}")
         
         if count >= limit:
-             raise HTTPException(status_code=429, detail=f"Daily limit reached ({limit}). Please try again tomorrow.")
+            raise HTTPException(status_code=429, detail=f"Daily limit of {limit} reached.")
+
+        client.rpc('increment_field', {
+            'table_name': 'profiles',
+            'field_name': count_col,
+            'row_id': user_id,
+            'increment_val': 1
+        }).execute()
         
-        return count
+        client.table("profiles").update({date_col: now.isoformat()}).eq("id", user_id).execute()
+
     except HTTPException as he:
         raise he
     except Exception as e:
-        logger.error(f"Quota check error: {e}")
-        raise HTTPException(status_code=500, detail="Could not verify quota.")
-
-def update_quota(client: Client, user_id: str, count_col: str, new_count: int):
-    try:
-        client.table("profiles").update({
-            count_col: new_count,
-            "last_image_generation_date" if "image" in count_col else "last_career_generation_date": datetime.now(timezone.utc).isoformat()
-        }).eq("id", user_id).execute()
-    except Exception as e:
-        logger.error(f"Failed to update quota: {e}")
+        logger.error(f"Quota increment error: {e}")
+        raise HTTPException(status_code=500, detail="Could not verify and update quota.")
 
 @app.post("/api/auth/signup")
 async def signup(creds: UserLogin):
@@ -316,15 +304,9 @@ async def upsert_profile(profile: UserProfile, authorization: str = Header(None)
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/generate-domain")
-async def generate_domain(req: GenerateDomainRequest, authorization: str = Header(None), user = Depends(verify_token)):
-    token = authorization.split(" ")[1]
-    client = get_user_client(token)
-    
-    current_count = check_quota(client, user.id, "daily_career_generations_count", "last_career_generation_date", DAILY_CAREER_LIMIT)
-    
+async def generate_domain(req: GenerateDomainRequest, user = Depends(verify_token)):
     try:
         clean_answers = sanitize_quiz_answers(req.quiz_answers)
-
         prompt = f"""
         Analyze these quiz answers from a General Career Assessment.
         Identify the most suitable broad domain for this user.
@@ -334,7 +316,6 @@ async def generate_domain(req: GenerateDomainRequest, authorization: str = Heade
         """
         model = genai.GenerativeModel(TEXT_MODEL_NAME)
         response = await model.generate_content_async(prompt, generation_config={"response_mime_type": "application/json"})
-        
         return json.loads(response.text)
     except Exception as e:
         logger.error(f"Domain Gen Error: {e}")
@@ -345,11 +326,10 @@ async def generate_career(req: GenerateCareerRequest, authorization: str = Heade
     token = authorization.split(" ")[1]
     client = get_user_client(token)
 
-    current_count = check_quota(client, user.id, "daily_career_generations_count", "last_career_generation_date", DAILY_CAREER_LIMIT)
+    increment_and_verify_quota(client, user.id, "daily_career_generations_count", "last_career_generation_date", DAILY_CAREER_LIMIT)
 
     try:
         user_p = req.user_profile
-        
         clean_answers = sanitize_quiz_answers(req.quiz_answers)
         safe_full_name = sanitize_input(user_p.full_name)
         safe_specialization = sanitize_input(user_p.specialization)
@@ -362,10 +342,9 @@ async def generate_career(req: GenerateCareerRequest, authorization: str = Heade
         
         Task:
         1. Identify {CAREERS_PER_GENERATION} personalized career paths.
-        2. STRICT ELIGIBILITY CHECK: If user is Arts, then don't suggest Quantum Physics, but if there is a realistic path the user can take to a career in their field of choice, then consider it.
+        2. STRICT ELIGIBILITY CHECK: If user is Arts, no Science.
         3. Provide only high-level details. Do NOT generate roadmaps or pivot analysis yet.
-        4. Address the user as "You" or "Your". Do NOT use their name.
-
+        
         OUTPUT FORMAT: STRICT JSON.
         {{
           "recommendations": [
@@ -373,7 +352,7 @@ async def generate_career(req: GenerateCareerRequest, authorization: str = Heade
               "id": "uuid-placeholder",
               "title": "Job Title",
               "matchScore": 85,
-              "summary": "2-3 sentence summary of why this fits.",
+              "summary": "1-2 sentence summary of why this fits.",
               "salaryRange": "$50k - $80k",
               "growth": "High",
               "tags": ["Tag1", "Tag2"],
@@ -392,20 +371,16 @@ async def generate_career(req: GenerateCareerRequest, authorization: str = Heade
             rec["roadmap"] = []
             rec["dayInLifePrompts"] = []
             
-        update_quota(client, user.id, "daily_career_generations_count", current_count + 1)
-        
         return result_json
     except Exception as e:
         logger.error(f"Career Gen Error: {e}")
         raise HTTPException(status_code=500, detail="AI generation failed")
 
 @app.post("/api/generate-career-details")
-async def generate_career_details(req: GenerateCareerDetailsRequest, authorization: str = Header(None), user = Depends(verify_token)):
-    
+async def generate_career_details(req: GenerateCareerDetailsRequest, user = Depends(verify_token)):
     try:
         user_p = req.user_profile
         safe_title = sanitize_input(req.career_title)
-        
         prompts_count = SLIDESHOW_IMAGE_COUNT
         
         prompt = f"""
@@ -450,11 +425,10 @@ async def generate_images(req: GenerateImagesRequest, authorization: str = Heade
     token = authorization.split(" ")[1]
     client = get_user_client(token)
 
-    current_count = check_quota(client, user.id, "daily_image_generations_count", "last_image_generation_date", DAILY_IMAGE_LIMIT)
+    increment_and_verify_quota(client, user.id, "daily_image_generations_count", "last_image_generation_date", DAILY_IMAGE_LIMIT)
 
     try:
         safe_career_title = sanitize_input(req.career_title)
-
         subject_desc = "a professional"
         if req.user_context:
             u = req.user_context
@@ -494,17 +468,9 @@ async def generate_images(req: GenerateImagesRequest, authorization: str = Heade
 
             return None
 
-        generated_images = []
-        for i, p in enumerate(req.prompts):
-            if i > 0:
-                await asyncio.sleep(1.5)
-            
-            img = await generate_single_image(p)
-            generated_images.append(img)
+        tasks = [generate_single_image(p) for p in req.prompts]
+        generated_images = await asyncio.gather(*tasks)
         
-        if any(img is not None for img in generated_images):
-            update_quota(client, user.id, "daily_image_generations_count", current_count + 1)
-
         return {"images": generated_images}
         
     except Exception as e:
@@ -518,7 +484,6 @@ async def get_saved_careers(authorization: str = Header(None), user = Depends(ve
         res = client.table("saved_careers").select("*").eq("user_id", user.id).execute()
         return res.data
     except Exception as e:
-        logger.error(f"Error fetching saved careers: {e}")
         return []
 
 @app.post("/api/saved-careers")
@@ -556,23 +521,8 @@ async def delete_career(career_uid: str, authorization: str = Header(None), user
         client.table("saved_careers").delete().eq("user_id", user.id).eq("career_uid", career_uid).execute()
         
         try:
-            files_to_remove = []
-            for i in range(10): 
-                files_to_remove.append(f"{user.id}/{career_uid}/slide_{i}.png")
-                files_to_remove.append(f"{user.id}/{career_uid}/slide_{i}.jpeg")
-                files_to_remove.append(f"{user.id}/{career_uid}/slide_{i}.jpg")
-            
-            async with httpx.AsyncClient(timeout=10.0) as http_client:
-                await http_client.request(
-                    method="DELETE",
-                    url=f"{SUPABASE_URL}/storage/v1/object/career_slideshows",
-                    headers={
-                        "Authorization": authorization,
-                        "apikey": SUPABASE_KEY,
-                        "Content-Type": "application/json"
-                    },
-                    json={"prefixes": files_to_remove}
-                )
+            files_to_remove = [f"{user.id}/{career_uid}/"]
+            supabase.storage.from_("career_slideshows").remove(files_to_remove)
         except Exception as storage_e:
             pass
 
