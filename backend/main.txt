@@ -6,7 +6,7 @@ import base64
 import urllib.parse
 import re
 import asyncio
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import List, Optional, Dict, Any
 
 from fastapi import FastAPI, HTTPException, Depends, Header, Request
@@ -36,6 +36,9 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = FastAPI()
+
+generated_career_cache: Dict[str, Dict[str, Any]] = {}
+CACHE_EXPIRATION_MINUTES = 10
 
 origins = [
     "http://localhost:3000",
@@ -173,7 +176,6 @@ async def verify_token(authorization: str = Header(None)):
 def increment_and_verify_quota(client: Client, user_id: str, count_col: str, date_col: str, limit: int):
     try:
         res = client.table("profiles").select(f"{count_col}, {date_col}").eq("id", user_id).single().execute()
-        
         if not res.data:
             raise HTTPException(status_code=404, detail="User profile not found for quota check.")
         
@@ -190,7 +192,6 @@ def increment_and_verify_quota(client: Client, user_id: str, count_col: str, dat
         
         if count >= limit:
             raise HTTPException(status_code=429, detail=f"Daily limit of {limit} reached.")
-
         client.rpc('increment_field', {
             'table_name': 'profiles',
             'field_name': count_col,
@@ -366,10 +367,14 @@ async def generate_career(req: GenerateCareerRequest, authorization: str = Heade
         response = await model.generate_content_async(prompt, generation_config={"response_mime_type": "application/json"})
         result_json = json.loads(response.text)
         
+        career_titles = []
         for rec in result_json.get("recommendations", []):
             if not rec.get("id"): rec["id"] = str(uuid.uuid4())
             rec["roadmap"] = []
             rec["dayInLifePrompts"] = []
+            career_titles.append(rec["title"])
+
+        generated_career_cache[user.id] = {"titles": career_titles, "timestamp": datetime.now(timezone.utc)}
             
         return result_json
     except Exception as e:
@@ -378,6 +383,18 @@ async def generate_career(req: GenerateCareerRequest, authorization: str = Heade
 
 @app.post("/api/generate-career-details")
 async def generate_career_details(req: GenerateCareerDetailsRequest, user = Depends(verify_token)):
+    user_cache = generated_career_cache.get(user.id)
+    if not user_cache:
+        raise HTTPException(status_code=400, detail="No careers generated. Please start a new assessment.")
+    
+    cache_age = datetime.now(timezone.utc) - user_cache["timestamp"]
+    if cache_age > timedelta(minutes=CACHE_EXPIRATION_MINUTES):
+        del generated_career_cache[user.id]
+        raise HTTPException(status_code=400, detail="Your session for viewing career details has expired. Please start a new assessment.")
+
+    if req.career_title not in user_cache["titles"]:
+        raise HTTPException(status_code=403, detail="Unauthorized to request details for this career.")
+
     try:
         user_p = req.user_profile
         safe_title = sanitize_input(req.career_title)
@@ -437,29 +454,30 @@ async def generate_images(req: GenerateImagesRequest, authorization: str = Heade
 
         async def generate_single_image(prompt_text):
             safe_prompt = sanitize_input(prompt_text)
-            full_prompt = f"Cinematic shot of {subject_desc} working as a {safe_career_title}. Scene: {safe_prompt}. Style: Photorealistic, 4k, dramatic lighting, inspiring, prestigious atmosphere."
+            full_prompt = f"Cinematic shot of {subject_desc} working as a {safe_career_title}. Scene: {safe_prompt}. Style: Photorealistic, 4k, dramatic lighting, inspiring, prestigious atmosphere. Negative prompt: text, words, letters, malformed"
+            
+            for attempt in range(2):
+                try:
+                    model = genai.GenerativeModel(IMAGE_MODEL_NAME)
+                    response = await model.generate_content_async(full_prompt)
+                    
+                    if response.candidates and response.candidates[0].content.parts:
+                        for part in response.candidates[0].content.parts:
+                            if part.inline_data:
+                                b64_data = base64.b64encode(part.inline_data.data).decode('utf-8')
+                                return f"data:{part.inline_data.mime_type};base64,{b64_data}"
+                except Exception as e:
+                    logger.warning(f"Image gen attempt {attempt + 1} failed for prompt: '{safe_prompt}'. Retrying...")
+                    await asyncio.sleep(1)
             
             try:
-                model = genai.GenerativeModel(IMAGE_MODEL_NAME)
-                response = await model.generate_content_async(full_prompt)
-                
-                if response.candidates and response.candidates[0].content.parts:
-                    for part in response.candidates[0].content.parts:
-                        if part.inline_data:
-                            b64_data = base64.b64encode(part.inline_data.data).decode('utf-8')
-                            return f"data:{part.inline_data.mime_type};base64,{b64_data}"
-            except Exception as e:
-                pass
-
-            try:
-                safe_prompt_encoded = full_prompt[:300] 
-                encoded_prompt = urllib.parse.quote(safe_prompt_encoded)
+                encoded_prompt = urllib.parse.quote(full_prompt[:300])
                 seed = uuid.uuid4().int % 10000
                 image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1280&height=720&seed={seed}&nologo=true"
                 
                 headers = {'User-Agent': 'CareerPathAI/1.0'}
-                async with httpx.AsyncClient(follow_redirects=True, timeout=30.0) as client:
-                    resp = await client.get(image_url, headers=headers)
+                async with httpx.AsyncClient(follow_redirects=True, timeout=30.0) as http_client:
+                    resp = await http_client.get(image_url, headers=headers)
                     if resp.status_code == 200:
                         b64_img = base64.b64encode(resp.content).decode('utf-8')
                         return f"data:image/jpeg;base64,{b64_img}"
