@@ -2,9 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { useAppStore } from './store';
 import { AppView } from './types';
 import { getUserProfile, getSavedCareers, getCurrentUser } from './services/supabaseService';
-import { Loader2, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
-import { Button } from './components/Button';
+import { Loader2, CheckCircle, XCircle } from 'lucide-react';
 import { APP_NAME } from './constants';
+import { ConfirmModal } from './components/ConfirmModal';
 
 import { Landing } from './pages/Landing';
 import { Auth } from './pages/Auth';
@@ -197,30 +197,19 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {pendingDeleteCareer && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
-            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={!isDeletingCareer ? cancelDeleteCareer : undefined}></div>
-            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-md w-full p-6 relative z-10 animate-[scaleIn_0.2s_ease-out] border border-slate-200 dark:border-slate-700">
-                <div className="flex items-center gap-3 mb-4 text-amber-600 dark:text-amber-500">
-                    <AlertTriangle size={28} />
-                    <h3 className="text-xl font-bold text-slate-900 dark:text-white">Unsave Career?</h3>
-                </div>
-                <p className="text-slate-600 dark:text-slate-300 mb-6">
-                    Are you sure you want to remove <strong>{pendingDeleteCareer.title}</strong> from your saved paths? This action cannot be undone.
-                </p>
-                <div className="flex gap-3 justify-end">
-                    <Button variant="ghost" onClick={cancelDeleteCareer} disabled={isDeletingCareer}>Cancel</Button>
-                    <Button 
-                        className="bg-red-600 hover:bg-red-700 text-white border-red-600 disabled:opacity-50"
-                        onClick={confirmDeleteCareer}
-                        disabled={isDeletingCareer}
-                    >
-                        {isDeletingCareer ? "Deleting..." : "Yes, Remove It"}
-                    </Button>
-                </div>
-            </div>
-        </div>
-      )}
+      <ConfirmModal
+        isOpen={!!pendingDeleteCareer}
+        onClose={cancelDeleteCareer}
+        onConfirm={confirmDeleteCareer}
+        title="Unsave Career?"
+        description={
+          <p>
+            Are you sure you want to remove <strong>{pendingDeleteCareer?.title}</strong> from your saved paths? This action cannot be undone.
+          </p>
+        }
+        confirmText="Yes, Remove It"
+        isLoading={isDeletingCareer}
+      />
     </div>
   );
 };

@@ -69,9 +69,15 @@ export const Slideshow: React.FC = () => {
             if (slide.imageUrl) {
                 const img = new Image();
                 img.src = slide.imageUrl;
-                img.onload = () => {
+                
+                const markLoaded = () => {
                     setLoadedIndices(prev => new Set(prev).add(index));
                 };
+                
+                img.onload = markLoaded;
+                img.onerror = markLoaded; 
+            } else {
+                setLoadedIndices(prev => new Set(prev).add(index));
             }
         });
     }
@@ -272,7 +278,9 @@ export const Slideshow: React.FC = () => {
       );
   }
 
-  if (loading) {
+  const allImagesLoaded = slides.length > 0 && slides.every((s, i) => !s.imageUrl || loadedIndices.has(i));
+
+  if (loading || !allImagesLoaded) {
     return (
       <div className="fixed inset-0 bg-black/95 z-[60] flex flex-col items-center justify-center animate-fade-in">
         <div className="relative animate-fade-in-up opacity-0" style={{ animationDelay: '0ms' }}>
@@ -358,25 +366,17 @@ export const Slideshow: React.FC = () => {
         
         <div className="h-[50%] md:h-full md:w-[70%] relative bg-black flex items-center justify-center overflow-hidden" onClick={handleContainerClick}>
              {slides.map((s, idx) => {
-                 const isLoaded = loadedIndices.has(idx);
                  return (
                     <div 
                         key={idx}
                         className={`absolute inset-0 flex items-center justify-center transition-opacity duration-500 ease-in-out ${idx === currentSlide ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}
                     >
                          {s.imageUrl ? (
-                             <>
-                                {!isLoaded && idx === currentSlide && (
-                                    <div className="absolute inset-0 flex items-center justify-center">
-                                        <Loader2 className="w-8 h-8 text-slate-600 animate-spin" />
-                                    </div>
-                                )}
-                                <img 
-                                    src={s.imageUrl} 
-                                    alt="Day in life" 
-                                    className={`w-full h-full object-cover transition-opacity duration-700 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
-                                />
-                             </>
+                             <img 
+                                 src={s.imageUrl} 
+                                 alt="Day in life" 
+                                 className="w-full h-full object-cover"
+                             />
                          ) : (
                             <div className="flex flex-col items-center justify-center text-slate-500 p-8 text-center bg-slate-900/50 w-full h-full">
                                 <ImageOff size={64} className="mb-4 opacity-40" />

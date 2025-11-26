@@ -214,17 +214,22 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({ isSavingCareer: true });
     
     try {
-        let currentVersion = state.selectedCareer?.id === career.id ? state.selectedCareer : career;
+        let currentVersion = { ...career };
+        if (state.selectedCareer?.id === career.id) {
+            currentVersion = { ...state.selectedCareer };
+        }
         
         if (state.user) {
             const hasRawImages = currentVersion.slideImages && currentVersion.slideImages.some(img => img && img.startsWith('data:'));
             if (hasRawImages && currentVersion.slideImages) {
                  try {
                      const uploadedUrls = await uploadCareerImages(state.user.id, currentVersion.id, currentVersion.slideImages as string[]);
-                     currentVersion = { ...currentVersion, slideImages: uploadedUrls };
-                     state.updateCareerImages(currentVersion.id, uploadedUrls);
+                     const cleanUrls = uploadedUrls.map(u => (u && u.startsWith('http')) ? u : null);
+                     currentVersion = { ...currentVersion, slideImages: cleanUrls };
+                     state.updateCareerImages(currentVersion.id, cleanUrls);
                  } catch (uploadError) {
-                     console.warn("Image upload during save failed, saving career without images first", uploadError);
+                     console.warn("Image upload during save failed", uploadError);
+                     currentVersion.slideImages = [];
                  }
             }
 

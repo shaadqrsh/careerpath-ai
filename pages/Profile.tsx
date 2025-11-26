@@ -3,9 +3,10 @@ import { useAppStore } from '../store';
 import { AppView, UserProfile } from '../types';
 import { Button } from '../components/Button';
 import { CustomSelect } from '../components/CustomSelect';
-import { ArrowLeft, Loader2, AlertTriangle, User, MapPin, Settings } from 'lucide-react';
+import { ArrowLeft, Loader2, User, MapPin, Settings } from 'lucide-react';
 import { FALLBACK_COUNTRIES } from '../constants';
 import { upsertUserProfile, getUserProfile, getCurrentUser, sendPasswordResetEmail } from '../services/supabaseService';
+import { ConfirmModal } from '../components/ConfirmModal';
 
 export const Profile: React.FC = () => {
   const { user, setView, setUser, showPasswordResetModal, setShowPasswordResetModal, showToast, theme, setTheme } = useAppStore();
@@ -302,53 +303,25 @@ export const Profile: React.FC = () => {
         </form>
       </div>
 
-      {showPasswordResetModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
-            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowPasswordResetModal(false)}></div>
-            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-md w-full p-6 relative z-10 animate-[scaleIn_0.2s_ease-out] border border-slate-200 dark:border-slate-700">
-                <div className="flex items-center gap-3 mb-4 text-amber-600 dark:text-amber-500">
-                    <AlertTriangle size={28} />
-                    <h3 className="text-xl font-bold text-slate-900 dark:text-white">Reset Password?</h3>
-                </div>
-                <p className="text-slate-600 dark:text-slate-300 mb-6">
-                    This will send a secure link to your registered email address to reset your password.
-                </p>
-                <div className="flex gap-3 justify-end">
-                    <Button variant="ghost" onClick={() => setShowPasswordResetModal(false)}>Cancel</Button>
-                    <Button 
-                        className="bg-blue-600 hover:bg-blue-700 text-white border-blue-600"
-                        onClick={confirmPasswordReset}
-                    >
-                        Yes, Send Email
-                    </Button>
-                </div>
-            </div>
-        </div>
-      )}
+      <ConfirmModal
+        isOpen={showPasswordResetModal}
+        onClose={() => setShowPasswordResetModal(false)}
+        onConfirm={confirmPasswordReset}
+        title="Reset Password?"
+        description="This will send a secure link to your registered email address to reset your password."
+        confirmText="Yes, Send Email"
+        variant="info"
+      />
 
-      {showUnsavedModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
-            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowUnsavedModal(false)}></div>
-            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-md w-full p-6 relative z-10 animate-[scaleIn_0.2s_ease-out] border border-slate-200 dark:border-slate-700">
-                <div className="flex items-center gap-3 mb-4 text-amber-600 dark:text-amber-500">
-                    <AlertTriangle size={28} />
-                    <h3 className="text-xl font-bold text-slate-900 dark:text-white">Unsaved Changes</h3>
-                </div>
-                <p className="text-slate-600 dark:text-slate-300 mb-6">
-                    You have unsaved changes in your profile. Are you sure you want to discard them?
-                </p>
-                <div className="flex gap-3 justify-end">
-                    <Button variant="ghost" onClick={() => setShowUnsavedModal(false)}>Keep Editing</Button>
-                    <Button 
-                        className="bg-red-600 hover:bg-red-700 text-white border-red-600"
-                        onClick={confirmDiscardChanges}
-                    >
-                        Discard Changes
-                    </Button>
-                </div>
-            </div>
-        </div>
-      )}
+      <ConfirmModal
+        isOpen={showUnsavedModal}
+        onClose={() => setShowUnsavedModal(false)}
+        onConfirm={confirmDiscardChanges}
+        title="Unsaved Changes"
+        description="You have unsaved changes in your profile. Are you sure you want to discard them?"
+        confirmText="Discard Changes"
+        cancelText="Keep Editing"
+      />
 
     </div>
   );

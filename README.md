@@ -32,11 +32,16 @@ This application uses a decoupled architecture for security and scalability:
 Follow these steps in order to deploy the application to the cloud.
 
 ### 1. Database Setup (Supabase)
-1.  Create a new **Supabase Project**.
-2.  Navigate to the **SQL Editor** in your Supabase dashboard.
-3.  Open the file `database.txt` from this repository, copy the content, and run it in the SQL Editor.
-4.  Go to **Storage**, and create a public bucket named `career_slideshows`.
-5.  **Email Templates**: Go to *Authentication -> Email Templates*. Use the content from `email_templates.txt` for "Confirm Signup" and "Reset Password" to ensure consistent styling.
+1.  **Create Project**: Log in to [Supabase](https://supabase.com/) and create a new project.
+2.  **Run SQL Setup**: 
+    *   Navigate to the **SQL Editor** in the sidebar.
+    *   Click **New Query**.
+    *   Copy the contents of the file `database.txt` provided in this repository.
+    *   Paste it into the editor and click **Run**.
+    *   *Note: This script will automatically create the necessary tables (`profiles`, `saved_careers`), set up Row Level Security (RLS) policies, and configure the `career_slideshows` storage bucket.*
+3.  **Email Templates (Optional)**: 
+    *   Go to **Authentication** -> **Email Templates**.
+    *   Update "Confirm Signup" and "Reset Password" with the content from `email_templates.txt` for consistent styling.
 
 ### 2. Backend Deployment (Hugging Face Spaces)
 1.  Create a new Space on Hugging Face and select **Docker** as the SDK.

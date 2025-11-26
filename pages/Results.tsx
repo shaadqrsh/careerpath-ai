@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAppStore } from '../store';
 import { AppView, CareerRecommendation } from '../types';
 import { TrendingUp, DollarSign, ArrowRight, ArrowLeft, Heart, Star } from 'lucide-react';
+import { ConfirmModal } from '../components/ConfirmModal';
 
 export const Results: React.FC = () => {
   const { recommendations, setSelectedCareer, setView, savedCareers, setCareerOrigin } = useAppStore();
+  const [showExitModal, setShowExitModal] = useState(false);
 
   const handleSelect = (career: CareerRecommendation) => {
     setSelectedCareer(career);
@@ -13,6 +15,16 @@ export const Results: React.FC = () => {
   };
 
   const isSaved = (id: string) => savedCareers.some(c => c.id === id);
+
+  const handleBackAttempt = () => {
+    const hasUnsavedCareers = recommendations.some(rec => !isSaved(rec.id));
+
+    if (hasUnsavedCareers) {
+      setShowExitModal(true);
+    } else {
+      setView(AppView.DASHBOARD);
+    }
+  };
 
   const formatGrowth = (growth: string) => {
     const match = growth.match(/^([^(]+)(\s*\(.*\))?$/);
@@ -30,7 +42,7 @@ export const Results: React.FC = () => {
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-8 animate-fade-in-up opacity-0" style={{ animationDelay: '0ms' }}>
             <button 
-                onClick={() => setView(AppView.DASHBOARD)} 
+                onClick={handleBackAttempt} 
                 className="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white flex items-center gap-2 transition-colors"
             >
                 <ArrowLeft size={20} /> Back to Menu
@@ -124,6 +136,16 @@ export const Results: React.FC = () => {
                 );
             })}
         </div>
+
+        <ConfirmModal
+            isOpen={showExitModal}
+            onClose={() => setShowExitModal(false)}
+            onConfirm={() => setView(AppView.DASHBOARD)}
+            title="Discard Results?"
+            description="You have unsaved career recommendations. If you go back now, these results will be lost forever."
+            confirmText="Yes, Discard"
+            cancelText="Stay Here"
+        />
       </div>
     </div>
   );

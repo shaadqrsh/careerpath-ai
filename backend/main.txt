@@ -5,6 +5,7 @@ import logging
 import base64
 import urllib.parse
 import re
+import asyncio
 from datetime import datetime, timezone
 from typing import List, Optional, Dict, Any
 
@@ -17,9 +18,9 @@ from supabase import create_client, Client
 import httpx 
 
 # --- CONFIGURATION ---
-SUPABASE_URL = os.environ.get("SUPABASE_URL")
-SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "").strip()
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "").strip()
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "").strip()
 
 FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:3000")
 
@@ -31,7 +32,7 @@ CAREERS_PER_GENERATION = 5
 TEXT_MODEL_NAME = "gemini-2.5-flash"
 IMAGE_MODEL_NAME = "gemini-2.5-flash-image" 
 
-logging.basicConfig(level=logging.ERROR)
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = FastAPI()
@@ -364,7 +365,7 @@ async def generate_career(req: GenerateCareerRequest, authorization: str = Heade
         5. DATA INTEGRITY: Ensure 'salaryRange', 'growth', and 'roadmap' are FILLED for every recommendation. Do not leave null.
         6. Do not refer to the user by name in the output text. Use 'You' or 'Your'.
         7. IMPORTANT: Do not mention specific question numbers or quote exact answers. Synthesize the user's responses into general traits (e.g., "Given your interest in visual problem solving...").
-        8. GENERATE {SLIDESHOW_IMAGE_COUNT} DAY IN A LIFE PROMPTS per career. Synthesize the user's responses into general traits (e.g., "Given your interest in visual problem solving...").
+        8. GENERATE {SLIDESHOW_IMAGE_COUNT} DAY IN A LIFE PROMPTS per career.
         
         OUTPUT FORMAT: STRICT JSON.
         {{
@@ -417,7 +418,6 @@ async def generate_images(req: GenerateImagesRequest, authorization: str = Heade
             age = req.future_age or (u.age + 5)
             subject_desc = f"a {age} year old {u.gender} {u.residence_country} national"
 
-        import asyncio
         async def generate_single_image(prompt_text):
             safe_prompt = sanitize_input(prompt_text)
             full_prompt = f"Cinematic shot of {subject_desc} working as a {safe_career_title}. Scene: {safe_prompt}. Style: Photorealistic, 4k, dramatic lighting."
@@ -451,8 +451,13 @@ async def generate_images(req: GenerateImagesRequest, authorization: str = Heade
 
             return None
 
-        tasks = [generate_single_image(p) for p in req.prompts]
-        generated_images = await asyncio.gather(*tasks)
+        generated_images = []
+        for i, p in enumerate(req.prompts):
+            if i > 0:
+                await asyncio.sleep(1.5)
+            
+            img = await generate_single_image(p)
+            generated_images.append(img)
         
         if any(img is not None for img in generated_images):
             update_quota(client, user.id, "daily_image_generations_count", current_count + 1)
@@ -482,9 +487,20 @@ async def save_career(career: CareerRecommendation, authorization: str = Header(
         data['user_id'] = user.id
         data['career_uid'] = career.id
         if 'id' in data: del data['id']
+
+        if 'slide_images' in data and data['slide_images']:
+            cleaned_images = []
+            for img in data['slide_images']:
+                if img and len(img) > 2000:
+                    cleaned_images.append(None)
+                else:
+                    cleaned_images.append(img)
+            data['slide_images'] = cleaned_images
+
         client.table("saved_careers").upsert(data, on_conflict="user_id,career_uid").execute()
         return {"status": "success"}
-    except Exception as e: raise HTTPException(status_code=500, detail=str(e))
+    except Exception as e: 
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.delete("/api/saved-careers/{career_uid}")
 async def delete_career(career_uid: str, authorization: str = Header(None), user = Depends(verify_token)):
@@ -500,41 +516,71 @@ async def delete_career(career_uid: str, authorization: str = Header(None), user
                 files_to_remove.append(f"{user.id}/{career_uid}/slide_{i}.jpeg")
                 files_to_remove.append(f"{user.id}/{career_uid}/slide_{i}.jpg")
             
-            client.storage.from_("career_slideshows").remove(files_to_remove)
+            async with httpx.AsyncClient(timeout=10.0) as http_client:
+                await http_client.request(
+                    method="DELETE",
+                    url=f"{SUPABASE_URL}/storage/v1/object/career_slideshows",
+                    headers={
+                        "Authorization": authorization,
+                        "apikey": SUPABASE_KEY,
+                        "Content-Type": "application/json"
+                    },
+                    json={"prefixes": files_to_remove}
+                )
         except Exception as storage_e:
             pass
 
         return {"status": "success"}
-    except Exception as e: raise HTTPException(status_code=500, detail=str(e))
+    except Exception as e: 
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/career-images")
 async def upload_career_images(req: SaveCareerImageRequest, authorization: str = Header(None), user = Depends(verify_token)):
     if req.user_id != user.id: raise HTTPException(status_code=403)
     
-    token = authorization.split(" ")[1]
-    client = get_user_client(token)
-
     uploaded_urls = []
-    for i, img_str in enumerate(req.images):
-        if not img_str: 
-            uploaded_urls.append(None)
-            continue
-            
-        if img_str.startswith("http"):
-            uploaded_urls.append(img_str)
-            continue
-            
-        try:
-            if "," in img_str: header, encoded = img_str.split(",", 1); ext = header.split(";")[0].split("/")[1]
-            else: encoded = img_str; ext = "png"
-            import base64
-            file_data = base64.b64decode(encoded)
-            file_path = f"{user.id}/{req.career_uid}/slide_{i}.{ext}"
-            
-            client.storage.from_("career_slideshows").upload(file_path, file_data, {"content-type": f"image/{ext}", "upsert": "true"})
-            public_url = client.storage.from_("career_slideshows").get_public_url(file_path)
-            uploaded_urls.append(public_url)
-        except Exception: uploaded_urls.append(img_str)
+    
+    async with httpx.AsyncClient(timeout=30.0) as http_client:
+        for i, img_str in enumerate(req.images):
+            if not img_str: 
+                uploaded_urls.append(None)
+                continue
+                
+            if img_str.startswith("http"):
+                uploaded_urls.append(img_str)
+                continue
+                
+            try:
+                if "," in img_str: header, encoded = img_str.split(",", 1); ext = header.split(";")[0].split("/")[1]
+                else: encoded = img_str; ext = "png"
+                
+                import base64
+                file_data = base64.b64decode(encoded)
+                file_path = f"{user.id}/{req.career_uid}/slide_{i}.{ext}"
+                
+                url = f"{SUPABASE_URL}/storage/v1/object/career_slideshows/{file_path}"
+                
+                resp = await http_client.post(
+                    url,
+                    content=file_data,
+                    headers={
+                        "Authorization": authorization,
+                        "apikey": SUPABASE_KEY,
+                        "Content-Type": f"image/{ext}",
+                        "x-upsert": "true"
+                    }
+                )
+
+                if resp.status_code == 200:
+                    public_url = f"{SUPABASE_URL}/storage/v1/object/public/career_slideshows/{file_path}"
+                    uploaded_urls.append(public_url)
+                else:
+                    logger.error(f"Raw HTTP Upload Failed: {resp.status_code} - {resp.text}")
+                    uploaded_urls.append(None)
+
+            except Exception as e: 
+                uploaded_urls.append(None)
+
     return {"image_urls": uploaded_urls}
 
 if __name__ == "__main__":
