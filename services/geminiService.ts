@@ -107,12 +107,15 @@ export const generateCareerDetails = async (
     career: CareerRecommendation
 ): Promise<Partial<CareerRecommendation>> => {
     try {
+        const safeTitle = career.title.length > 190 ? career.title.substring(0, 190) + "..." : career.title;
+        const safeSummary = career.summary.length > 950 ? career.summary.substring(0, 950) + "..." : career.summary;
+
         const response = await apiFetch(`${API_BASE_URL}/api/generate-career-details`, {
             method: 'POST',
             body: JSON.stringify({
                 user_profile: user,
-                career_title: career.title,
-                career_summary: career.summary
+                career_title: safeTitle,
+                career_summary: safeSummary
             })
         });
 

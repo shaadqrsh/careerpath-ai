@@ -3,7 +3,7 @@ import { useAppStore } from '../store';
 import { AppView, UserProfile } from '../types';
 import { Button } from '../components/Button';
 import { CustomSelect } from '../components/CustomSelect';
-import { ArrowLeft, Loader2, User, MapPin, Settings } from 'lucide-react';
+import { ArrowLeft, Loader2, User, MapPin, Settings, Mail } from 'lucide-react';
 import { FALLBACK_COUNTRIES } from '../constants';
 import { upsertUserProfile, getUserProfile, getCurrentUser, sendPasswordResetEmail } from '../services/supabaseService';
 import { ConfirmModal } from '../components/ConfirmModal';
@@ -19,6 +19,7 @@ export const Profile: React.FC = () => {
   
   const [initialData, setInitialData] = useState<Partial<UserProfile> | null>(null);
   const [showUnsavedModal, setShowUnsavedModal] = useState(false);
+  const [userEmail, setUserEmail] = useState('');
 
   const [formData, setFormData] = useState<Partial<UserProfile>>({
     fullName: '',
@@ -58,6 +59,7 @@ export const Profile: React.FC = () => {
       try {
         const authUser = await getCurrentUser();
         if (authUser) {
+           if (isMounted) setUserEmail(authUser.email || '');
            const profile = await getUserProfile(authUser.id);
            if (profile && isMounted) {
              setFormData(profile);
@@ -274,6 +276,19 @@ export const Profile: React.FC = () => {
                  </h3>
                  
                  <div className="space-y-6">
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Email Address</label>
+                        <div className="relative">
+                            <Mail className="absolute left-3 top-3.5 text-slate-400 dark:text-slate-500 w-5 h-5" />
+                            <input 
+                                type="email"
+                                value={userEmail}
+                                disabled
+                                className="w-full bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl py-3 pl-10 pr-4 text-slate-500 dark:text-slate-400 cursor-not-allowed opacity-75"
+                            />
+                        </div>
+                    </div>
+
                     <div>
                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">App Theme</label>
                         <CustomSelect 

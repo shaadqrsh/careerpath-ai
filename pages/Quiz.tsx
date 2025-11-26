@@ -24,6 +24,10 @@ export const Quiz: React.FC = () => {
   const progress = ((currentIndex) / domainQuestions.length) * 100;
 
   useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [currentIndex]);
+
+  useEffect(() => {
     if (user) {
         const lastDateStr = user.lastCareerGenerationDate;
         const dailyLimit = user.limits?.dailyCareerLimit ?? 5;

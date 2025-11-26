@@ -30,7 +30,7 @@ const BananaIcon = ({ className }: { className?: string }) => (
 );
 
 export const Slideshow: React.FC = () => {
-  const { selectedCareer, setView, user, setUser, updateCareerImages, savedCareers, showModal, hideModal } = useAppStore();
+  const { selectedCareer, setView, user, setUser, updateCareerImages, savedCareers, showModal, hideModal, showToast } = useAppStore();
   const [slides, setSlides] = useState<Slide[]>([]);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [loadedIndices, setLoadedIndices] = useState<Set<number>>(new Set());
@@ -132,9 +132,19 @@ export const Slideshow: React.FC = () => {
             
             if (remaining <= 0) {
                 if (isMounted) {
-                    setQuotaError(true);
+                    const prompts = selectedCareer.dayInLifePrompts || [];
+                    while (prompts.length < targetCount) {
+                         prompts.push("Working in a professional environment");
+                    }
+                    const simpleSlides = prompts.slice(0, targetCount).map((text, i) => ({
+                        id: i,
+                        text: text,
+                        imageUrl: existingImages[i] || ""
+                    }));
+                    setSlides(simpleSlides);
                     setLoading(false);
                 }
+                hasStartedRef.current = true;
                 return;
             }
         }
@@ -215,7 +225,7 @@ export const Slideshow: React.FC = () => {
     return () => {
         isMounted = false;
     };
-  }, [selectedCareer, user, updateCareerImages, savedCareers, setUser]);
+  }, [selectedCareer, user, updateCareerImages, savedCareers, setUser, showToast]);
 
   const handleNext = () => {
     setCurrentSlide(curr => Math.min(curr + 1, slides.length - 1));
