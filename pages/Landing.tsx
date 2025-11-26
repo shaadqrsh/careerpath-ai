@@ -2,6 +2,7 @@ import React from 'react';
 import { useAppStore } from '../store';
 import { AppView } from '../types';
 import { Button } from '../components/Button';
+import { GeminiBadge } from '../components/GeminiBadge';
 import { ArrowRight } from 'lucide-react';
 import { APP_NAME } from '../constants';
 
@@ -18,14 +19,7 @@ export const Landing: React.FC = () => {
 
       <div className="z-10 text-center w-full max-w-7xl px-2">
         <div className="mb-6 flex justify-center animate-fade-in-up opacity-0" style={{ animationDelay: '0ms' }}>
-          <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 shadow-sm">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" className="text-blue-500">
-                <path d="M12 24C12 24 10 14 0 12C10 10 12 0 12 0C12 0 14 10 24 12C14 14 12 24 12 24Z" />
-            </svg>
-            <span className="text-sm font-semibold bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-transparent">
-                Powered by Gemini
-            </span>
-          </span>
+          <GeminiBadge variant="glass" size="lg" />
         </div>
 
         <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight text-slate-900 dark:text-white mb-6 animate-fade-in-up opacity-0" style={{ animationDelay: '150ms' }}>

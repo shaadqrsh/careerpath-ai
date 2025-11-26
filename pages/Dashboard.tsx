@@ -3,6 +3,7 @@ import { useAppStore } from '../store';
 import { AppView, CareerDomain } from '../types';
 import { Beaker, Briefcase, Palette, LogOut, User, Heart, HelpCircle, ArrowRight, Zap, Image, Menu, X, AlertOctagon } from 'lucide-react';
 import { APP_NAME } from '../constants';
+import { GeminiBadge } from '../components/GeminiBadge';
 
 export const Dashboard: React.FC = () => {
   const { setView, setDomain, savedCareers, hasViewedSavedPaths, user, logout, showModal, hideModal } = useAppStore();
@@ -96,14 +97,7 @@ export const Dashboard: React.FC = () => {
                 <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400">
                     {APP_NAME}
                 </h1>
-                <div className="hidden md:flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-                     <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" className="text-blue-500">
-                        <path d="M12 24C12 24 10 14 0 12C10 10 12 0 12 0C12 0 14 10 24 12C14 14 12 24 12 24Z" />
-                    </svg>
-                    <span className="text-xs font-semibold bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-transparent">
-                        Powered by Gemini
-                    </span>
-                </div>
+                <GeminiBadge className="hidden md:flex" />
             </div>
 
             <div className="hidden md:flex items-center gap-4">

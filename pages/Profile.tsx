@@ -3,7 +3,9 @@ import { useAppStore } from '../store';
 import { AppView, UserProfile } from '../types';
 import { Button } from '../components/Button';
 import { CustomSelect } from '../components/CustomSelect';
-import { ArrowLeft, Loader2, User, MapPin, Settings, Mail } from 'lucide-react';
+import { Input } from '../components/Input'; // Standardized Input
+import { FullScreenLoader } from '../components/FullScreenLoader'; // Standardized Loader
+import { ArrowLeft, User, MapPin, Settings, Mail } from 'lucide-react';
 import { FALLBACK_COUNTRIES } from '../constants';
 import { upsertUserProfile, getUserProfile, getCurrentUser, sendPasswordResetEmail } from '../services/supabaseService';
 import { ConfirmModal } from '../components/ConfirmModal';
@@ -150,11 +152,7 @@ export const Profile: React.FC = () => {
   };
 
   if (isLoadingData) {
-      return (
-        <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 transition-colors">
-            <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
-        </div>
-      );
+      return <FullScreenLoader />;
   }
 
   return (
@@ -180,16 +178,12 @@ export const Profile: React.FC = () => {
                 </h3>
                 <div className="space-y-6">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Full Name</label>
-                            <input 
-                                type="text"
-                                required
-                                value={formData.fullName}
-                                onChange={(e) => handleChange('fullName', e.target.value)}
-                                className="w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-600 rounded-xl py-3 px-4 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors"
-                            />
-                        </div>
+                        <Input
+                            label="Full Name"
+                            required
+                            value={formData.fullName}
+                            onChange={(e) => handleChange('fullName', e.target.value)}
+                        />
                         <div>
                             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Gender</label>
                             <CustomSelect 
@@ -201,18 +195,15 @@ export const Profile: React.FC = () => {
                     </div>
 
                     <div className="grid grid-cols-2 gap-6">
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Age</label>
-                            <input 
-                                type="number"
-                                required
-                                min={14}
-                                max={80}
-                                value={formData.age}
-                                onChange={(e) => handleChange('age', parseInt(e.target.value))}
-                                className="w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-600 rounded-xl py-3 px-4 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors"
-                            />
-                        </div>
+                        <Input
+                            label="Age"
+                            type="number"
+                            required
+                            min={14}
+                            max={80}
+                            value={formData.age}
+                            onChange={(e) => handleChange('age', parseInt(e.target.value))}
+                        />
                         <div>
                             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Level</label>
                             <CustomSelect 
@@ -223,17 +214,13 @@ export const Profile: React.FC = () => {
                         </div>
                     </div>
 
-                    <div>
-                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Major / Specialization</label>
-                        <input 
-                            type="text"
-                            required
-                            value={formData.specialization}
-                            onChange={(e) => handleChange('specialization', e.target.value)}
-                            className="w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-600 rounded-xl py-3 px-4 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors"
-                            placeholder="e.g. Commerce, Computer Science, Biology"
-                        />
-                    </div>
+                    <Input
+                        label="Major / Specialization"
+                        required
+                        value={formData.specialization}
+                        onChange={(e) => handleChange('specialization', e.target.value)}
+                        placeholder="e.g. Commerce, Computer Science, Biology"
+                    />
                 </div>
             </div>
 
@@ -276,18 +263,14 @@ export const Profile: React.FC = () => {
                  </h3>
                  
                  <div className="space-y-6">
-                    <div>
-                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Email Address</label>
-                        <div className="relative">
-                            <Mail className="absolute left-3 top-3.5 text-slate-400 dark:text-slate-500 w-5 h-5" />
-                            <input 
-                                type="email"
-                                value={userEmail}
-                                disabled
-                                className="w-full bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl py-3 pl-10 pr-4 text-slate-500 dark:text-slate-400 cursor-not-allowed opacity-75"
-                            />
-                        </div>
-                    </div>
+                    <Input
+                        label="Email Address"
+                        icon={<Mail />}
+                        type="email"
+                        value={userEmail}
+                        disabled
+                        className="cursor-not-allowed opacity-75 bg-slate-100 dark:bg-slate-900"
+                    />
 
                     <div>
                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">App Theme</label>

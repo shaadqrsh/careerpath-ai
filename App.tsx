@@ -22,7 +22,22 @@ import { SavedPaths } from './pages/SavedPaths';
 import { UpdatePassword } from './pages/UpdatePassword';
 
 const App: React.FC = () => {
-  const { currentView, theme, setView, setUser, setSavedCareers, pendingDeleteCareer, confirmDeleteCareer, cancelDeleteCareer, toast, isDeletingCareer, showToast, logout, modal } = useAppStore();
+  const { 
+    currentView, 
+    theme, 
+    setView, 
+    setUser, 
+    setSavedCareers, 
+    pendingDeleteCareer, 
+    confirmDeleteCareer, 
+    cancelDeleteCareer, 
+    toast, 
+    isDeletingCareer, 
+    showToast, 
+    logout, 
+    modal 
+  } = useAppStore();
+  
   const [isInitializing, setIsInitializing] = useState(true);
 
   useEffect(() => {
@@ -182,16 +197,14 @@ const App: React.FC = () => {
     <div className="min-h-screen transition-colors duration-300 bg-slate-50 text-slate-900 dark:bg-slate-900 dark:text-slate-50 relative">
       {renderView()}
 
-      {modal && (
-        <AlertModal
-          isOpen={modal.isOpen}
-          icon={modal.icon}
-          title={modal.title}
-          description={modal.description}
-          buttonText={modal.buttonText}
-          onButtonClick={modal.onButtonClick}
-        />
-      )}
+      <AlertModal
+        isOpen={!!modal && modal.isOpen}
+        icon={modal?.icon}
+        title={modal?.title || ''}
+        description={modal?.description}
+        buttonText={modal?.buttonText || 'Close'}
+        onButtonClick={modal?.onButtonClick || (() => {})}
+      />
 
       <Toast 
         show={toast.show}
