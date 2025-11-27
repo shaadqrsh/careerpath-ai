@@ -317,11 +317,19 @@ async def upsert_profile(profile: UserProfile, authorization: str = Header(None)
     client = get_user_client(token)
     try:
         data = profile.model_dump(by_alias=False)
-        keys = [k for k in data if 'count' in k or 'date' in k or k == 'limits']
-        for k in keys: del data[k]
-        client.table("profiles").upsert(data).execute()
+        
+        updatable_fields = [
+            'id', 'full_name', 'gender', 'age', 'education_level', 
+            'specialization', 'residence_country', 'preferred_work_country'
+        ]
+        
+        final_payload = {k: v for k, v in data.items() if k in updatable_fields}
+        
+        client.table("profiles").upsert(final_payload).execute()
         return {"status": "success"}
-    except Exception: raise HTTPException(status_code=500)
+    except Exception as e: 
+        logger.error(f"Error in upsert_profile: {e}")
+        raise HTTPException(status_code=500)
 
 @app.post("/api/generate-domain")
 async def generate_domain(req: GenerateDomainRequest, authorization: str = Header(None), user = Depends(verify_token)):
