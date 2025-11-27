@@ -1,3 +1,4 @@
+import React from 'react';
 import { UserProfile, QuizAnswer, CareerRecommendation, Slide, CareerRoadmapStep, CareerDomain } from "../types";
 import { API_BASE_URL } from "../constants";
 import { useAppStore } from '../store';

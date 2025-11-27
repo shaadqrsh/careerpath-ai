@@ -1,3 +1,4 @@
+import React from 'react';
 import { CareerRecommendation, UserProfile } from '../types';
 import { API_BASE_URL } from '../constants';
 import { useAppStore } from '../store';
@@ -9,6 +10,7 @@ const clearToken = () => localStorage.removeItem('access_token');
 const handleAuthError = () => {
     const { showModal, logout } = useAppStore.getState();
     if (useAppStore.getState().modal?.isOpen) return;
+
     showModal({
         variant: 'danger',
         title: "Session Expired",
@@ -41,13 +43,13 @@ const apiFetch = async (url: string, options: RequestInit = {}) => {
 
 const toDbProfile = (p: UserProfile) => ({
     id: p.id,
-    fullName: p.fullName || '',
+    full_name: p.fullName || '',
     gender: p.gender || '',
     age: p.age || 0,
-    educationLevel: p.educationLevel || '',
+    education_level: p.educationLevel || '',
     specialization: p.specialization || '',
-    residenceCountry: p.residenceCountry || '',
-    preferredWorkCountry: p.preferredWorkCountry || ''
+    residence_country: p.residenceCountry || '',
+    preferred_work_country: p.preferredWorkCountry || ''
 });
 
 const fromDbProfile = (d: any): UserProfile => {
@@ -137,11 +139,14 @@ export const signInWithEmail = async (email: string, password: string) => {
             method: 'POST',
             body: JSON.stringify({ email, password })
         });
-        if (!response.ok) throw new Error("Login failed");
+        if (!response.ok) {
+            const errorBody = await response.json().catch(() => ({ detail: "Login failed" }));
+            throw new Error(errorBody.detail || "Login failed");
+        }
         const data = await response.json();
         setToken(data.access_token);
         return { user: data.user, session: data };
-    } catch (e) {
+    } catch (e: any) {
         console.error("Sign In Error:", e);
         throw e;
     }
@@ -153,9 +158,12 @@ export const signUpWithEmail = async (email: string, password: string) => {
             method: 'POST',
             body: JSON.stringify({ email, password })
         });
-        if (!response.ok) throw new Error("Signup failed");
+        if (!response.ok) {
+            const errorBody = await response.json().catch(() => ({ detail: "Signup failed" }));
+            throw new Error(errorBody.detail || "Signup failed");
+        }
         return await response.json();
-    } catch (e) {
+    } catch (e: any) {
         console.error("Sign Up Error:", e);
         throw e;
     }
@@ -181,9 +189,12 @@ export const updateUserPassword = async (password: string) => {
             method: 'POST',
             body: JSON.stringify({ password })
         });
-        if (!response.ok) throw new Error("Failed to update password");
+        if (!response.ok) {
+            const errorBody = await response.json().catch(() => ({ detail: "Update failed" }));
+            throw new Error(errorBody.detail || "Failed to update password");
+        }
         return true;
-    } catch (e) {
+    } catch (e: any) {
         console.error("Update Password Error:", e);
         throw e;
     }

@@ -249,7 +249,13 @@ async def login(creds: UserLogin):
     try:
         res = supabase.auth.sign_in_with_password({"email": creds.email, "password": creds.password})
         return {"access_token": res.session.access_token, "user": res.user}
-    except Exception: raise HTTPException(status_code=400, detail="Invalid login credentials")
+    except Exception as e:
+        error_msg = str(e)
+        if "Email not confirmed" in error_msg:
+            raise HTTPException(status_code=400, detail="Email not confirmed")
+        if "Invalid login credentials" in error_msg:
+            raise HTTPException(status_code=400, detail="Invalid login credentials")
+        raise HTTPException(status_code=400, detail=error_msg)
 
 @app.post("/api/auth/reset-password")
 async def reset_password(req: PasswordResetRequest):
@@ -270,7 +276,16 @@ async def update_password(req: UpdatePasswordRequest, authorization: str = Heade
     async with httpx.AsyncClient() as client:
         response = await client.put(url, json={"password": req.password}, headers=headers)
         if response.status_code != 200:
-            raise HTTPException(status_code=500, detail="Failed to update password")
+            try:
+                err_data = response.json()
+                msg = err_data.get("msg") or err_data.get("error_description") or "Failed to update password"
+                if "New password should be different" in msg:
+                    raise HTTPException(status_code=400, detail="New password must be different from the old password")
+                raise HTTPException(status_code=response.status_code, detail=msg)
+            except HTTPException as he:
+                raise he
+            except Exception:
+                raise HTTPException(status_code=500, detail="Failed to update password")
             
     return {"status": "success"}
 

@@ -90,8 +90,12 @@ export const Auth: React.FC = () => {
         
         if (msg.includes("Email not confirmed")) {
             msg = "Please verify your email address to log in.";
+        } else if (msg.includes("Invalid login credentials")) {
+            msg = "Incorrect email or password.";
         } else if (msg.includes("User already registered") || msg.includes("already exists")) {
             msg = "Account already exists. Please log in.";
+        } else if (msg.includes("password should be at least")) {
+            msg = "Password must be at least 6 characters.";
         }
         
         setError(msg);
@@ -163,6 +167,7 @@ export const Auth: React.FC = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder={isLogin ? "you@example.com" : "Enter new email"}
             />
+            
             <div>
                 <div className="flex justify-between mb-2">
                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Password</label>
