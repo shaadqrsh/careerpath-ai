@@ -252,7 +252,11 @@ export const CareerDetail: React.FC = () => {
                         </div>
                     </div>
 
-                    {selectedCareer.roadmap?.map((step, idx) => (
+                    {selectedCareer.roadmap?.map((step, idx) => {
+                        const hasLocalPath = step.localPath && step.localPath !== 'NA';
+                        const hasTargetPath = !isSameLocation && step.targetPath && step.targetPath !== 'NA';
+                        const pathCount = (hasLocalPath ? 1 : 0) + (hasTargetPath ? 1 : 0);
+                        return (
                         <div key={idx} className="relative group animate-fade-in-up opacity-0" style={{ animationDelay: `${700 + (idx * 150)}ms` }}>
                             <div className="absolute -left-[46px] top-6 w-6 h-6 rounded-full bg-white dark:bg-slate-800 border-2 border-green-500 group-hover:bg-green-500 transition-colors z-10"></div>
                             <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
@@ -260,8 +264,8 @@ export const CareerDetail: React.FC = () => {
                                 <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">{step.title}</h3>
                                 <p className="text-slate-600 dark:text-slate-400 mb-4 text-lg">{step.description}</p>
                                 
-                                <div className={`grid grid-cols-1 ${!isSameLocation && step.targetPath && step.targetPath !== 'NA' ? 'md:grid-cols-2' : ''} gap-4 border-t border-slate-200 dark:border-slate-700 pt-4`}>
-                                    {step.localPath && step.localPath !== 'NA' && (
+                                <div className={`grid grid-cols-1 ${pathCount === 2 ? 'md:grid-cols-2' : ''} gap-4 border-t border-slate-200 dark:border-slate-700 pt-4`}>
+                                    {hasLocalPath && (
                                         <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-lg border border-slate-200 dark:border-slate-700/50">
                                             <div className="flex items-center gap-2 mb-2">
                                                 <MapPin size={14} className="text-blue-500" />
@@ -273,7 +277,7 @@ export const CareerDetail: React.FC = () => {
                                         </div>
                                     )}
                                     
-                                    {!isSameLocation && step.targetPath && step.targetPath !== 'NA' && (
+                                    {hasTargetPath && (
                                         <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-lg border border-slate-200 dark:border-slate-700/50">
                                             <div className="flex items-center gap-2 mb-2">
                                                 <MapPin size={14} className="text-green-500" />
@@ -297,7 +301,7 @@ export const CareerDetail: React.FC = () => {
                                 )}
                             </div>
                         </div>
-                    ))}
+                    )})}
                 </div>
             )}
         </section>

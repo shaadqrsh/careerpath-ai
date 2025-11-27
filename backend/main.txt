@@ -317,17 +317,14 @@ async def upsert_profile(profile: UserProfile, authorization: str = Header(None)
     client = get_user_client(token)
     try:
         data = profile.model_dump(by_alias=False)
-        
         updatable_fields = [
             'id', 'full_name', 'gender', 'age', 'education_level', 
             'specialization', 'residence_country', 'preferred_work_country'
         ]
-        
         final_payload = {k: v for k, v in data.items() if k in updatable_fields}
-        
         client.table("profiles").upsert(final_payload).execute()
         return {"status": "success"}
-    except Exception as e: 
+    except Exception as e:
         logger.error(f"Error in upsert_profile: {e}")
         raise HTTPException(status_code=500)
 
@@ -337,13 +334,29 @@ async def generate_domain(req: GenerateDomainRequest, authorization: str = Heade
     client = get_user_client(token)
     increment_and_verify_quota(client, user.id, "daily_general_quiz_count", "last_career_generation_date", DAILY_GENERAL_QUIZ_LIMIT, "You have taken the general quiz too many times today.")
     try:
-        clean_answers = sanitize_quiz_answers(req.quiz_answers)[:500] 
+        clean_answers = sanitize_quiz_answers(req.quiz_answers) 
         prompt = f"Analyze quiz answers: {clean_answers}. Suggest domain: 'science', 'commerce', or 'arts'. Output JSON: {{ \"suggested_domain\": \"name\" }}"
         model = genai.GenerativeModel(TEXT_MODEL_NAME)
         response = await model.generate_content_async(prompt, generation_config={"response_mime_type": "application/json", "max_output_tokens": 500})
-        text = clean_json_text(response.text)
-        return json.loads(text)
-    except Exception: return {"suggested_domain": "general"}
+        raw_text = clean_json_text(response.text)
+        try:
+            data = json.loads(raw_text)
+            domain = data.get("suggested_domain")
+            if domain in ['science', 'commerce', 'arts']:
+                return {"suggested_domain": domain}
+        except json.JSONDecodeError:
+            logger.warning(f"Failed to decode JSON for domain suggestion. Raw text: {raw_text}")
+        text_lower = raw_text.lower()
+        if "'science'" in text_lower or '"science"' in text_lower:
+            return {"suggested_domain": "science"}
+        if "'commerce'" in text_lower or '"commerce"' in text_lower:
+            return {"suggested_domain": "commerce"}
+        if "'arts'" in text_lower or '"arts"' in text_lower:
+            return {"suggested_domain": "arts"}
+        return {"suggested_domain": "general"}
+    except Exception as e:
+        logger.error(f"Error in generate_domain: {e}", exc_info=True)
+        return {"suggested_domain": "general"}
 
 @app.post("/api/generate-career", response_model=GenerateCareerResponse)
 async def generate_career(req: GenerateCareerRequest, authorization: str = Header(None), user = Depends(verify_token)):
