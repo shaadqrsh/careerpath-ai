@@ -14,7 +14,6 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   last_career_generation_date TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
   daily_general_quiz_count INTEGER DEFAULT 0,
   daily_details_view_count INTEGER DEFAULT 0,
-  skills TEXT[];
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
@@ -35,6 +34,7 @@ CREATE TABLE IF NOT EXISTS public.saved_careers (
   roadmap JSONB,
   day_in_life_prompts TEXT[],
   slide_images TEXT[],
+  skills TEXT[];
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
   UNIQUE(user_id, career_uid)
 );
