@@ -43,13 +43,13 @@ const apiFetch = async (url: string, options: RequestInit = {}) => {
 
 const toDbProfile = (p: UserProfile) => ({
     id: p.id,
-    fullName: p.fullName || '',
+    full_name: p.fullName || '',
     gender: p.gender || '',
     age: p.age || 0,
-    educationLevel: p.educationLevel || '',
+    education_level: p.educationLevel || '',
     specialization: p.specialization || '',
-    residenceCountry: p.residenceCountry || '',
-    preferredWorkCountry: p.preferredWorkCountry || ''
+    residence_country: p.residenceCountry || '',
+    preferred_work_country: p.preferredWorkCountry || ''
 });
 
 const fromDbProfile = (d: any): UserProfile => {
