@@ -15,6 +15,7 @@ export const Quiz: React.FC = () => {
     setDomain, 
     quizAnswers, 
     showConfirm, 
+    hideConfirm,
     resetQuiz 
   } = useAppStore();
   
@@ -104,6 +105,7 @@ export const Quiz: React.FC = () => {
             cancelText: "Stay Here",
             variant: "info",
             onConfirm: () => {
+                hideConfirm();
                 resetQuiz();
                 setView(AppView.DASHBOARD);
             }

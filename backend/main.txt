@@ -430,7 +430,7 @@ TASK 1 - REALISTIC ROADMAP:
 Create a 3-4 step educational and professional roadmap to reach {safe_title}.
 - Be specific about certifications, degrees, or experience needed
 - Include realistic timeframes (not overly optimistic)
-- If Current Residence and Target Residence countries differ, note where each step is best completed using localPath and targetPath. Both (localPath and targetPath) should be generated for each step.
+- If Current Residence and Target Residence countries differ, note where each step is best completed using localPath and targetPath. Atleast one of the two (localPath and targetPath) should be generated for each step.
 - Address the user as "you" - do NOT use their name
 - The description of the step shouldn't be more than in 2-3 short sentences.
 - REQUIRED FIELDS: title, description, duration, localPath, targetPath (must be generated)
@@ -470,7 +470,7 @@ OUTPUT FORMAT: Strict JSON
             "title": "Step Name",
             "description": "Specific details with realistic expectations, addressing user as 'you'...",
             "localPath": "How to accomplish this in {user_p.residence_country}",
-            "targetPath": "How to accomplish this in {user_p.preferred_work_country}",
+            "targetPath": "How to accomplish this in {user_p.preferred_work_country} (or null)",
             "duration": "Realistic duration (e.g., '6-12 months', '2-3 years')",
             "challenges": "Specific obstacle (or null)"
         }}

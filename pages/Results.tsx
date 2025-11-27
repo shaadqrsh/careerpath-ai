@@ -1,13 +1,22 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useAppStore } from '../store';
 import { AppView, CareerRecommendation } from '../types';
 import { TrendingUp, DollarSign, ArrowRight, ArrowLeft, Heart, Star } from 'lucide-react';
-import { ConfirmModal } from '../components/ConfirmModal';
 import { Badge } from '../components/Badge';
 
 export const Results: React.FC = () => {
-  const { recommendations, setSelectedCareer, setView, savedCareers, setCareerOrigin, user, showModal, hideModal } = useAppStore();
-  const [showExitModal, setShowExitModal] = useState(false);
+  const { 
+    recommendations, 
+    setSelectedCareer, 
+    setView, 
+    savedCareers, 
+    setCareerOrigin, 
+    user, 
+    showModal, 
+    hideModal,
+    showConfirm,
+    hideConfirm 
+  } = useAppStore();
 
   const handleSelect = (career: CareerRecommendation) => {
     const detailsLimit = user?.limits?.dailyDetailsViewLimit || 50;
@@ -33,7 +42,17 @@ export const Results: React.FC = () => {
     const hasUnsavedCareers = recommendations.some(rec => !isSaved(rec.id));
 
     if (hasUnsavedCareers) {
-      setShowExitModal(true);
+      showConfirm({
+        title: "Discard Results?",
+        description: "You have unsaved career recommendations. If you go back now, these results will be lost forever.",
+        confirmText: "Yes, Discard",
+        cancelText: "Stay Here",
+        variant: 'danger',
+        onConfirm: () => {
+            hideConfirm();
+            setView(AppView.DASHBOARD);
+        }
+      });
     } else {
       setView(AppView.DASHBOARD);
     }
@@ -151,16 +170,6 @@ export const Results: React.FC = () => {
                 );
             })}
         </div>
-
-        <ConfirmModal
-            isOpen={showExitModal}
-            onClose={() => setShowExitModal(false)}
-            onConfirm={() => setView(AppView.DASHBOARD)}
-            title="Discard Results?"
-            description="You have unsaved career recommendations. If you go back now, these results will be lost forever."
-            confirmText="Yes, Discard"
-            cancelText="Stay Here"
-        />
       </div>
     </div>
   );
