@@ -43,13 +43,13 @@ const apiFetch = async (url: string, options: RequestInit = {}) => {
 
 const toDbProfile = (p: UserProfile) => ({
     id: p.id,
-    full_name: p.fullName || '',
+    fullName: p.fullName || '',
     gender: p.gender || '',
     age: p.age || 0,
-    education_level: p.educationLevel || '',
+    educationLevel: p.educationLevel || '',
     specialization: p.specialization || '',
-    residence_country: p.residenceCountry || '',
-    preferred_work_country: p.preferredWorkCountry || ''
+    residenceCountry: p.residenceCountry || '',
+    preferredWorkCountry: p.preferredWorkCountry || ''
 });
 
 const fromDbProfile = (d: any): UserProfile => {
@@ -63,13 +63,13 @@ const fromDbProfile = (d: any): UserProfile => {
 
     return {
         id: d.id,
-        fullName: d.full_name,
+        fullName: d.full_name || d.fullName,
         gender: d.gender,
         age: d.age,
-        educationLevel: d.education_level,
+        educationLevel: d.education_level || d.educationLevel,
         specialization: d.specialization,
-        residenceCountry: d.residence_country,
-        preferredWorkCountry: d.preferred_work_country,
+        residenceCountry: d.residence_country || d.residenceCountry || '',
+        preferredWorkCountry: d.preferred_work_country || d.preferredWorkCountry || '',
         dailyImageGenerationsCount: d.daily_image_generations_count,
         lastImageGenerationDate: d.last_image_generation_date,
         dailyCareerGenerationsCount: d.daily_career_generations_count,
