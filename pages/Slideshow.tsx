@@ -4,30 +4,7 @@ import { AppView, Slide } from '../types';
 import { generateStorySlides } from '../services/geminiService';
 import { uploadCareerImages, saveCareerToDb, getUserProfile } from '../services/supabaseService';
 import { X, ChevronLeft, ChevronRight, Loader2, ImageOff, ArrowLeft, ArrowRight, Image as ImageIcon } from 'lucide-react';
-
-const BananaIcon = ({ className }: { className?: string }) => (
-    <svg 
-        viewBox="0 0 24 24" 
-        fill="none" 
-        xmlns="http://www.w3.org/2000/svg"
-        className={className}
-    >
-        <path 
-            d="M8.61603 3.5C8.61603 3.5 12.3381 2.5 14.8195 4.9814C17.3009 7.46279 16.0598 11.1849 16.0598 11.1849" 
-            stroke="currentColor" 
-            strokeWidth="2" 
-            strokeLinecap="round" 
-            strokeLinejoin="round"
-        />
-        <path 
-            d="M16.0598 11.1849C16.0598 11.1849 17.3009 19.8685 9.85671 22.35C2.41253 24.8314 1.17144 18.6279 1.17144 18.6279C1.17144 18.6279 5.51329 19.2483 9.23637 12.4255C12.9594 5.60271 8.61603 3.5 8.61603 3.5Z" 
-            stroke="currentColor" 
-            strokeWidth="2" 
-            strokeLinecap="round" 
-            strokeLinejoin="round"
-        />
-    </svg>
-);
+import { GeminiBadge } from '../components/GeminiBadge';
 
 export const Slideshow: React.FC = () => {
   const { selectedCareer, setView, user, setUser, updateCareerImages, savedCareers, showModal, hideModal, showToast } = useAppStore();
@@ -336,12 +313,7 @@ export const Slideshow: React.FC = () => {
             </p>
             
             {isGenerating && (
-                <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-yellow-400/10 border border-yellow-400/20 backdrop-blur-md">
-                    <BananaIcon className="w-4 h-4 text-yellow-400" />
-                    <span className="text-xs font-bold text-yellow-400 tracking-wide">
-                        Powered by Nano Banana
-                    </span>
-                </div>
+                <GeminiBadge variant="banana" />
             )}
         </div>
       </div>

@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useAppStore } from '../store';
 import { AppView, CareerDomain } from '../types';
-import { Beaker, Briefcase, Palette, LogOut, User, Heart, HelpCircle, ArrowRight, Zap, Image, Menu, X } from 'lucide-react';
+import { LogOut, User, Heart, ArrowRight, Zap, Image, Menu, X } from 'lucide-react';
 import { APP_NAME } from '../constants';
 import { GeminiBadge } from '../components/GeminiBadge';
+import { DomainIcon } from '../components/DomainIcon';
 
 export const Dashboard: React.FC = () => {
   const { setView, setDomain, savedCareers, hasViewedSavedPaths, user, logout, showModal, hideModal } = useAppStore();
@@ -45,17 +46,32 @@ export const Dashboard: React.FC = () => {
   }, [isMobileMenuOpen]);
 
   const handleStartQuiz = (domain: CareerDomain) => {
-    const generalQuizLimit = user?.limits?.dailyGeneralQuizLimit ?? 20;
-    if (domain === 'general' && user && (user.dailyGeneralQuizCount || 0) >= generalQuizLimit) {
-        showModal({
-            variant: 'danger',
-            title: "Usage Limit Reached",
-            description: "You have started the general assessment too many times today. Please try again tomorrow or use a specific domain quiz.",
-            buttonText: "Okay",
-            onButtonClick: hideModal
-        });
-        return;
+    if (domain === 'general') {
+        const generalQuizLimit = user?.limits?.dailyGeneralQuizLimit ?? 20;
+        if (user && (user.dailyGeneralQuizCount || 0) >= generalQuizLimit) {
+            showModal({
+                variant: 'danger',
+                title: "Usage Limit Reached",
+                description: "You have started the general assessment too many times today. Please try again tomorrow or use a specific domain quiz.",
+                buttonText: "Okay",
+                onButtonClick: hideModal
+            });
+            return;
+        }
+    } else {
+        if (careerQuota <= 0) {
+            const limit = user?.limits?.dailyCareerLimit ?? 5;
+            showModal({
+                variant: 'danger',
+                title: "Daily Limit Reached",
+                description: <>You've reached your daily limit of <strong>{limit}</strong> career assessments. Please return in 24 hours to explore more paths.</>,
+                buttonText: "Okay",
+                onButtonClick: hideModal
+            });
+            return;
+        }
     }
+
     setDomain(domain);
     setView(AppView.QUIZ);
   };
@@ -65,10 +81,10 @@ export const Dashboard: React.FC = () => {
       setView(AppView.LANDING);
   };
 
-  const categories: {id: CareerDomain, title: string, icon: React.ReactNode, color: string, desc: string}[] = [
-    { id: 'science', title: 'Science & Tech', icon: <Beaker size={32} />, color: 'from-cyan-500 to-blue-600', desc: 'Engineering, Medicine, Research' },
-    { id: 'commerce', title: 'Commerce', icon: <Briefcase size={32} />, color: 'from-emerald-500 to-green-600', desc: 'Business, Finance, Law' },
-    { id: 'arts', title: 'Arts & Creative', icon: <Palette size={32} />, color: 'from-pink-500 to-rose-600', desc: 'Design, Media, Humanities' },
+  const categories: {id: CareerDomain, title: string, desc: string}[] = [
+    { id: 'science', title: 'Science & Tech', desc: 'Engineering, Medicine, Research' },
+    { id: 'commerce', title: 'Commerce', desc: 'Business, Finance, Law' },
+    { id: 'arts', title: 'Arts & Creative', desc: 'Design, Media, Humanities' },
   ];
 
   const getQuotaStyles = (current: number) => {
@@ -248,12 +264,10 @@ export const Dashboard: React.FC = () => {
                   className="group relative bg-white dark:bg-slate-800/50 backdrop-blur-sm rounded-2xl p-6 md:p-8 hover:shadow-xl dark:hover:bg-slate-800 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] cursor-pointer border border-slate-200 dark:border-slate-700 hover:border-blue-500 dark:hover:border-slate-500 shadow-sm flex flex-col h-full"
                   onClick={() => handleStartQuiz(cat.id)}
                 >
-                  <div className={`absolute inset-0 bg-gradient-to-br ${cat.color} opacity-0 group-hover:opacity-5 rounded-2xl transition-opacity`} />
+                  <div className={`absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-5 rounded-2xl transition-opacity ${cat.id === 'science' ? 'from-cyan-500 to-blue-600' : cat.id === 'commerce' ? 'from-emerald-500 to-green-600' : 'from-pink-500 to-rose-600'}`} />
                   
                   <div className="flex flex-row md:flex-col md:items-start gap-4 flex-1">
-                      <div className={`w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-gradient-to-br ${cat.color} flex items-center justify-center mb-0 md:mb-6 text-white shadow-lg shrink-0`}>
-                        {cat.icon}
-                      </div>
+                      <DomainIcon domain={cat.id} className="mb-0 md:mb-6" />
                       <div className="flex-1 text-left">
                           <h3 className="text-xl md:text-2xl font-bold mb-1 md:mb-2 text-slate-900 dark:text-white">{cat.title}</h3>
                           <p className="text-sm md:text-base text-slate-600 dark:text-slate-400 mb-0">{cat.desc}</p>
@@ -280,9 +294,7 @@ export const Dashboard: React.FC = () => {
             >
                 <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-indigo-500 opacity-0 group-hover:opacity-5 rounded-2xl transition-opacity" />
                 <div className="flex items-center gap-4 md:gap-6 relative z-10 w-full md:w-auto">
-                    <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-lg flex-shrink-0">
-                        <HelpCircle size={32} />
-                    </div>
+                    <DomainIcon domain="general" />
                     <div className="text-left">
                         <h3 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white mb-1 md:mb-2">Can't decide?</h3>
                         <p className="text-sm md:text-base text-slate-600 dark:text-slate-400">Take our General Personality Quiz to find your direction.</p>

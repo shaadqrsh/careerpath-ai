@@ -14,9 +14,6 @@ export const Quiz: React.FC = () => {
     selectedDomain, 
     setDomain, 
     quizAnswers, 
-    user, 
-    showModal, 
-    hideModal, 
     showConfirm, 
     resetQuiz 
   } = useAppStore();
@@ -27,7 +24,6 @@ export const Quiz: React.FC = () => {
   const [showGeneralResult, setShowGeneralResult] = useState(false);
   const [suggestedDomain, setSuggestedDomain] = useState<CareerDomain | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
-  const [quotaExceeded, setQuotaExceeded] = useState(false);
 
   const domainQuestions = QUESTIONS.filter(q => q.domain === selectedDomain);
   
@@ -37,43 +33,6 @@ export const Quiz: React.FC = () => {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [currentIndex]);
-
-  useEffect(() => {
-    if (user) {
-        const lastDateStr = user.lastCareerGenerationDate;
-        const dailyLimit = user.limits?.dailyCareerLimit ?? 5;
-        let remaining = dailyLimit;
-        
-        if (lastDateStr) {
-            const lastDate = new Date(lastDateStr);
-            const now = new Date();
-            const isSameDay = lastDate.toISOString().split('T')[0] === now.toISOString().split('T')[0];
-            
-            if (isSameDay) {
-                remaining = Math.max(0, dailyLimit - (user.dailyCareerGenerationsCount || 0));
-            }
-        }
-        if (selectedDomain !== 'general' && remaining <= 0) {
-            setQuotaExceeded(true);
-        }
-    }
-  }, [user, selectedDomain]);
-
-  useEffect(() => {
-    if (quotaExceeded) {
-        const dailyLimit = user?.limits?.dailyCareerLimit ?? 5;
-        showModal({
-            variant: 'danger',
-            title: "Daily Limit Reached",
-            description: <>You've reached your daily limit of <strong>{dailyLimit}</strong> career assessments. Please return in 24 hours to explore more paths.</>,
-            buttonText: "Return to Dashboard",
-            onButtonClick: () => {
-                hideModal();
-                setView(AppView.DASHBOARD);
-            }
-        });
-    }
-  }, [quotaExceeded, showModal, hideModal, setView, user]);
 
   useEffect(() => {
     if (domainQuestions.length === 0 && !showGeneralResult) {
@@ -154,10 +113,6 @@ export const Quiz: React.FC = () => {
         setView(AppView.DASHBOARD);
     }
   };
-
-  if (quotaExceeded) {
-      return null;
-  }
 
   if (isCalculating) {
       return <FullScreenLoader text="Analyzing your preferences..." />;

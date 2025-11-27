@@ -3,7 +3,7 @@ import React from 'react';
 interface GeminiBadgeProps {
   size?: 'sm' | 'md' | 'lg';
   className?: string;
-  variant?: 'default' | 'glass';
+  variant?: 'default' | 'glass' | 'banana';
 }
 
 export const GeminiBadge: React.FC<GeminiBadgeProps> = ({ 
@@ -19,13 +19,35 @@ export const GeminiBadge: React.FC<GeminiBadgeProps> = ({
 
   const currentSize = sizeClasses[size];
 
+  if (variant === 'banana') {
+    return (
+      <div className={`inline-flex items-center gap-1.5 rounded-full bg-yellow-400/10 border border-yellow-400/20 backdrop-blur-md ${currentSize.px} ${currentSize.py} ${className}`}>
+        <svg 
+            width={currentSize.icon + 2} 
+            height={currentSize.icon + 2} 
+            viewBox="0 0 24 24" 
+            fill="none" 
+            xmlns="http://www.w3.org/2000/svg"
+            className="text-yellow-400 shrink-0"
+        >
+            <path d="M8.61603 3.5C8.61603 3.5 12.3381 2.5 14.8195 4.9814C17.3009 7.46279 16.0598 11.1849 16.0598 11.1849" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M16.0598 11.1849C16.0598 11.1849 17.3009 19.8685 9.85671 22.35C2.41253 24.8314 1.17144 18.6279 1.17144 18.6279C1.17144 18.6279 5.51329 19.2483 9.23637 12.4255C12.9594 5.60271 8.61603 3.5 8.61603 3.5Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+        <span className={`${currentSize.text} font-bold text-yellow-400 tracking-wide whitespace-nowrap`}>
+            Powered by Nano Banana
+        </span>
+      </div>
+    );
+  }
+
   const variantClasses = {
-    default: "bg-slate-100 dark:bg-slate-800",
-    glass: "bg-white dark:bg-slate-800/50 backdrop-blur-sm shadow-sm"
+    default: "bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700",
+    glass: "bg-white dark:bg-slate-800/50 backdrop-blur-sm shadow-sm border-slate-200 dark:border-slate-700",
+    banana: ""
   };
 
   return (
-    <div className={`inline-flex items-center gap-1.5 rounded-full border border-slate-200 dark:border-slate-700 ${variantClasses[variant]} ${currentSize.px} ${currentSize.py} ${className}`}>
+    <div className={`inline-flex items-center gap-1.5 rounded-full border ${variantClasses[variant]} ${currentSize.px} ${currentSize.py} ${className}`}>
       <svg 
         width={currentSize.icon} 
         height={currentSize.icon} 
