@@ -2,6 +2,7 @@ import React from 'react';
 import { create } from 'zustand';
 import { AppView, UserProfile, QuizAnswer, CareerRecommendation, CareerDomain } from './types';
 import { saveCareerToDb, deleteCareerFromDb, uploadCareerImages, signOut as serviceSignOut } from './services/supabaseService';
+import { AlertVariant } from './components/AlertModal';
 
 export type AppTheme = 'light' | 'dark' | 'system';
 
@@ -9,7 +10,7 @@ interface ModalConfig {
     isOpen: boolean;
     title: string;
     description: React.ReactNode;
-    icon?: React.ReactNode;
+    variant?: AlertVariant;
     buttonText?: string;
     onButtonClick?: () => void;
 }
@@ -42,12 +43,10 @@ interface AppState {
   isSavingCareer: boolean;
   showPasswordResetModal: boolean;
   
-  // Global UI States
   modal: ModalConfig | null;
   confirmation: ConfirmConfig | null;
   toast: { show: boolean; message: string; type: 'success' | 'error' };
 
-  // Actions
   showModal: (config: Omit<ModalConfig, 'isOpen'>) => void;
   hideModal: () => void;
   
@@ -184,6 +183,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       });
       return;
     }
+
     set({ isSavingCareer: true });
     try {
         let currentVersion = { ...currentCareerState };
@@ -245,7 +245,7 @@ export const useAppStore = create<AppState>((set, get) => ({
             savedCareers: newSaved,
             selectedCareer: newSelected,
             recommendations: newRecommendations,
-            confirmation: null // Close modal
+            confirmation: null 
         });
         
         state.showToast("Career deleted successfully", 'success');

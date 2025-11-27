@@ -3,7 +3,7 @@ import { useAppStore } from '../store';
 import { AppView } from '../types';
 import { Button } from '../components/Button';
 import { Badge } from '../components/Badge';
-import { ChevronLeft, PlayCircle, Heart, MapPin, Briefcase, GraduationCap, Loader2, ArrowRightCircle, Shuffle, Star, DollarSign, TrendingUp, AlertOctagon, AlertTriangle, ShieldAlert } from 'lucide-react';
+import { ChevronLeft, PlayCircle, Heart, MapPin, Briefcase, GraduationCap, Loader2, ArrowRightCircle, Shuffle, Star, DollarSign, TrendingUp, AlertTriangle, ShieldAlert } from 'lucide-react';
 import { generateCareerDetails } from '../services/geminiService';
 
 export const CareerDetail: React.FC = () => {
@@ -26,7 +26,7 @@ export const CareerDetail: React.FC = () => {
                 console.error("Failed to load career details", error);
                 if (error.message && error.message.includes("Usage limit reached")) {
                      showModal({
-                        icon: <AlertOctagon className="w-16 h-16 text-red-500 mx-auto mb-6" />,
+                        variant: 'danger',
                         title: "Usage Limit Reached",
                         description: "You have viewed too many career details today. Please come back tomorrow.",
                         buttonText: "Back to Dashboard",

@@ -3,7 +3,7 @@ import { useAppStore } from '../store';
 import { AppView, Slide } from '../types';
 import { generateStorySlides } from '../services/geminiService';
 import { uploadCareerImages, saveCareerToDb, getUserProfile } from '../services/supabaseService';
-import { X, ChevronLeft, ChevronRight, Loader2, ImageOff, AlertOctagon, ArrowLeft, ArrowRight, Image as ImageIcon } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Loader2, ImageOff, ArrowLeft, ArrowRight, Image as ImageIcon } from 'lucide-react';
 
 const BananaIcon = ({ className }: { className?: string }) => (
     <svg 
@@ -52,7 +52,7 @@ export const Slideshow: React.FC = () => {
     if (quotaError) {
         const limit = user?.limits?.dailyImageLimit ?? 3;
         showModal({
-            icon: <AlertOctagon className="w-16 h-16 text-red-500 mx-auto mb-6" />,
+            variant: 'danger',
             title: "Daily Limit Reached",
             description: <>You've used all <strong>{limit}</strong> free visualizations for today. Please return in 24 hours to generate more career scenes.</>,
             buttonText: "Return to Career",
@@ -67,7 +67,7 @@ export const Slideshow: React.FC = () => {
   useEffect(() => {
       if (allFailed) {
           showModal({
-            icon: <ImageOff className="w-12 h-12 text-slate-600 mx-auto mb-6" />,
+            variant: 'warning',
             title: "Visualizations are not available",
             description: "We couldn't generate the scenes for this career right now. Please try again later.",
             buttonText: "Close",

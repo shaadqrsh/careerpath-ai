@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAppStore } from '../store';
 import { AppView, CareerRecommendation } from '../types';
-import { TrendingUp, DollarSign, ArrowRight, ArrowLeft, Heart, Star, AlertOctagon } from 'lucide-react';
+import { TrendingUp, DollarSign, ArrowRight, ArrowLeft, Heart, Star } from 'lucide-react';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { Badge } from '../components/Badge';
 
@@ -13,7 +13,7 @@ export const Results: React.FC = () => {
     const detailsLimit = user?.limits?.dailyDetailsViewLimit || 50;
     if (!career.detailsLoaded && user && (user.dailyDetailsViewCount || 0) >= detailsLimit) {
         showModal({
-            icon: <AlertOctagon className="w-16 h-16 text-red-500 mx-auto mb-6" />,
+            variant: 'danger',
             title: "Usage Limit Reached",
             description: "You have viewed too many new career details today. Please stick to the careers you have already opened or come back tomorrow.",
             buttonText: "Okay",

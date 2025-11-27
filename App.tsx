@@ -197,7 +197,7 @@ const App: React.FC = () => {
 
       <AlertModal
         isOpen={!!modal && modal.isOpen}
-        icon={modal?.icon}
+        variant={modal?.variant}
         title={modal?.title || ''}
         description={modal?.description}
         buttonText={modal?.buttonText || 'Close'}

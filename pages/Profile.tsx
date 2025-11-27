@@ -3,8 +3,8 @@ import { useAppStore } from '../store';
 import { AppView, UserProfile } from '../types';
 import { Button } from '../components/Button';
 import { CustomSelect } from '../components/CustomSelect';
-import { Input } from '../components/Input'; // Standardized Input
-import { FullScreenLoader } from '../components/FullScreenLoader'; // Standardized Loader
+import { Input } from '../components/Input';
+import { FullScreenLoader } from '../components/FullScreenLoader';
 import { ArrowLeft, User, MapPin, Settings, Mail } from 'lucide-react';
 import { FALLBACK_COUNTRIES } from '../constants';
 import { upsertUserProfile, getUserProfile, getCurrentUser, sendPasswordResetEmail } from '../services/supabaseService';

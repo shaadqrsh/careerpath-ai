@@ -3,7 +3,7 @@ import { useAppStore } from '../store';
 import { AppView, CareerDomain } from '../types';
 import { QUESTIONS } from '../constants';
 import { Button } from '../components/Button';
-import { CheckCircle2, ChevronRight, AlertOctagon } from 'lucide-react';
+import { CheckCircle2, ChevronRight } from 'lucide-react';
 import { FullScreenLoader } from '../components/FullScreenLoader';
 import { generateDomainSuggestion } from '../services/geminiService';
 
@@ -63,7 +63,7 @@ export const Quiz: React.FC = () => {
     if (quotaExceeded) {
         const dailyLimit = user?.limits?.dailyCareerLimit ?? 5;
         showModal({
-            icon: <AlertOctagon className="w-16 h-16 text-red-500 mx-auto mb-6" />,
+            variant: 'danger',
             title: "Daily Limit Reached",
             description: <>You've reached your daily limit of <strong>{dailyLimit}</strong> career assessments. Please return in 24 hours to explore more paths.</>,
             buttonText: "Return to Dashboard",

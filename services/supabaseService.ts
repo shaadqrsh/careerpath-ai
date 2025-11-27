@@ -1,8 +1,6 @@
-import React from 'react';
 import { CareerRecommendation, UserProfile } from '../types';
 import { API_BASE_URL } from '../constants';
 import { useAppStore } from '../store';
-import { AlertOctagon } from 'lucide-react';
 
 const getToken = () => localStorage.getItem('access_token');
 const setToken = (token: string) => localStorage.setItem('access_token', token);
@@ -11,9 +9,8 @@ const clearToken = () => localStorage.removeItem('access_token');
 const handleAuthError = () => {
     const { showModal, logout } = useAppStore.getState();
     if (useAppStore.getState().modal?.isOpen) return;
-
     showModal({
-        icon: React.createElement(AlertOctagon, { className: "w-16 h-16 text-red-500 mx-auto mb-6" }),
+        variant: 'danger',
         title: "Session Expired",
         description: "Your session has expired. Please log in again to continue.",
         buttonText: "Okay, Log In",

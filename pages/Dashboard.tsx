@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAppStore } from '../store';
 import { AppView, CareerDomain } from '../types';
-import { Beaker, Briefcase, Palette, LogOut, User, Heart, HelpCircle, ArrowRight, Zap, Image, Menu, X, AlertOctagon } from 'lucide-react';
+import { Beaker, Briefcase, Palette, LogOut, User, Heart, HelpCircle, ArrowRight, Zap, Image, Menu, X } from 'lucide-react';
 import { APP_NAME } from '../constants';
 import { GeminiBadge } from '../components/GeminiBadge';
 
@@ -48,7 +48,7 @@ export const Dashboard: React.FC = () => {
     const generalQuizLimit = user?.limits?.dailyGeneralQuizLimit ?? 20;
     if (domain === 'general' && user && (user.dailyGeneralQuizCount || 0) >= generalQuizLimit) {
         showModal({
-            icon: <AlertOctagon className="w-16 h-16 text-red-500 mx-auto mb-6" />,
+            variant: 'danger',
             title: "Usage Limit Reached",
             description: "You have started the general assessment too many times today. Please try again tomorrow or use a specific domain quiz.",
             buttonText: "Okay",
@@ -56,7 +56,6 @@ export const Dashboard: React.FC = () => {
         });
         return;
     }
-
     setDomain(domain);
     setView(AppView.QUIZ);
   };

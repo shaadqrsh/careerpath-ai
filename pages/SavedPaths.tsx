@@ -3,7 +3,7 @@ import { useAppStore } from '../store';
 import { AppView, CareerRecommendation } from '../types';
 import { Button } from '../components/Button';
 import { Badge } from '../components/Badge';
-import { ArrowLeft, Trash2, ArrowRight, TrendingUp, DollarSign, RefreshCw, Loader2, AlertOctagon } from 'lucide-react';
+import { ArrowLeft, Trash2, ArrowRight, TrendingUp, DollarSign } from 'lucide-react';
 import { getSavedCareers } from '../services/supabaseService';
 
 export const SavedPaths: React.FC = () => {
@@ -14,7 +14,7 @@ export const SavedPaths: React.FC = () => {
     const detailsLimit = user?.limits?.dailyDetailsViewLimit || 50;
     if (!career.detailsLoaded && user && (user.dailyDetailsViewCount || 0) >= detailsLimit) {
         showModal({
-            icon: <AlertOctagon className="w-16 h-16 text-red-500 mx-auto mb-6" />,
+            variant: 'danger',
             title: "Usage Limit Reached",
             description: "You have viewed too many new career details today. Please stick to the careers you have already opened or come back tomorrow.",
             buttonText: "Okay",

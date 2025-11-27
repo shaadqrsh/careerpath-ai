@@ -3,7 +3,7 @@ import { useAppStore } from '../store';
 import { AppView } from '../types';
 import { generateCareerRecommendations } from '../services/geminiService';
 import { getUserProfile } from '../services/supabaseService';
-import { Loader2, AlertOctagon } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { GeminiBadge } from '../components/GeminiBadge';
 
 const generateUUID = () => {
@@ -128,9 +128,9 @@ export const Analysis: React.FC = () => {
             if (e.message === "QUOTA_EXCEEDED") {
                 const limit = user.limits?.dailyCareerLimit ?? 5;
                 showModal({
-                    icon: <AlertOctagon className="w-16 h-16 text-red-500 mx-auto mb-6" />,
+                    variant: 'danger',
                     title: "Daily Limit Reached",
-                    description: `You've reached your daily limit of ${limit} career assessments. Please return in 24 hours to explore more paths.`,
+                    description: <>You've reached your daily limit of <strong>${limit}</strong> career assessments. Please return in 24 hours to explore more paths.</>,
                     buttonText: "Return to Dashboard",
                     onButtonClick: () => {
                         hideModal();
@@ -139,7 +139,7 @@ export const Analysis: React.FC = () => {
                 });
             } else {
                 showModal({
-                    icon: <AlertOctagon className="w-16 h-16 text-amber-500 mx-auto mb-6" />,
+                    variant: 'warning',
                     title: "Analysis Failed",
                     description: "We encountered an issue while generating your career path. Please try again.",
                     buttonText: "Return to Dashboard",
