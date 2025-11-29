@@ -337,8 +337,23 @@ async def generate_domain(req: GenerateDomainRequest, authorization: str = Heade
         clean_answers = sanitize_quiz_answers(req.quiz_answers) 
         prompt = f"Analyze quiz answers: {clean_answers}. Suggest domain: 'science', 'commerce', or 'arts'. Output JSON: {{ \"suggested_domain\": \"name\" }}"
         model = genai.GenerativeModel(TEXT_MODEL_NAME)
-        response = await model.generate_content_async(prompt, generation_config={"response_mime_type": "application/json", "max_output_tokens": 500})
-        raw_text = clean_json_text(response.text)
+        safety_settings = [
+            {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
+            {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
+            {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
+            {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
+        ]
+        response = await model.generate_content_async(
+            prompt, 
+            generation_config={"response_mime_type": "application/json", "max_output_tokens": 500},
+            safety_settings=safety_settings
+        )
+        try:
+            raw_text = clean_json_text(response.text)
+        except ValueError:
+            # Captures "Invalid operation: The `response.text` quick accessor..."
+            logger.warning("Gemini returned empty response (likely safety filter). Defaulting to 'general'.")
+            return {"suggested_domain": "general"}
         try:
             data = json.loads(raw_text)
             domain = data.get("suggested_domain")
@@ -480,7 +495,7 @@ Evaluate the difficulty of this career transition:
 Explain in 1-2 sentences what makes this transition easier or harder for this specific user.
 
 TASK 3 - SKILLS ANALYSIS:
-List 5-7 specific hard and soft skills required for this role in the target market. 
+List 5-7 specific hard and soft skills required for this role in the target market. Each skill shouldn't be longer than 1-2 words.
 Mix technical tools (software, languages, etc.) and interpersonal/cognitive abilities.
 
 TASK 4 - REALISTIC DAY-IN-THE-LIFE SCENARIOS:
