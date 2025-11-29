@@ -24,8 +24,8 @@ DAILY_IMAGE_LIMIT = 3
 DAILY_CAREER_LIMIT = 5
 
 # Hidden Rate Limits
-DAILY_GENERAL_QUIZ_LIMIT = 20  
-DAILY_DETAILS_VIEW_LIMIT = 50 
+DAILY_GENERAL_QUIZ_LIMIT = 10 
+DAILY_DETAILS_VIEW_LIMIT = 30 
 
 # Configuration Constants
 SLIDESHOW_IMAGE_COUNT = 3
@@ -345,14 +345,13 @@ async def generate_domain(req: GenerateDomainRequest, authorization: str = Heade
         ]
         response = await model.generate_content_async(
             prompt, 
-            generation_config={"response_mime_type": "application/json", "max_output_tokens": 500},
+            generation_config={"response_mime_type": "application/json", "max_output_tokens": 5000},
             safety_settings=safety_settings
         )
         try:
             raw_text = clean_json_text(response.text)
         except ValueError:
-            # Captures "Invalid operation: The `response.text` quick accessor..."
-            logger.warning("Gemini returned empty response (likely safety filter). Defaulting to 'general'.")
+            logger.warning("Gemini returned empty response. Defaulting to 'general'.")
             return {"suggested_domain": "general"}
         try:
             data = json.loads(raw_text)
@@ -360,14 +359,11 @@ async def generate_domain(req: GenerateDomainRequest, authorization: str = Heade
             if domain in ['science', 'commerce', 'arts']:
                 return {"suggested_domain": domain}
         except json.JSONDecodeError:
-            logger.warning(f"Failed to decode JSON for domain suggestion. Raw text: {raw_text}")
+            pass
         text_lower = raw_text.lower()
-        if "'science'" in text_lower or '"science"' in text_lower:
-            return {"suggested_domain": "science"}
-        if "'commerce'" in text_lower or '"commerce"' in text_lower:
-            return {"suggested_domain": "commerce"}
-        if "'arts'" in text_lower or '"arts"' in text_lower:
-            return {"suggested_domain": "arts"}
+        if "science" in text_lower: return {"suggested_domain": "science"}
+        if "commerce" in text_lower: return {"suggested_domain": "commerce"}
+        if "arts" in text_lower: return {"suggested_domain": "arts"}
         return {"suggested_domain": "general"}
     except Exception as e:
         logger.error(f"Error in generate_domain: {e}", exc_info=True)
