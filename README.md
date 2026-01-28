@@ -38,7 +38,7 @@ Follow these steps in order to deploy the application to the cloud.
     *   Click **New Query**.
     *   Copy the contents of the file `database.txt` provided in this repository.
     *   Paste it into the editor and click **Run**.
-    *   *Note: This script will automatically create the necessary tables (`profiles`, `saved_careers`), set up Row Level Security (RLS) policies, and configure the `career_slideshows` storage bucket.*
+    *   *Note: This script will automatically create the dedicated schema `careerpath_ai`, the necessary tables (`profiles`, `saved_careers`), set up Row Level Security (RLS) policies, and configure the `careerpath_ai_slideshows` storage bucket with strict security.*
 3.  **Email Templates (Optional)**: 
     *   Go to **Authentication** -> **Email Templates**.
     *   Update "Confirm Signup" and "Reset Password" with the content from `email_templates.txt` for consistent styling.

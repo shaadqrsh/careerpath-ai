@@ -1,48 +1,21 @@
 -- 1. Create the new schema
 CREATE SCHEMA IF NOT EXISTS careerpath_ai;
 
--- 2. Create tables in the new schema
-CREATE TABLE IF NOT EXISTS careerpath_ai.profiles (
-  id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
-  full_name TEXT,
-  gender TEXT,
-  age INT,
-  education_level TEXT,
-  specialization TEXT,
-  residence_country TEXT,
-  preferred_work_country TEXT,
-  daily_image_generations_count INT DEFAULT 0,
-  daily_career_generations_count INT DEFAULT 0,
-  daily_general_quiz_count INT DEFAULT 0,
-  daily_details_view_count INT DEFAULT 0,
-  last_image_generation_date TIMESTAMPTZ,
-  last_career_generation_date TIMESTAMPTZ,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
+-- 2. Move existing tables (if they exist in public)
+DO $$
+BEGIN
+    IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'profiles') THEN
+        ALTER TABLE public.profiles SET SCHEMA careerpath_ai;
+    END IF;
+    
+    IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'saved_careers') THEN
+        ALTER TABLE public.saved_careers SET SCHEMA careerpath_ai;
+    END IF;
+END $$;
 
-CREATE TABLE IF NOT EXISTS careerpath_ai.saved_careers (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
-  career_uid UUID NOT NULL,
-  title TEXT NOT NULL,
-  match_score INT,
-  summary TEXT,
-  salary_range TEXT,
-  growth TEXT,
-  tags TEXT[],
-  entry_barriers TEXT,
-  is_pivot BOOLEAN DEFAULT false,
-  pivot_analysis TEXT,
-  skills TEXT[],
-  roadmap JSONB,
-  day_in_life_prompts TEXT[],
-  slide_images TEXT[],
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE(user_id, career_uid)
-);
+-- 3. Move the function
+DROP FUNCTION IF EXISTS public.check_and_increment_quota(UUID, TEXT, TEXT, INT);
 
--- 3. Create Quota Function in the new schema
 CREATE OR REPLACE FUNCTION careerpath_ai.check_and_increment_quota(
     p_user_id UUID,
     p_count_field TEXT,
@@ -76,24 +49,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- 4. Enable RLS
-ALTER TABLE careerpath_ai.profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE careerpath_ai.saved_careers ENABLE ROW LEVEL SECURITY;
-
--- 5. Create Policies (Namespaced to schema)
-
--- Profiles
-CREATE POLICY "Users can insert their own profile" ON careerpath_ai.profiles FOR INSERT WITH CHECK (auth.uid() = id);
-CREATE POLICY "Users can view their own profile" ON careerpath_ai.profiles FOR SELECT USING (auth.uid() = id);
-CREATE POLICY "Users can update their own profile" ON careerpath_ai.profiles FOR UPDATE USING (auth.uid() = id);
-
--- Saved Careers
-CREATE POLICY "Users can insert their own saved careers" ON careerpath_ai.saved_careers FOR INSERT WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "Users can view their own saved careers" ON careerpath_ai.saved_careers FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Users can update their own saved careers" ON careerpath_ai.saved_careers FOR UPDATE USING (auth.uid() = user_id);
-CREATE POLICY "Users can delete their own saved careers" ON careerpath_ai.saved_careers FOR DELETE USING (auth.uid() = user_id);
-
--- 6. Grant Permissions
+-- 4. Grant usage on the new schema
 GRANT USAGE ON SCHEMA careerpath_ai TO authenticated;
 GRANT USAGE ON SCHEMA careerpath_ai TO service_role;
 GRANT ALL ON ALL TABLES IN SCHEMA careerpath_ai TO authenticated;
@@ -101,7 +57,7 @@ GRANT ALL ON ALL TABLES IN SCHEMA careerpath_ai TO service_role;
 GRANT ALL ON ALL SEQUENCES IN SCHEMA careerpath_ai TO authenticated;
 GRANT ALL ON ALL SEQUENCES IN SCHEMA careerpath_ai TO service_role;
 
--- 7. Storage Setup (New hardened bucket)
+-- 5. Storage Migration & Security Hardening
 -- Bucket: careerpath_ai_slideshows
 INSERT INTO storage.buckets (id, name, public) 
 VALUES ('careerpath_ai_slideshows', 'careerpath_ai_slideshows', true) 

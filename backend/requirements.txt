@@ -1,7 +1,7 @@
 fastapi
 uvicorn
-supabase
-google-generativeai
+supabase==2.23.0
+google-genai
 python-multipart
 pydantic
 requests

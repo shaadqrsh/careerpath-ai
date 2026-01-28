@@ -14,7 +14,8 @@ from fastapi import FastAPI, HTTPException, Depends, Header, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, ConfigDict
 from pydantic.alias_generators import to_camel
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 from supabase import create_client, Client
 import httpx
 
@@ -77,12 +78,14 @@ if not SUPABASE_URL or not SUPABASE_KEY:
     logger.warning("Supabase credentials missing.")
     supabase: Client = None
 else:
-    supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+    from supabase.lib.client_options import ClientOptions
+    supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY, options=ClientOptions(schema="careerpath_ai"))
 
 if not GEMINI_API_KEY:
     logger.warning("Gemini API Key missing.")
+    ai_client = None
 else:
-    genai.configure(api_key=GEMINI_API_KEY)
+    ai_client = genai.Client(api_key=GEMINI_API_KEY)
 
 def sanitize_input(text: str) -> str:
     if not isinstance(text, str): return str(text)
@@ -108,7 +111,8 @@ def clean_json_text(text: str) -> str:
     return text.strip()
 
 def get_user_client(token: str) -> Client:
-    client = create_client(SUPABASE_URL, SUPABASE_KEY)
+    from supabase.lib.client_options import ClientOptions
+    client = create_client(SUPABASE_URL, SUPABASE_KEY, options=ClientOptions(schema="careerpath_ai"))
     client.postgrest.auth(token)
     return client
 
@@ -334,6 +338,7 @@ async def generate_domain(req: GenerateDomainRequest, authorization: str = Heade
     client = get_user_client(token)
     increment_and_verify_quota(client, user.id, "daily_general_quiz_count", "last_career_generation_date", DAILY_GENERAL_QUIZ_LIMIT, "You have taken the general quiz too many times today.")
     try:
+        if not ai_client: raise Exception("AI client not initialized")
         clean_answers = sanitize_quiz_answers(req.quiz_answers) 
         prompt = f"Analyze quiz answers: {clean_answers}. Suggest domain: 'science', 'commerce', or 'arts'. Output JSON: {{ \"suggested_domain\": \"name\" }}"
         model = genai.GenerativeModel(TEXT_MODEL_NAME)
@@ -435,10 +440,10 @@ OUTPUT FORMAT: Strict JSON
 }}
 IMPORTANT: Do NOT include 'roadmap' or 'dayInLifePrompts' in this response. They will be generated later.
 """
-        model = genai.GenerativeModel(TEXT_MODEL_NAME)
-        response = await model.generate_content_async(
-            prompt, 
-            generation_config={"response_mime_type": "application/json", "max_output_tokens": 8192}
+        response = await ai_client.aio.models.generate_content(
+            model=TEXT_MODEL_NAME,
+            contents=prompt,
+            config=types.GenerateContentConfig(response_mime_type="application/json", max_output_tokens=8192)
         )
         text = clean_json_text(response.text)
         result_json = json.loads(text)
@@ -525,10 +530,10 @@ OUTPUT FORMAT: Strict JSON
     "dayInLifePrompts": ["Realistic everyday prompt 1", "Realistic everyday prompt 2", "Realistic everyday prompt 3"]
 }}
 """
-        model = genai.GenerativeModel(TEXT_MODEL_NAME)
-        response = await model.generate_content_async(
-            prompt, 
-            generation_config={"response_mime_type": "application/json", "max_output_tokens": 5000}
+        response = await ai_client.aio.models.generate_content(
+            model=TEXT_MODEL_NAME,
+            contents=prompt,
+            config=types.GenerateContentConfig(response_mime_type="application/json", max_output_tokens=5000)
         )
         text = clean_json_text(response.text)
         return json.loads(text)
@@ -549,7 +554,6 @@ async def generate_images(req: GenerateImagesRequest, authorization: str = Heade
             subject = f"a {age}yo {req.user_context.gender} professional from {req.user_context.residence_country}"
 
         safe_prompts = req.prompts[:SLIDESHOW_IMAGE_COUNT]
-        model = genai.GenerativeModel(IMAGE_MODEL_NAME)
 
         async def gen_one_image(prompt_text, idx):
             await asyncio.sleep(idx * 1.5)
@@ -566,7 +570,13 @@ Negative: text, words, watermarks, logos, unrealistic lighting, overly dramatic 
 """
             for attempt in range(3):
                 try:
-                    res = await model.generate_content_async(prompt)
+                    res = await ai_client.aio.models.generate_content(
+                        model=IMAGE_MODEL_NAME,
+                        contents=prompt,
+                        config=types.GenerateContentConfig(
+                            response_mime_type="image/png" 
+                        )
+                    )
                     if res.candidates and res.candidates[0].content.parts:
                         part = res.candidates[0].content.parts[0]
                         if hasattr(part, 'inline_data') and part.inline_data:
@@ -614,7 +624,7 @@ async def delete_career(career_uid: str, authorization: str = Header(None), user
         try:
             files_to_remove = [f"{user.id}/{career_uid}/slide_{i}.png" for i in range(5)]
             files_to_remove += [f"{user.id}/{career_uid}/slide_{i}.jpg" for i in range(5)]
-            client.storage.from_('career_slideshows').remove(files_to_remove)
+            client.storage.from_('careerpath_ai_slideshows').remove(files_to_remove)
         except Exception: pass
 
         client.table("saved_careers").delete().eq("user_id", user.id).eq("career_uid", career_uid).execute()
@@ -642,10 +652,10 @@ async def upload_career_images(req: SaveCareerImageRequest, authorization: str =
                      uploaded.append(None)
                      continue
 
-                url = f"{SUPABASE_URL}/storage/v1/object/career_slideshows/{user.id}/{req.career_uid}/slide_{i}.{ext}"
+                url = f"{SUPABASE_URL}/storage/v1/object/careerpath_ai_slideshows/{user.id}/{req.career_uid}/slide_{i}.{ext}"
                 data = base64.b64decode(img.split(",")[1] if "," in img else img)
                 await client.post(url, content=data, headers={"Authorization": authorization, "apikey": SUPABASE_KEY, "Content-Type": f"image/{ext}", "x-upsert": "true"})
-                uploaded.append(f"{SUPABASE_URL}/storage/v1/object/public/career_slideshows/{user.id}/{req.career_uid}/slide_{i}.{ext}")
+                uploaded.append(f"{SUPABASE_URL}/storage/v1/object/public/careerpath_ai_slideshows/{user.id}/{req.career_uid}/slide_{i}.{ext}")
             except: uploaded.append(None)
     return {"image_urls": uploaded}
 
