@@ -17,6 +17,8 @@ CREATE TABLE IF NOT EXISTS careerpath_ai.profiles (
   daily_details_view_count INT DEFAULT 0,
   last_image_generation_date TIMESTAMPTZ,
   last_career_generation_date TIMESTAMPTZ,
+  last_general_quiz_date TIMESTAMPTZ,
+  last_details_view_date TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );

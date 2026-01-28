@@ -155,6 +155,8 @@ class UserProfile(BaseSchema):
     daily_details_view_count: Optional[int] = 0
     last_image_generation_date: Optional[datetime] = None
     last_career_generation_date: Optional[datetime] = None
+    last_general_quiz_date: Optional[datetime] = None
+    last_details_view_date: Optional[datetime] = None
     limits: Optional[Limits] = None 
 
 class CareerRoadmapStep(BaseSchema):
@@ -336,22 +338,24 @@ async def upsert_profile(profile: UserProfile, authorization: str = Header(None)
 async def generate_domain(req: GenerateDomainRequest, authorization: str = Header(None), user = Depends(verify_token)):
     token = authorization.split(" ")[1]
     client = get_user_client(token)
-    increment_and_verify_quota(client, user.id, "daily_general_quiz_count", "last_career_generation_date", DAILY_GENERAL_QUIZ_LIMIT, "You have taken the general quiz too many times today.")
+    increment_and_verify_quota(client, user.id, "daily_general_quiz_count", "last_general_quiz_date", DAILY_GENERAL_QUIZ_LIMIT, "You have taken the general quiz too many times today.")
     try:
         if not ai_client: raise Exception("AI client not initialized")
         clean_answers = sanitize_quiz_answers(req.quiz_answers) 
         prompt = f"Analyze quiz answers: {clean_answers}. Suggest domain: 'science', 'commerce', or 'arts'. Output JSON: {{ \"suggested_domain\": \"name\" }}"
-        model = genai.GenerativeModel(TEXT_MODEL_NAME)
-        safety_settings = [
-            {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
-            {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
-            {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
-            {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
-        ]
-        response = await model.generate_content_async(
-            prompt, 
-            generation_config={"response_mime_type": "application/json", "max_output_tokens": 5000},
-            safety_settings=safety_settings
+        response = await ai_client.aio.models.generate_content(
+            model=TEXT_MODEL_NAME,
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json", 
+                max_output_tokens=5000,
+                safety_settings=[
+                    types.SafetySetting(category="HARM_CATEGORY_HARASSMENT", threshold="BLOCK_NONE"),
+                    types.SafetySetting(category="HARM_CATEGORY_HATE_SPEECH", threshold="BLOCK_NONE"),
+                    types.SafetySetting(category="HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold="BLOCK_NONE"),
+                    types.SafetySetting(category="HARM_CATEGORY_DANGEROUS_CONTENT", threshold="BLOCK_NONE"),
+                ]
+            )
         )
         try:
             raw_text = clean_json_text(response.text)
@@ -461,7 +465,7 @@ IMPORTANT: Do NOT include 'roadmap' or 'dayInLifePrompts' in this response. They
 async def generate_career_details(req: GenerateCareerDetailsRequest, authorization: str = Header(None), user = Depends(verify_token)):
     token = authorization.split(" ")[1]
     client = get_user_client(token)
-    increment_and_verify_quota(client, user.id, "daily_details_view_count", "last_career_generation_date", DAILY_DETAILS_VIEW_LIMIT, "Usage limit reached for career details generation.")
+    increment_and_verify_quota(client, user.id, "daily_details_view_count", "last_details_view_date", DAILY_DETAILS_VIEW_LIMIT, "Usage limit reached for career details generation.")
     try:
         user_p = req.user_profile
         safe_title = sanitize_input(req.career_title)
@@ -570,18 +574,21 @@ Negative: text, words, watermarks, logos, unrealistic lighting, overly dramatic 
 """
             for attempt in range(3):
                 try:
+                    generate_content_config = types.GenerateContentConfig(
+                        response_modalities=["IMAGE"],
+                    )
                     res = await ai_client.aio.models.generate_content(
                         model=IMAGE_MODEL_NAME,
                         contents=prompt,
-                        config=types.GenerateContentConfig(
-                            response_mime_type="image/png" 
-                        )
+                        config=generate_content_config,
                     )
                     if res.candidates and res.candidates[0].content.parts:
-                        part = res.candidates[0].content.parts[0]
-                        if hasattr(part, 'inline_data') and part.inline_data:
-                            return f"data:{part.inline_data.mime_type};base64,{base64.b64encode(part.inline_data.data).decode('utf-8')}"
+                        for part in res.candidates[0].content.parts:
+                             if part.inline_data and part.inline_data.data:
+                                 mime = part.inline_data.mime_type or "image/jpeg"
+                                 return f"data:{mime};base64,{base64.b64encode(part.inline_data.data).decode('utf-8')}"
                 except Exception as e:
+                    logger.error(f"Image gen attempt {attempt} failed: {e}")
                     err_str = str(e)
                     if "429" in err_str or "ResourceExhausted" in err_str or "Quota" in err_str:
                         await asyncio.sleep((attempt + 1) * 3)
