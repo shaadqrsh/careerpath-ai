@@ -221,6 +221,23 @@ async def verify_token(authorization: str = Header(None)):
     except Exception as e:
         raise HTTPException(status_code=401, detail="Authentication failed")
 
+async def verify_registered_user(authorization: str = Header(None), user = Depends(verify_token)):
+    """
+    Ensures the user has a profile in the careerpath_ai schema.
+    This prevents users from other apps on the same Supabase project from accessing this API.
+    """
+    token = authorization.split(" ")[1]
+    client = get_user_client(token)
+    try:
+        # Check if profile exists by selecting just the ID
+        res = client.table("profiles").select("id").eq("id", user.id).single().execute()
+        if not res.data:
+            raise HTTPException(status_code=403, detail="Access denied. Please complete onboarding.")
+        return user
+    except Exception:
+        # If any error (e.g. 406 Not Acceptable if row missing + RLS), treat as forbidden
+        raise HTTPException(status_code=403, detail="Access denied. User profile not found.")
+
 def increment_and_verify_quota(client: Client, user_id: str, count_col: str, date_col: str, limit: int, error_msg: str = None):
     try:
         response = client.rpc('check_and_increment_quota', {
@@ -303,6 +320,8 @@ async def get_profile(authorization: str = Header(None), user = Depends(verify_t
     token = authorization.split(" ")[1]
     client = get_user_client(token)
     try:
+        # Note: We use verify_token here (not verify_registered_user) because this endpoint
+        # allows the frontend to CHECK if the user is registered. Returns 404 if not found.
         res = client.table("profiles").select("*").eq("id", user.id).single().execute()
         if not res.data: raise HTTPException(status_code=404, detail="Profile not found")
         profile = res.data
@@ -318,6 +337,7 @@ async def get_profile(authorization: str = Header(None), user = Depends(verify_t
 
 @app.post("/api/profile")
 async def upsert_profile(profile: UserProfile, authorization: str = Header(None), user = Depends(verify_token)):
+    # Note: We use verify_token here because this is the ONBOARDING endpoint.
     if profile.id != user.id: raise HTTPException(status_code=403)
     token = authorization.split(" ")[1]
     client = get_user_client(token)
@@ -335,7 +355,7 @@ async def upsert_profile(profile: UserProfile, authorization: str = Header(None)
         raise HTTPException(status_code=500)
 
 @app.post("/api/generate-domain")
-async def generate_domain(req: GenerateDomainRequest, authorization: str = Header(None), user = Depends(verify_token)):
+async def generate_domain(req: GenerateDomainRequest, authorization: str = Header(None), user = Depends(verify_registered_user)):
     token = authorization.split(" ")[1]
     client = get_user_client(token)
     increment_and_verify_quota(client, user.id, "daily_general_quiz_count", "last_general_quiz_date", DAILY_GENERAL_QUIZ_LIMIT, "You have taken the general quiz too many times today.")
@@ -379,7 +399,7 @@ async def generate_domain(req: GenerateDomainRequest, authorization: str = Heade
         return {"suggested_domain": "general"}
 
 @app.post("/api/generate-career", response_model=GenerateCareerResponse)
-async def generate_career(req: GenerateCareerRequest, authorization: str = Header(None), user = Depends(verify_token)):
+async def generate_career(req: GenerateCareerRequest, authorization: str = Header(None), user = Depends(verify_registered_user)):
     token = authorization.split(" ")[1]
     client = get_user_client(token)
     increment_and_verify_quota(client, user.id, "daily_career_generations_count", "last_career_generation_date", DAILY_CAREER_LIMIT)
@@ -462,7 +482,7 @@ IMPORTANT: Do NOT include 'roadmap' or 'dayInLifePrompts' in this response. They
         raise HTTPException(status_code=500, detail="AI generation failed")
 
 @app.post("/api/generate-career-details")
-async def generate_career_details(req: GenerateCareerDetailsRequest, authorization: str = Header(None), user = Depends(verify_token)):
+async def generate_career_details(req: GenerateCareerDetailsRequest, authorization: str = Header(None), user = Depends(verify_registered_user)):
     token = authorization.split(" ")[1]
     client = get_user_client(token)
     increment_and_verify_quota(client, user.id, "daily_details_view_count", "last_details_view_date", DAILY_DETAILS_VIEW_LIMIT, "Usage limit reached for career details generation.")
@@ -546,7 +566,7 @@ OUTPUT FORMAT: Strict JSON
         raise HTTPException(status_code=500, detail="AI details generation failed")
 
 @app.post("/api/generate-images")
-async def generate_images(req: GenerateImagesRequest, authorization: str = Header(None), user = Depends(verify_token)):
+async def generate_images(req: GenerateImagesRequest, authorization: str = Header(None), user = Depends(verify_registered_user)):
     token = authorization.split(" ")[1]
     client = get_user_client(token)
     increment_and_verify_quota(client, user.id, "daily_image_generations_count", "last_image_generation_date", DAILY_IMAGE_LIMIT)
@@ -604,14 +624,14 @@ Negative: text, words, watermarks, logos, unrealistic lighting, overly dramatic 
         return {"images": [None]*len(req.prompts)}
 
 @app.get("/api/saved-careers")
-async def get_saved_careers(authorization: str = Header(None), user = Depends(verify_token)):
+async def get_saved_careers(authorization: str = Header(None), user = Depends(verify_registered_user)):
     token = authorization.split(" ")[1]
     client = get_user_client(token)
     try: return client.table("saved_careers").select("*").eq("user_id", user.id).execute().data
     except Exception: return []
 
 @app.post("/api/saved-careers")
-async def save_career(career: CareerRecommendation, authorization: str = Header(None), user = Depends(verify_token)):
+async def save_career(career: CareerRecommendation, authorization: str = Header(None), user = Depends(verify_registered_user)):
     token = authorization.split(" ")[1]
     client = get_user_client(token)
     try:
@@ -624,7 +644,7 @@ async def save_career(career: CareerRecommendation, authorization: str = Header(
     except Exception as e: raise HTTPException(status_code=500, detail=str(e))
 
 @app.delete("/api/saved-careers/{career_uid}")
-async def delete_career(career_uid: str, authorization: str = Header(None), user = Depends(verify_token)):
+async def delete_career(career_uid: str, authorization: str = Header(None), user = Depends(verify_registered_user)):
     token = authorization.split(" ")[1]
     client = get_user_client(token)
     try:
@@ -639,7 +659,7 @@ async def delete_career(career_uid: str, authorization: str = Header(None), user
     except Exception as e: raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/career-images")
-async def upload_career_images(req: SaveCareerImageRequest, authorization: str = Header(None), user = Depends(verify_token)):
+async def upload_career_images(req: SaveCareerImageRequest, authorization: str = Header(None), user = Depends(verify_registered_user)):
     if req.user_id != user.id: raise HTTPException(status_code=403)
     uploaded = []
     async with httpx.AsyncClient(timeout=30.0) as client:
