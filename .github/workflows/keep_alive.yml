@@ -2,9 +2,8 @@ name: Keep Projects Awake
 
 on:
   schedule:
-    # Runs at the start of every hour
     - cron: '0 * * * *'
-  workflow_dispatch: # Allows manual triggers
+  workflow_dispatch:
 
 jobs:
   ping:
@@ -14,8 +13,7 @@ jobs:
         run: curl -s -L -f "${{ secrets.HF_SPACE_URL }}" > /dev/null
       - name: Ping Supabase Database
         run: |
-          # Use the 'Accept-Profile' header to specify the careerpath_ai schema
-          curl -X GET "${{ secrets.SUPABASE_URL }}/rest/v1/profiles?select=id&limit=1" \
+          curl -s -X GET "${{ secrets.SUPABASE_URL }}/rest/v1/profiles?select=id&limit=1" \
           -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
           -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
           -H "Accept-Profile: careerpath_ai"
