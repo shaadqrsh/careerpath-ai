@@ -2,10 +2,9 @@ name: Keep Projects Awake
 
 on:
   schedule:
-    # Runs every 24 hours at midnight.
-    # This is safe for both HF (48h limit) and Supabase (7d limit).
-    - cron: '0 0 * * *'
-  workflow_dispatch: # Allows you to run this manually anytime
+    # Runs at the start of every hour
+    - cron: '0 * * * *'
+  workflow_dispatch: # Allows manual triggers
 
 jobs:
   ping:
@@ -16,7 +15,8 @@ jobs:
 
       - name: Ping Supabase Database
         run: |
-          # Replace 'profiles' with any real table name in your database
+          # Use the 'Accept-Profile' header to specify the careerpath_ai schema
           curl -X GET "${{ secrets.SUPABASE_URL }}/rest/v1/profiles?select=id&limit=1" \
           -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
-          -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}"
+          -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+          -H "Accept-Profile: careerpath_ai"
