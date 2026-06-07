@@ -55,7 +55,9 @@ REALISM_CONTEXTS = [
 
 # API Keys and URLs
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "").strip()
-SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "").strip()
+# Accept either name: SUPABASE_KEY (HF Spaces convention) or SUPABASE_ANON_KEY
+# (the name used in Vercel env + the keep_alive GitHub workflow).
+SUPABASE_KEY = (os.environ.get("SUPABASE_KEY") or os.environ.get("SUPABASE_ANON_KEY") or "").strip()
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "").strip()
 FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:3000")
 # --- CONFIGURATION ENDS ---
