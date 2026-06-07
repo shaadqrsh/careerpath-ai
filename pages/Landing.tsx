@@ -4,27 +4,27 @@ import { AppView } from '../types';
 import { Button } from '../components/Button';
 import { ArrowRight, Compass, Map, Telescope } from 'lucide-react';
 
-const MARQUEE = "DISCOVER  ·  ANALYZE  ·  ENVISION  ·  CHART YOUR COURSE  ·  ";
+const MARQUEE = "TAKE A QUIZ  ·  GET CAREER MATCHES  ·  SEE A ROADMAP  ·  ";
 
 const ENTRIES = [
   {
     no: '01',
-    title: 'Survey your terrain',
-    body: 'A short field survey reads your personality, aptitude, and interests, then plots them against the working world.',
+    title: 'Take a short quiz',
+    body: 'Answer a few questions about your interests, strengths, and what you enjoy. It takes about five minutes.',
     icon: Compass,
     ink: 'text-cobalt',
   },
   {
     no: '02',
-    title: 'Read the charts',
-    body: 'We connect your profile to real roles, salaries, and demand, and rank the paths where you would genuinely thrive.',
+    title: 'Get matched to careers',
+    body: 'See careers that fit your answers, ranked by match, with salary ranges and how much each field is growing.',
     icon: Map,
     ink: 'text-vermillion',
   },
   {
     no: '03',
-    title: 'See the horizon',
-    body: 'Step-by-step education routes plus AI-rendered day-in-the-life scenes, so the future is something you can picture.',
+    title: 'Get a step-by-step plan',
+    body: 'For any career, see the education steps to get there plus AI images showing a typical day in that job.',
     icon: Telescope,
     ink: 'text-pine',
   },
@@ -40,10 +40,10 @@ export const Landing: React.FC = () => {
       <header className="border-b-2 border-ink dark:border-paper/70">
         <div className="max-w-6xl mx-auto w-full px-5 py-3 flex items-center justify-between">
           <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-ink/70 dark:text-paper/70">
-            The Career Almanac
+            CareerPath AI
           </span>
           <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-ink/70 dark:text-paper/70">
-            No. 01 / Edition: You
+            Free career guidance
           </span>
         </div>
       </header>
@@ -55,7 +55,7 @@ export const Landing: React.FC = () => {
           <div className="animate-fade-in-up opacity-0" style={{ animationDelay: '0ms' }}>
             <span className="inline-flex items-center gap-2 border-2 border-ink dark:border-paper/70 px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.2em] bg-marigold text-ink">
               <span className="w-1.5 h-1.5 bg-ink rounded-full" />
-              A field guide to your future
+              Career matches in 5 minutes
             </span>
           </div>
 
@@ -68,17 +68,17 @@ export const Landing: React.FC = () => {
           </h1>
 
           <p className="mt-8 max-w-xl font-serif text-xl md:text-2xl leading-relaxed text-ink/75 dark:text-paper/75 animate-fade-in-up opacity-0" style={{ animationDelay: '260ms' }}>
-            Stop guessing. CareerPath AI surveys your strengths, reads the market,
-            and charts a personalized route to careers worth the climb.
+            Take a short quiz and get career matches based on your interests and strengths,
+            each with a salary range and a step-by-step plan to get there.
           </p>
 
           <div className="mt-10 flex flex-col sm:flex-row gap-4 items-start animate-fade-in-up opacity-0" style={{ animationDelay: '380ms' }}>
             <Button size="lg" onClick={() => setView(AppView.AUTH)} className="group">
-              Begin the survey
+              Sign up and start
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </Button>
             <p className="font-mono text-[11px] uppercase tracking-widest text-ink/50 dark:text-paper/50 sm:py-4">
-              Free to start · No CV required
+              Free · No resume needed
             </p>
           </div>
         </div>
@@ -128,7 +128,7 @@ export const Landing: React.FC = () => {
       <footer className="border-t-2 border-ink dark:border-paper/70">
         <div className="max-w-6xl mx-auto w-full px-5 py-5 flex flex-col sm:flex-row items-center justify-between gap-2">
           <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink/55 dark:text-paper/55">
-            Printed with Gemini · Set in Archivo &amp; Newsreader
+            Powered by Google Gemini
           </span>
           <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink/55 dark:text-paper/55">
             CareerPath AI

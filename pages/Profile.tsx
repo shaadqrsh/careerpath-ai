@@ -169,7 +169,7 @@ export const Profile: React.FC = () => {
           >
             <ArrowLeft size={14} className="group-hover:-translate-x-0.5 transition-transform" /> Back to dashboard
           </button>
-          <h2 className="font-display text-4xl md:text-5xl text-ink dark:text-paper leading-[0.95]">Your record.</h2>
+          <h2 className="font-display text-4xl md:text-5xl text-ink dark:text-paper leading-[0.95]">Edit your profile</h2>
         </div>
 
         <form onSubmit={handleSubmit} className="bg-paper dark:bg-[#1c1a17] border-2 border-ink dark:border-paper shadow-stamp-lg dark:shadow-stamp-light animate-fade-in-up opacity-0" style={{ animationDelay: '100ms' }}>

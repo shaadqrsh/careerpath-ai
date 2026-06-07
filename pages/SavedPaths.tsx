@@ -15,8 +15,8 @@ export const SavedPaths: React.FC = () => {
     if (!career.detailsLoaded && user && (user.dailyDetailsViewCount || 0) >= detailsLimit) {
         showModal({
             variant: 'danger',
-            title: "Usage Limit Reached",
-            description: "You have viewed too many new career details today. Please stick to the careers you have already opened or come back tomorrow.",
+            title: "Limit reached for today",
+            description: "You have opened too many new careers today. You can still view ones you already opened, or come back tomorrow.",
             buttonText: "Okay",
             onButtonClick: hideModal
         });
@@ -59,11 +59,11 @@ export const SavedPaths: React.FC = () => {
         </div>
 
         <div className="mb-10 animate-fade-in-up opacity-0" style={{ animationDelay: '100ms' }}>
-          <h2 className="font-display text-5xl md:text-6xl text-ink dark:text-paper leading-[0.92]">Your collection.</h2>
+          <h2 className="font-display text-5xl md:text-6xl text-ink dark:text-paper leading-[0.92]">Saved careers</h2>
           <p className="mt-4 font-serif text-lg text-ink/70 dark:text-paper/70">
             {savedCareers.length === 0
-              ? "Nothing pressed into the almanac yet."
-              : `${savedCareers.length} path${savedCareers.length === 1 ? '' : 's'} saved for later.`}
+              ? "You have not saved any careers yet."
+              : `${savedCareers.length} career${savedCareers.length === 1 ? '' : 's'} saved.`}
           </p>
         </div>
 
@@ -115,9 +115,9 @@ export const SavedPaths: React.FC = () => {
 
         {savedCareers.length === 0 && (
           <div className="mt-8 p-10 border-2 border-dashed border-ink/40 dark:border-paper/40 text-center animate-fade-in-up opacity-0" style={{ animationDelay: '200ms' }}>
-            <p className="font-serif text-lg text-ink/70 dark:text-paper/70">Run a survey to find paths worth keeping.</p>
+            <p className="font-serif text-lg text-ink/70 dark:text-paper/70">Take a quiz and save the careers you like to find them here.</p>
             <div className="mt-5 flex justify-center">
-              <Button onClick={() => setView(AppView.DASHBOARD)}>Explore careers</Button>
+              <Button onClick={() => setView(AppView.DASHBOARD)}>Take a quiz</Button>
             </div>
           </div>
         )}

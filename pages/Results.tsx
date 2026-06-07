@@ -23,8 +23,8 @@ export const Results: React.FC = () => {
     if (!career.detailsLoaded && user && (user.dailyDetailsViewCount || 0) >= detailsLimit) {
         showModal({
             variant: 'danger',
-            title: "Usage Limit Reached",
-            description: "You have viewed too many new career details today. Please stick to the careers you have already opened or come back tomorrow.",
+            title: "Limit reached for today",
+            description: "You have opened too many new careers today. You can still view ones you already opened, or come back tomorrow.",
             buttonText: "Okay",
             onButtonClick: hideModal
         });
@@ -43,10 +43,10 @@ export const Results: React.FC = () => {
 
     if (hasUnsavedCareers) {
       showConfirm({
-        title: "Discard Results?",
-        description: "You have unsaved career recommendations. If you go back now, these results will be lost forever.",
-        confirmText: "Yes, Discard",
-        cancelText: "Stay Here",
+        title: "Leave without saving?",
+        description: "Some of these matches are not saved. If you leave now, you will lose them and would need to take the quiz again.",
+        confirmText: "Leave",
+        cancelText: "Stay",
         variant: 'danger',
         onConfirm: () => {
             hideConfirm();
@@ -85,8 +85,8 @@ export const Results: React.FC = () => {
         </div>
 
         <div className="mb-12 animate-fade-in-up opacity-0" style={{ animationDelay: '100ms' }}>
-          <h2 className="font-display text-5xl md:text-6xl text-ink dark:text-paper leading-[0.92]">Your top matches.</h2>
-          <p className="mt-4 font-serif text-lg text-ink/70 dark:text-paper/70 max-w-2xl">Based on your survey, here are the paths where you would genuinely thrive. Tap any entry to explore the full route.</p>
+          <h2 className="font-display text-5xl md:text-6xl text-ink dark:text-paper leading-[0.92]">Your career matches</h2>
+          <p className="mt-4 font-serif text-lg text-ink/70 dark:text-paper/70 max-w-2xl">Based on your quiz answers, ranked by how well each one fits. Click any career to see the details and a plan.</p>
         </div>
 
         <div className="space-y-5">
@@ -146,7 +146,7 @@ export const Results: React.FC = () => {
 
                   <div className="flex-shrink-0 self-end md:self-center relative z-10">
                     <span className="font-bold uppercase tracking-wide text-sm text-vermillion inline-flex items-center gap-1.5 group-hover:translate-x-1 transition-transform">
-                      Explore <ArrowRight className="w-4 h-4" />
+                      View details <ArrowRight className="w-4 h-4" />
                     </span>
                   </div>
                 </div>

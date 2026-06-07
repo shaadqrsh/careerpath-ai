@@ -27,9 +27,9 @@ export const CareerDetail: React.FC = () => {
                 if (error.message && error.message.includes("Usage limit reached")) {
                      showModal({
                         variant: 'danger',
-                        title: "Usage Limit Reached",
-                        description: "You have viewed too many career details today. Please come back tomorrow.",
-                        buttonText: "Back to Dashboard",
+                        title: "Limit reached for today",
+                        description: "You have opened too many new careers today. Please come back tomorrow.",
+                        buttonText: "Back to dashboard",
                         onButtonClick: () => {
                             hideModal();
                             setView(AppView.DASHBOARD);
@@ -58,7 +58,7 @@ export const CareerDetail: React.FC = () => {
   const isSaved = savedCareers.some(c => c.id === selectedCareer.id);
 
   const backTarget = careerOrigin === 'saved' ? AppView.SAVED_PATHS : AppView.RESULTS;
-  const backLabel = careerOrigin === 'saved' ? "Back to Saved Paths" : "Back to Results";
+  const backLabel = careerOrigin === 'saved' ? "Back to saved" : "Back to matches";
 
   const isBestMatch = careerOrigin === 'results' && recommendations.length > 0 && recommendations[0].id === selectedCareer.id;
 
@@ -91,7 +91,7 @@ export const CareerDetail: React.FC = () => {
             >
               <ChevronLeft size={14} className="group-hover:-translate-x-0.5 transition-transform" /> {backLabel}
             </button>
-            <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-paper/40 hidden sm:block">Entry / Detail</span>
+            <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-paper/40 hidden sm:block">Career details</span>
           </div>
 
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mt-2 animate-fade-in-up opacity-0" style={{ animationDelay: '100ms' }}>
@@ -143,7 +143,7 @@ export const CareerDetail: React.FC = () => {
                 title="View a day in life visualization"
               >
                 <PlayCircle className="w-5 h-5" strokeWidth={2.25} />
-                {isSavingCareer ? "Saving..." : (loadingDetails ? "Building route..." : "Day in the life")}
+                {isSavingCareer ? "Saving..." : (loadingDetails ? "Loading..." : "See a day in this job")}
               </Button>
             </div>
           </div>
@@ -165,7 +165,7 @@ export const CareerDetail: React.FC = () => {
               <h3 className="font-display text-lg text-ink dark:text-paper mb-4">Why this fits you</h3>
 
               <div className="mb-4">
-                <p className="font-mono text-[10px] font-bold text-ink/50 dark:text-paper/50 uppercase tracking-widest mb-2">Best suited for profiles with</p>
+                <p className="font-mono text-[10px] font-bold text-ink/50 dark:text-paper/50 uppercase tracking-widest mb-2">Good fit if you are</p>
                 <div className="flex flex-wrap gap-2">
                   {selectedCareer.tags.map(t => (
                     <Badge key={t} variant="blue">{t}</Badge>
@@ -220,7 +220,7 @@ export const CareerDetail: React.FC = () => {
             <span className="w-9 h-9 bg-pine text-paper border-2 border-ink dark:border-paper shadow-stamp-sm dark:shadow-stamp-light flex items-center justify-center">
               <GraduationCap size={18} strokeWidth={2.25} />
             </span>
-            <h2 className="font-display text-2xl md:text-3xl text-ink dark:text-paper">Your route ahead</h2>
+            <h2 className="font-display text-2xl md:text-3xl text-ink dark:text-paper">How to get there</h2>
           </div>
 
           {loadingDetails ? (
@@ -242,10 +242,10 @@ export const CareerDetail: React.FC = () => {
                 </div>
                 <div>
                   <h4 className="font-display text-base mb-1">
-                    {selectedCareer.isPivot ? "Major pivot detected" : "Natural progression"}
+                    {selectedCareer.isPivot ? "This is a career change" : "This builds on your background"}
                   </h4>
                   <p className="font-serif text-base opacity-90 leading-relaxed">
-                    {selectedCareer.pivotAnalysis || `This route guides you from your background in ${user?.specialization || 'General Studies'} directly to your goal.`}
+                    {selectedCareer.pivotAnalysis || `This plan takes you from your background in ${user?.specialization || 'General Studies'} to this career.`}
                   </p>
                 </div>
               </div>

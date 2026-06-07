@@ -31,9 +31,9 @@ export const Slideshow: React.FC = () => {
         const limit = user?.limits?.dailyImageLimit ?? 3;
         showModal({
             variant: 'danger',
-            title: "Daily Limit Reached",
-            description: <>You've used all <strong>{limit}</strong> free visualizations for today. Please return in 24 hours to generate more career scenes.</>,
-            buttonText: "Return to Career",
+            title: "No image sets left today",
+            description: <>You have used all <strong>{limit}</strong> day-in-the-life image sets for today. Try again in 24 hours.</>,
+            buttonText: "Back to career",
             onButtonClick: () => {
                 hideModal();
                 setView(AppView.CAREER_DETAIL);
@@ -46,8 +46,8 @@ export const Slideshow: React.FC = () => {
       if (allFailed) {
           showModal({
             variant: 'warning',
-            title: "Visualizations are not available",
-            description: "We couldn't generate the scenes for this career right now. Please try again later.",
+            title: "Images unavailable",
+            description: "We could not generate the images for this career right now. Please try again later.",
             buttonText: "Close",
             onButtonClick: () => {
                 hideModal();

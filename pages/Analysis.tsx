@@ -32,16 +32,16 @@ export const Analysis: React.FC = () => {
   const targetLogs = React.useMemo(() => {
     if (!user) return [];
     
-    const locationString = user.residenceCountry === user.preferredWorkCountry 
-        ? `> Location Context: ${user.residenceCountry} (Local)`
-        : `> Location Context: ${user.residenceCountry} -> ${user.preferredWorkCountry}`;
+    const locationString = user.residenceCountry === user.preferredWorkCountry
+        ? `> Location: ${user.residenceCountry}`
+        : `> Location: ${user.residenceCountry} to ${user.preferredWorkCountry}`;
 
     return [
-      `> Initializing session for: ${user.fullName}`,
-      `> Demographics: ${user.age} yrs / ${user.gender}`,
+      `> Reading profile for ${user.fullName}`,
+      `> Age ${user.age}, ${user.gender}`,
       `> Education: ${user.educationLevel}`,
-      `> Specialization: ${user.specialization || 'General'}`,
-      locationString 
+      `> Field of study: ${user.specialization || 'General'}`,
+      locationString
     ];
   }, [user]);
 
@@ -130,7 +130,7 @@ export const Analysis: React.FC = () => {
                 showModal({
                     variant: 'danger',
                     title: "Daily Limit Reached",
-                    description: <>You have reached your daily limit of <strong>{limit}</strong> career assessments. Please return in 24 hours to explore more paths.</>,
+                    description: <>You have used all <strong>{limit}</strong> of your career quizzes for today. Try again in 24 hours.</>,
                     buttonText: "Return to Dashboard",
                     onButtonClick: () => {
                         hideModal();
@@ -173,7 +173,7 @@ export const Analysis: React.FC = () => {
 
       <div className="animate-fade-in-up opacity-0 text-center" style={{ animationDelay: '150ms' }}>
         <h2 className="mt-8 font-display text-3xl md:text-4xl text-ink dark:text-paper leading-tight">
-          Charting your course.
+          Finding your career matches
         </h2>
 
         <div className="mt-4 flex justify-center">
@@ -187,7 +187,7 @@ export const Analysis: React.FC = () => {
 
       <div ref={scrollRef} className="mt-10 w-full max-w-lg bg-ink dark:bg-[#0d0c0a] p-5 font-mono text-xs md:text-sm text-marigold border-2 border-ink dark:border-paper/70 shadow-stamp dark:shadow-stamp-light overflow-y-auto max-h-[330px] min-h-[260px] relative scroll-smooth animate-fade-in-up opacity-0" style={{ animationDelay: '300ms' }}>
         <div className="flex items-center justify-between mb-4 border-b-2 border-dashed border-paper/30 pb-2 sticky top-0 bg-ink dark:bg-[#0d0c0a] z-10">
-          <span className="text-paper/50 uppercase tracking-[0.2em] text-[10px]">Field log</span>
+          <span className="text-paper/50 uppercase tracking-[0.2em] text-[10px]">Working</span>
           <span className="flex items-center gap-1.5 text-pine">
             <span className="w-2 h-2 bg-pine animate-pulse"></span>
             <span className="uppercase tracking-widest text-[10px]">live</span>

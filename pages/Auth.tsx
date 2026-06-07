@@ -103,11 +103,11 @@ export const Auth: React.FC = () => {
     }
   };
 
-  const heading = isForgotPassword ? "Reset access" : (isLogin ? "Welcome back" : "New membership");
+  const heading = isForgotPassword ? "Reset your password" : (isLogin ? "Log in" : "Create an account");
   const subhead = isForgotPassword
-    ? "Enter your email and we will post a reset link."
-    : (isLogin ? "Sign in to return to your almanac." : "Open an account and start your survey.");
-  const stub = isForgotPassword ? "Recovery" : (isLogin ? "Returning" : "Enrolling");
+    ? "Enter your email and we will send a reset link."
+    : (isLogin ? "Log in to see your saved careers." : "Sign up to take the quiz and save your matches.");
+  const stub = isForgotPassword ? "Reset" : (isLogin ? "Log in" : "Sign up");
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-paper dark:bg-[#14130f] px-4 py-12 transition-colors duration-300 relative tex-grid">
@@ -116,13 +116,13 @@ export const Auth: React.FC = () => {
           onClick={() => setView(AppView.LANDING)}
           className="group mb-5 inline-flex items-center gap-2 font-mono text-[11px] font-bold uppercase tracking-widest text-ink/60 dark:text-paper/60 hover:text-vermillion underline decoration-2 decoration-transparent hover:decoration-vermillion underline-offset-4 transition-all"
         >
-          <ArrowLeft size={14} className="group-hover:-translate-x-0.5 transition-transform" /> The Career Almanac
+          <ArrowLeft size={14} className="group-hover:-translate-x-0.5 transition-transform" /> Back to home
         </button>
 
         <div className="bg-paper dark:bg-[#1c1a17] border-2 border-ink dark:border-paper shadow-stamp-lg dark:shadow-stamp-light">
           {/* Card header band */}
           <div className="flex items-center justify-between border-b-2 border-ink dark:border-paper px-7 py-3 bg-ink dark:bg-paper text-paper dark:text-ink">
-            <span className="font-mono text-[10px] font-bold uppercase tracking-[0.2em]">Member card</span>
+            <span className="font-mono text-[10px] font-bold uppercase tracking-[0.2em]">CareerPath AI</span>
             <span className="font-mono text-[10px] font-bold uppercase tracking-[0.2em]">{stub}</span>
           </div>
 
@@ -156,7 +156,7 @@ export const Auth: React.FC = () => {
                   placeholder="you@example.com"
                 />
                 <Button type="submit" fullWidth disabled={loading}>
-                  {loading ? 'Posting link...' : 'Send reset link'}
+                  {loading ? 'Sending...' : 'Send reset link'}
                 </Button>
                 <div className="text-center">
                   <button
@@ -164,7 +164,7 @@ export const Auth: React.FC = () => {
                     onClick={() => { setIsForgotPassword(false); setError(null); setSuccessMessage(null); }}
                     className="group font-mono text-[11px] font-bold uppercase tracking-widest text-ink/60 dark:text-paper/60 hover:text-vermillion underline decoration-2 decoration-transparent hover:decoration-vermillion underline-offset-4 flex items-center justify-center gap-2 mx-auto transition-all"
                   >
-                    <ArrowLeft size={14} /> Back to sign in
+                    <ArrowLeft size={14} /> Back to log in
                   </button>
                 </div>
               </form>
@@ -205,7 +205,7 @@ export const Auth: React.FC = () => {
                 </div>
 
                 <Button type="submit" fullWidth disabled={loading}>
-                  {loading ? (isLogin ? 'Signing in...' : 'Enrolling...') : (isLogin ? 'Sign in' : 'Create account')}
+                  {loading ? (isLogin ? 'Logging in...' : 'Creating account...') : (isLogin ? 'Log in' : 'Create account')}
                 </Button>
               </form>
             )}
@@ -218,7 +218,7 @@ export const Auth: React.FC = () => {
                 onClick={toggleMode}
                 className="font-mono text-[11px] font-bold uppercase tracking-widest text-ink/70 dark:text-paper/70 hover:text-vermillion underline decoration-2 decoration-transparent hover:decoration-vermillion underline-offset-4 transition-all"
               >
-                {isLogin ? "No account? Enroll now" : "Already a member? Sign in"}
+                {isLogin ? "No account? Sign up" : "Already have an account? Log in"}
               </button>
             </div>
           )}

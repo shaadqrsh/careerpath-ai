@@ -51,9 +51,9 @@ export const Dashboard: React.FC = () => {
         if (user && (user.dailyGeneralQuizCount || 0) >= generalQuizLimit) {
             showModal({
                 variant: 'danger',
-                title: "Usage Limit Reached",
-                description: "You have started the general assessment too many times today. Please try again tomorrow or use a specific domain quiz.",
-                buttonText: "Okay",
+                title: "Too many quizzes today",
+                description: "You have started the general quiz too many times today. Try again tomorrow, or pick a specific field instead.",
+                buttonText: "Got it",
                 onButtonClick: hideModal
             });
             return;
@@ -63,9 +63,9 @@ export const Dashboard: React.FC = () => {
             const limit = user?.limits?.dailyCareerLimit ?? 5;
             showModal({
                 variant: 'danger',
-                title: "Daily Limit Reached",
-                description: <>You have reached your daily limit of <strong>{limit}</strong> career assessments. Please return in 24 hours to explore more paths.</>,
-                buttonText: "Okay",
+                title: "No quizzes left today",
+                description: <>You have used all <strong>{limit}</strong> of your career quizzes for today. Try again in 24 hours.</>,
+                buttonText: "Got it",
                 onButtonClick: hideModal
             });
             return;
@@ -106,18 +106,18 @@ export const Dashboard: React.FC = () => {
                 {APP_NAME}
               </h1>
               <span className="hidden md:inline-block font-mono text-[10px] uppercase tracking-[0.2em] text-ink/45 dark:text-paper/45 border-l-2 border-ink/20 dark:border-paper/20 pl-3">
-                Almanac No. 01
+                Career guidance
               </span>
             </div>
 
             <div className="hidden md:flex items-center gap-3">
-              <div className={`flex items-center gap-1.5 px-2.5 py-1.5 border-2 font-mono text-[11px] font-bold uppercase tracking-wide ${quotaTone(careerQuota)}`} title="Daily Career Assessments Remaining">
+              <div className={`flex items-center gap-1.5 px-2.5 py-1.5 border-2 font-mono text-[11px] font-bold uppercase tracking-wide ${quotaTone(careerQuota)}`} title="Career quizzes left today">
                 <Zap size={13} strokeWidth={2.25} />
-                <span>{careerQuota}/{displayCareerLimit}</span>
+                <span>{careerQuota}/{displayCareerLimit} quizzes</span>
               </div>
-              <div className={`flex items-center gap-1.5 px-2.5 py-1.5 border-2 font-mono text-[11px] font-bold uppercase tracking-wide ${quotaTone(imageQuota)}`} title="Daily Career Visualization Remaining">
+              <div className={`flex items-center gap-1.5 px-2.5 py-1.5 border-2 font-mono text-[11px] font-bold uppercase tracking-wide ${quotaTone(imageQuota)}`} title="Day-in-the-life image sets left today">
                 <Image size={13} strokeWidth={2.25} />
-                <span>{imageQuota}/{displayImageLimit}</span>
+                <span>{imageQuota}/{displayImageLimit} images</span>
               </div>
 
               <div className="h-6 w-0.5 bg-ink/20 dark:bg-paper/20 mx-1" />
@@ -204,14 +204,14 @@ export const Dashboard: React.FC = () => {
               <div className={`flex items-center justify-between p-3 border-2 font-mono uppercase tracking-wide text-sm ${quotaTone(careerQuota)}`}>
                 <div className="flex items-center gap-3">
                   <Zap size={18} strokeWidth={2.25} />
-                  <span>Assessments</span>
+                  <span>Quizzes left</span>
                 </div>
                 <span className="font-bold">{careerQuota}/{displayCareerLimit}</span>
               </div>
               <div className={`flex items-center justify-between p-3 border-2 font-mono uppercase tracking-wide text-sm ${quotaTone(imageQuota)}`}>
                 <div className="flex items-center gap-3">
                   <Image size={18} strokeWidth={2.25} />
-                  <span>Visualizations</span>
+                  <span>Image sets left</span>
                 </div>
                 <span className="font-bold">{imageQuota}/{displayImageLimit}</span>
               </div>
@@ -223,13 +223,13 @@ export const Dashboard: React.FC = () => {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
         <div className="mb-12 animate-fade-in-up opacity-0" style={{ animationDelay: '0ms' }}>
           <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-ink/55 dark:text-paper/55">
-            {user?.fullName ? `Welcome back, ${user.fullName.split(' ')[0]}` : 'The catalogue'}
+            {user?.fullName ? `Welcome back, ${user.fullName.split(' ')[0]}` : 'Dashboard'}
           </span>
           <h2 className="mt-2 font-display text-5xl md:text-6xl leading-[0.92] max-w-3xl">
-            Pick a section to start your survey.
+            Start a career quiz
           </h2>
           <p className="mt-4 font-serif text-lg text-ink/70 dark:text-paper/70 max-w-2xl">
-            Choose a domain for a specialized assessment, or open the general survey if you are not yet sure which way to go.
+            Pick a field below to take a focused quiz, or take the general quiz if you are not sure which field fits you.
           </p>
         </div>
 
@@ -237,9 +237,9 @@ export const Dashboard: React.FC = () => {
           <div className="mb-10 p-4 border-2 border-vermillion bg-vermillion/10 text-vermillion-600 dark:text-vermillion flex flex-col sm:flex-row justify-between sm:items-center gap-2 animate-fade-in-up opacity-0 w-full" style={{ animationDelay: '100ms' }}>
             <div className="flex items-center gap-3">
               <Zap className="shrink-0" size={20} strokeWidth={2.25} />
-              <span className="font-bold uppercase tracking-wide text-sm">Daily assessments spent</span>
+              <span className="font-bold uppercase tracking-wide text-sm">No quizzes left today</span>
             </div>
-            <span className="font-mono text-xs uppercase tracking-widest opacity-80">Come back tomorrow for more</span>
+            <span className="font-mono text-xs uppercase tracking-widest opacity-80">Resets in 24 hours</span>
           </div>
         )}
 
@@ -259,7 +259,7 @@ export const Dashboard: React.FC = () => {
                   <p className="font-mono text-[11px] uppercase tracking-wide text-ink/55 dark:text-paper/55">{cat.desc}</p>
                 </div>
                 <div className="mt-6 pt-4 border-t-2 border-dashed border-ink/30 dark:border-paper/30 flex items-center justify-between font-bold uppercase tracking-wide text-sm text-vermillion">
-                  <span>Start survey</span>
+                  <span>Take quiz</span>
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </div>
               </div>
@@ -275,12 +275,12 @@ export const Dashboard: React.FC = () => {
             <div className="flex items-center gap-5">
               <DomainIcon domain="general" />
               <div>
-                <span className="font-mono text-[11px] uppercase tracking-[0.2em] opacity-60">Not sure where to begin?</span>
-                <h3 className="font-display text-2xl md:text-3xl mt-1">Take the general survey.</h3>
+                <span className="font-mono text-[11px] uppercase tracking-[0.2em] opacity-60">Not sure which to pick?</span>
+                <h3 className="font-display text-2xl md:text-3xl mt-1">Take the general quiz</h3>
               </div>
             </div>
-            <span className="font-bold uppercase tracking-wide text-sm inline-flex items-center gap-2 whitespace-nowrap text-marigold dark:text-vermillion group-hover:text-paper transition-colors">
-              Start general survey <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            <span className="font-bold uppercase tracking-wide text-sm inline-flex items-center gap-2 whitespace-nowrap">
+              Take quiz <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </span>
           </div>
         </div>

@@ -99,10 +99,10 @@ export const Quiz: React.FC = () => {
   const handleExit = () => {
     if (showGeneralResult || quizAnswers.length > 0) {
         showConfirm({
-            title: "Exit Assessment?",
-            description: "If you exit now, your quiz progress will be lost. This will not use up a career assessment credit.",
-            confirmText: "Yes, Exit",
-            cancelText: "Stay Here",
+            title: "Exit the quiz?",
+            description: "Your answers so far will be lost. This will not use up one of your daily quizzes.",
+            confirmText: "Exit quiz",
+            cancelText: "Keep going",
             variant: "info",
             onConfirm: () => {
                 hideConfirm();
@@ -117,7 +117,7 @@ export const Quiz: React.FC = () => {
   };
 
   if (isCalculating) {
-      return <FullScreenLoader text="Analyzing your preferences..." />;
+      return <FullScreenLoader text="Checking your answers..." />;
   }
 
   if (showGeneralResult && suggestedDomain) {
@@ -125,20 +125,20 @@ export const Quiz: React.FC = () => {
         <div className="min-h-screen bg-paper dark:bg-[#14130f] flex items-center justify-center px-4 transition-colors duration-300 tex-grid">
             <div className="max-w-lg w-full bg-paper dark:bg-[#1c1a17] border-2 border-ink dark:border-paper shadow-stamp-lg dark:shadow-stamp-light animate-fade-in-up">
                 <div className="border-b-2 border-ink dark:border-paper px-7 py-3 bg-ink dark:bg-paper text-paper dark:text-ink flex items-center justify-between">
-                    <span className="font-mono text-[10px] font-bold uppercase tracking-[0.2em]">Survey result</span>
-                    <span className="font-mono text-[10px] font-bold uppercase tracking-[0.2em]">Recommendation</span>
+                    <span className="font-mono text-[10px] font-bold uppercase tracking-[0.2em]">Quiz result</span>
+                    <span className="font-mono text-[10px] font-bold uppercase tracking-[0.2em]">Suggested field</span>
                 </div>
                 <div className="p-8 text-center">
                     <div className="w-14 h-14 bg-pine text-paper border-2 border-ink dark:border-paper shadow-stamp-sm dark:shadow-stamp-light flex items-center justify-center mx-auto mb-6">
                         <CheckCircle2 size={28} strokeWidth={2.25} />
                     </div>
-                    <h2 className="font-display text-3xl text-ink dark:text-paper mb-3 leading-tight">Bearings found.</h2>
+                    <h2 className="font-display text-3xl text-ink dark:text-paper mb-3 leading-tight">Your answers fit {suggestedDomain}</h2>
                     <p className="font-serif text-lg text-ink/70 dark:text-paper/70 mb-8">
-                        Your answers point toward <span className="text-vermillion font-bold capitalize">{suggestedDomain}</span>. Let us run the full survey for that section.
+                        Take the <span className="text-vermillion font-bold capitalize">{suggestedDomain}</span> quiz next to get your career matches.
                     </p>
                     <div className="space-y-3">
                         <Button fullWidth size="lg" onClick={handleContinueToDomain}>
-                            Continue to {suggestedDomain} survey
+                            Take the {suggestedDomain} quiz
                         </Button>
                         <Button fullWidth variant="outline" onClick={handleExit}>
                             Back to dashboard
@@ -159,8 +159,8 @@ export const Quiz: React.FC = () => {
       <div className="w-full max-w-3xl fixed top-0 left-0 right-0 mx-auto px-4 z-10 bg-paper/95 dark:bg-[#14130f]/95 backdrop-blur-sm border-b-2 border-ink dark:border-paper/70 transition-colors">
         <div className="max-w-3xl mx-auto pt-4 pb-3">
           <div className="flex justify-between font-mono text-[11px] font-bold text-ink/60 dark:text-paper/60 mb-2 uppercase tracking-[0.18em]">
-            <span className="capitalize">{selectedDomain} survey</span>
-            <span>Q {currentIndex + 1} / {domainQuestions.length}</span>
+            <span className="capitalize">{selectedDomain} quiz</span>
+            <span>Question {currentIndex + 1} of {domainQuestions.length}</span>
           </div>
           <div className="h-2 border-2 border-ink dark:border-paper/70 overflow-hidden">
             <div className="h-full bg-vermillion transition-all duration-500 ease-out" style={{ width: `${progress}%` }} />
@@ -202,10 +202,10 @@ export const Quiz: React.FC = () => {
 
         <div className="mt-9 flex flex-col-reverse sm:flex-row gap-4 justify-between items-stretch sm:items-center animate-fade-in-up opacity-0" style={{ animationDelay: '600ms' }}>
           <Button variant="ghost" onClick={handleExit} className="w-full sm:w-auto">
-            Exit survey
+            Exit quiz
           </Button>
           <Button size="lg" onClick={handleNext} disabled={!selectedOption} className="w-full sm:w-auto group">
-            {currentIndex === domainQuestions.length - 1 ? (selectedDomain === 'general' ? 'See recommendation' : 'Finish survey') : 'Next question'}
+            {currentIndex === domainQuestions.length - 1 ? (selectedDomain === 'general' ? 'See result' : 'See my matches') : 'Next question'}
             <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
           </Button>
         </div>

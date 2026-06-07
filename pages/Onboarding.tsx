@@ -126,7 +126,7 @@ export const Onboarding: React.FC = () => {
       <div className="w-full max-w-3xl">
         <div className="flex items-center justify-between mb-5 animate-fade-in-up opacity-0" style={{ animationDelay: '0ms' }}>
           <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-ink/55 dark:text-paper/55">
-            Survey · Form A · Particulars
+            Step 1 of 1 · About you
           </span>
           <button
             onClick={handleLogout}
@@ -137,8 +137,8 @@ export const Onboarding: React.FC = () => {
         </div>
 
         <div className="mb-8 animate-fade-in-up opacity-0" style={{ animationDelay: '100ms' }}>
-          <h2 className="font-display text-4xl md:text-5xl text-ink dark:text-paper leading-[0.95]">Tell us where you stand.</h2>
-          <p className="mt-3 font-serif text-lg text-ink/70 dark:text-paper/70 max-w-xl">We calibrate every recommendation against your background, demographics, and location.</p>
+          <h2 className="font-display text-4xl md:text-5xl text-ink dark:text-paper leading-[0.95]">Tell us about yourself</h2>
+          <p className="mt-3 font-serif text-lg text-ink/70 dark:text-paper/70 max-w-xl">We use this to tailor your career matches to your background and where you want to work.</p>
         </div>
 
         <form onSubmit={handleSubmit} className="bg-paper dark:bg-[#1c1a17] border-2 border-ink dark:border-paper shadow-stamp-lg dark:shadow-stamp-light animate-fade-in-up opacity-0" style={{ animationDelay: '200ms' }}>
@@ -231,7 +231,7 @@ export const Onboarding: React.FC = () => {
 
           <div className="border-t-2 border-ink dark:border-paper p-8 animate-fade-in-up opacity-0 relative z-10" style={{ animationDelay: '500ms' }}>
             <Button type="submit" fullWidth size="lg" disabled={saving}>
-              {saving ? "Filing your card..." : "Continue to dashboard"}
+              {saving ? "Saving..." : "Continue to dashboard"}
             </Button>
           </div>
         </form>
