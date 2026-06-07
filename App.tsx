@@ -50,12 +50,12 @@ const App: React.FC = () => {
 
         if (effectiveTheme === 'dark') {
             root.classList.add('dark');
-            body.classList.remove('bg-slate-50');
-            body.classList.add('bg-slate-900');
+            body.classList.remove('bg-paper');
+            body.classList.add('bg-[#14130f]');
         } else {
             root.classList.remove('dark');
-            body.classList.remove('bg-slate-900');
-            body.classList.add('bg-slate-50');
+            body.classList.remove('bg-[#14130f]');
+            body.classList.add('bg-paper');
         }
     };
 
@@ -192,7 +192,7 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen transition-colors duration-300 bg-slate-50 text-slate-900 dark:bg-slate-900 dark:text-slate-50 relative">
+    <div className="min-h-screen transition-colors duration-300 bg-paper text-ink dark:bg-[#14130f] dark:text-paper relative">
       {renderView()}
 
       <AlertModal

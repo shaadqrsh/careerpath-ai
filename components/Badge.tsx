@@ -6,20 +6,23 @@ interface BadgeProps {
   className?: string;
 }
 
-export const Badge: React.FC<BadgeProps> = ({ 
-  children, 
-  variant = 'slate', 
-  className = '' 
+// Almanac index tags: flat, ink-outlined, mono caps.
+export const Badge: React.FC<BadgeProps> = ({
+  children,
+  variant = 'slate',
+  className = '',
 }) => {
   const variants = {
-    slate: "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-600",
-    blue: "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800",
-    green: "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800",
-    amber: "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800",
+    slate: "bg-paper dark:bg-transparent text-ink dark:text-paper border-ink dark:border-paper/60",
+    blue: "bg-cobalt/10 dark:bg-cobalt/20 text-cobalt-600 dark:text-cobalt border-cobalt",
+    green: "bg-pine/10 dark:bg-pine/20 text-pine dark:text-pine border-pine",
+    amber: "bg-marigold/15 dark:bg-marigold/20 text-marigold-700 dark:text-marigold border-marigold-600",
   };
 
   return (
-    <span className={`px-2 py-1 text-xs font-medium rounded border transition-colors ${variants[variant]} ${className}`}>
+    <span
+      className={`inline-flex items-center px-2.5 py-1 font-mono text-[10px] font-bold uppercase tracking-wider border-2 ${variants[variant]} ${className}`}
+    >
       {children}
     </span>
   );

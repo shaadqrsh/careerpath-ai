@@ -47,92 +47,79 @@ export const SavedPaths: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 py-8 px-4 sm:px-6 lg:px-8 pb-20 md:pb-10 transition-colors duration-300">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-paper dark:bg-[#14130f] py-8 px-4 sm:px-6 lg:px-8 pb-20 md:pb-10 transition-colors duration-300 tex-grid">
+      <div className="max-w-6xl mx-auto">
         <div className="flex items-center justify-between mb-8 animate-fade-in-up opacity-0" style={{ animationDelay: '0ms' }}>
-            <button 
-                onClick={() => setView(AppView.DASHBOARD)} 
-                className="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white flex items-center gap-2 transition-colors"
-            >
-                <ArrowLeft size={20} /> Back to Dashboard
-            </button>
+          <button
+            onClick={() => setView(AppView.DASHBOARD)}
+            className="font-mono text-[11px] uppercase tracking-widest text-ink/55 dark:text-paper/55 hover:text-vermillion flex items-center gap-2 transition-colors"
+          >
+            <ArrowLeft size={14} /> Back to dashboard
+          </button>
         </div>
 
         <div className="mb-10 animate-fade-in-up opacity-0" style={{ animationDelay: '100ms' }}>
-            <h2 className="text-3xl font-bold text-slate-900 dark:text-white">Saved Paths</h2>
-            <p className="text-slate-600 dark:text-slate-400 mt-2">
-                {savedCareers.length === 0 
-                    ? "You haven't saved any career paths yet." 
-                    : `You have ${savedCareers.length} saved career path${savedCareers.length === 1 ? '' : 's'}.`
-                }
-            </p>
+          <h2 className="font-display text-5xl md:text-6xl text-ink dark:text-paper leading-[0.92]">Your collection.</h2>
+          <p className="mt-4 font-serif text-lg text-ink/70 dark:text-paper/70">
+            {savedCareers.length === 0
+              ? "Nothing pressed into the almanac yet."
+              : `${savedCareers.length} path${savedCareers.length === 1 ? '' : 's'} saved for later.`}
+          </p>
         </div>
 
-        <div className="space-y-6">
-            {savedCareers.map((career, index) => (
-                <div key={career.id} style={{ animationDelay: `${200 + (index * 100)}ms` }} className="flex items-center gap-6 group-outer relative animate-fade-in-up opacity-0">
-                    <div 
-                        onClick={() => handleSelect(career)}
-                        className="group flex-1 relative bg-white dark:bg-slate-800/50 backdrop-blur-sm rounded-2xl p-6 md:p-8 border border-slate-200 dark:border-slate-700 transition-all duration-300 flex flex-col md:flex-row gap-6 md:items-center shadow-sm cursor-pointer hover:shadow-xl hover:border-blue-500 dark:hover:border-slate-500 hover:scale-[1.02] dark:hover:bg-slate-800 overflow-hidden"
-                    >
-                         <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-indigo-500 opacity-0 group-hover:opacity-5 transition-opacity duration-300" />
-                        
-                         <div className="flex-grow relative z-10">
-                            <div className="flex flex-wrap gap-2 mb-2">
-                                {career.tags.map(t => (
-                                    <Badge key={t} variant="slate" className="group-hover:bg-blue-100 dark:group-hover:bg-blue-900/30 group-hover:text-blue-700 dark:group-hover:text-blue-300 transition-colors">
-                                        {t}
-                                    </Badge>
-                                ))}
-                            </div>
-                            <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{career.title}</h3>
-                            <p className="text-slate-600 dark:text-slate-400 text-sm md:text-base mb-4 max-w-2xl line-clamp-2">{career.summary}</p>
-                            
-                            <div className="flex items-center gap-6 text-sm font-medium text-slate-500 dark:text-slate-300 mt-3">
-                                <div className="flex items-center gap-2">
-                                    <TrendingUp size={18} className="text-blue-500 dark:text-blue-400" />
-                                    {career.matchScore}% Match
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <DollarSign size={18} className="text-green-500 dark:text-green-400" />
-                                    {career.salaryRange}
-                                </div>
-                            </div>
-                        </div>
+        <div className="space-y-5">
+          {savedCareers.map((career, index) => (
+            <div key={career.id} style={{ animationDelay: `${200 + index * 100}ms` }} className="flex items-stretch gap-4 relative animate-fade-in-up opacity-0">
+              <div
+                onClick={() => handleSelect(career)}
+                className="group flex-1 relative bg-paper dark:bg-[#1c1a17] border-2 border-ink dark:border-paper p-6 md:p-7 flex flex-col md:flex-row gap-6 md:items-center shadow-stamp dark:shadow-stamp-light cursor-pointer transition-transform duration-150 hover:-translate-x-[2px] hover:-translate-y-[2px] active:translate-x-[3px] active:translate-y-[3px] active:shadow-none"
+              >
+                <div className="flex-grow relative z-10 min-w-0">
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {career.tags.map(t => (
+                      <Badge key={t} variant="slate">{t}</Badge>
+                    ))}
+                  </div>
+                  <h3 className="font-display text-2xl text-ink dark:text-paper mb-2 group-hover:text-vermillion transition-colors">{career.title}</h3>
+                  <p className="font-serif text-ink/70 dark:text-paper/70 mb-4 max-w-2xl line-clamp-2 text-base md:text-lg">{career.summary}</p>
 
-                        <div className="flex-shrink-0 self-end relative z-10 mt-4 md:mt-0">
-                            <span className="text-slate-500 dark:text-slate-400 font-medium group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300 group-hover:translate-x-2 inline-flex items-center">
-                                View Details <ArrowRight className="ml-1 w-4 h-4" />
-                            </span>
-                        </div>
+                  <div className="flex flex-wrap items-center gap-x-6 gap-y-2 font-mono text-xs uppercase tracking-wide text-ink/60 dark:text-paper/60">
+                    <div className="flex items-center gap-2">
+                      <TrendingUp size={14} className="text-cobalt" strokeWidth={2.25} />
+                      {career.matchScore}% match
                     </div>
+                    <div className="flex items-center gap-2">
+                      <DollarSign size={14} className="text-pine" strokeWidth={2.25} />
+                      {career.salaryRange}
+                    </div>
+                  </div>
+                </div>
 
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation(); 
-                            toggleSavedCareer(career); 
-                        }}
-                        title="Remove Saved Career"
-                        className="hidden md:flex flex-shrink-0 w-12 h-12 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 backdrop-blur-sm text-slate-400 hover:text-pink-500 hover:border-pink-500 dark:hover:border-pink-500 hover:shadow-lg hover:shadow-pink-500/20 items-center justify-center transition-all duration-300 hover:scale-110 z-20"
-                    >
-                        <Trash2 size={20} />
-                    </button>
+                <div className="flex-shrink-0 self-end md:self-center relative z-10">
+                  <span className="font-bold uppercase tracking-wide text-sm text-vermillion inline-flex items-center gap-1.5 group-hover:translate-x-1 transition-transform">
+                    View details <ArrowRight className="w-4 h-4" />
+                  </span>
                 </div>
-            ))}
+              </div>
+
+              <button
+                onClick={(e) => { e.stopPropagation(); toggleSavedCareer(career); }}
+                title="Remove from collection"
+                className="hidden md:flex flex-shrink-0 w-14 border-2 border-ink dark:border-paper bg-paper dark:bg-[#1c1a17] text-ink/50 dark:text-paper/50 hover:bg-vermillion hover:text-paper hover:border-vermillion items-center justify-center transition-colors z-20"
+              >
+                <Trash2 size={20} strokeWidth={2.25} />
+              </button>
+            </div>
+          ))}
         </div>
-        
+
         {savedCareers.length === 0 && (
-             <div className="mt-8 p-8 border-2 border-dashed border-slate-300 dark:border-slate-800 rounded-xl text-center animate-fade-in-up opacity-0" style={{ animationDelay: '200ms' }}>
-                <p className="text-slate-500 dark:text-slate-400">Go explore some quizzes to find your dream job!</p>
-                <div className="mt-4 flex gap-4 justify-center">
-                    <Button 
-                        onClick={() => setView(AppView.DASHBOARD)}
-                        className="group transition-transform hover:scale-105" 
-                    >
-                        Explore Careers
-                    </Button>
-                </div>
-             </div>
+          <div className="mt-8 p-10 border-2 border-dashed border-ink/40 dark:border-paper/40 text-center animate-fade-in-up opacity-0" style={{ animationDelay: '200ms' }}>
+            <p className="font-serif text-lg text-ink/70 dark:text-paper/70">Run a survey to find paths worth keeping.</p>
+            <div className="mt-5 flex justify-center">
+              <Button onClick={() => setView(AppView.DASHBOARD)}>Explore careers</Button>
+            </div>
+          </div>
         )}
       </div>
     </div>

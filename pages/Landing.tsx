@@ -2,63 +2,139 @@ import React from 'react';
 import { useAppStore } from '../store';
 import { AppView } from '../types';
 import { Button } from '../components/Button';
-import { GeminiBadge } from '../components/GeminiBadge';
-import { ArrowRight } from 'lucide-react';
-import { APP_NAME } from '../constants';
+import { ArrowRight, Compass, Map, Telescope } from 'lucide-react';
+
+const MARQUEE = "DISCOVER  ·  ANALYZE  ·  ENVISION  ·  CHART YOUR COURSE  ·  ";
+
+const ENTRIES = [
+  {
+    no: '01',
+    title: 'Survey your terrain',
+    body: 'A short field survey reads your personality, aptitude, and interests, then plots them against the working world.',
+    icon: Compass,
+    ink: 'text-cobalt',
+  },
+  {
+    no: '02',
+    title: 'Read the charts',
+    body: 'We connect your profile to real roles, salaries, and demand, and rank the paths where you would genuinely thrive.',
+    icon: Map,
+    ink: 'text-vermillion',
+  },
+  {
+    no: '03',
+    title: 'See the horizon',
+    body: 'Step-by-step education routes plus AI-rendered day-in-the-life scenes, so the future is something you can picture.',
+    icon: Telescope,
+    ink: 'text-pine',
+  },
+];
 
 export const Landing: React.FC = () => {
   const { setView } = useAppStore();
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden bg-slate-50 dark:bg-slate-900 transition-colors duration-300 py-20 px-4">
-      
-      <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-blue-500/10 dark:bg-blue-600/20 blur-[100px]" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-indigo-500/10 dark:bg-indigo-600/20 blur-[100px]" />
-      </div>
+    <div className="min-h-screen flex flex-col bg-paper dark:bg-[#14130f] text-ink dark:text-paper transition-colors duration-300 overflow-x-hidden">
 
-      <div className="z-10 text-center w-full max-w-7xl px-2">
-        <div className="mb-6 flex justify-center animate-fade-in-up opacity-0" style={{ animationDelay: '0ms' }}>
-          <GeminiBadge variant="glass" size="lg" />
-        </div>
-
-        <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight text-slate-900 dark:text-white mb-6 animate-fade-in-up opacity-0" style={{ animationDelay: '150ms' }}>
-          Find Your Future with <br />
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400">
-            {APP_NAME}
+      {/* Masthead */}
+      <header className="border-b-2 border-ink dark:border-paper/70">
+        <div className="max-w-6xl mx-auto w-full px-5 py-3 flex items-center justify-between">
+          <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-ink/70 dark:text-paper/70">
+            The Career Almanac
           </span>
-        </h1>
+          <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-ink/70 dark:text-paper/70">
+            No. 01 / Edition: You
+          </span>
+        </div>
+      </header>
 
-        <p className="text-xl text-slate-600 dark:text-slate-400 mb-10 max-w-2xl mx-auto leading-relaxed animate-fade-in-up opacity-0" style={{ animationDelay: '300ms' }}>
-          Stop guessing. Let us analyze your personality, skills, and global trends to build a personalized career roadmap just for you.
-        </p>
+      {/* Hero */}
+      <section className="relative flex-1 tex-grid">
+        <div className="max-w-6xl mx-auto w-full px-5 pt-16 pb-20 md:pt-24">
 
-        <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in-up opacity-0" style={{ animationDelay: '450ms' }}>
-          <Button 
-            size="lg" 
-            onClick={() => setView(AppView.AUTH)}
-            className="group"
-          >
-            Get Started 
-            <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-          </Button>
+          <div className="animate-fade-in-up opacity-0" style={{ animationDelay: '0ms' }}>
+            <span className="inline-flex items-center gap-2 border-2 border-ink dark:border-paper/70 px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.2em] bg-marigold text-ink">
+              <span className="w-1.5 h-1.5 bg-ink rounded-full" />
+              A field guide to your future
+            </span>
+          </div>
+
+          <h1 className="mt-7 font-display text-[15vw] leading-[0.86] sm:text-7xl md:text-8xl lg:text-9xl tracking-tight animate-fade-in-up opacity-0" style={{ animationDelay: '120ms' }}>
+            Find the
+            <br />
+            <span className="text-vermillion">work</span> you were
+            <br />
+            built for.
+          </h1>
+
+          <p className="mt-8 max-w-xl font-serif text-xl md:text-2xl leading-relaxed text-ink/75 dark:text-paper/75 animate-fade-in-up opacity-0" style={{ animationDelay: '260ms' }}>
+            Stop guessing. CareerPath AI surveys your strengths, reads the market,
+            and charts a personalized route to careers worth the climb.
+          </p>
+
+          <div className="mt-10 flex flex-col sm:flex-row gap-4 items-start animate-fade-in-up opacity-0" style={{ animationDelay: '380ms' }}>
+            <Button size="lg" onClick={() => setView(AppView.AUTH)} className="group">
+              Begin the survey
+              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            </Button>
+            <p className="font-mono text-[11px] uppercase tracking-widest text-ink/50 dark:text-paper/50 sm:py-4">
+              Free to start · No CV required
+            </p>
+          </div>
         </div>
 
-        <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-6 text-left max-w-5xl mx-auto">
-           <div className="p-4 rounded-xl bg-white/50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 backdrop-blur-sm animate-fade-in-up opacity-0" style={{ animationDelay: '600ms' }}>
-              <h3 className="font-bold text-slate-900 dark:text-white mb-1">Holistic Analysis</h3>
-              <p className="text-sm text-slate-600 dark:text-slate-400">Deeply connects your personality, aptitude, and interests to real roles.</p>
-           </div>
-           <div className="p-4 rounded-xl bg-white/50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 backdrop-blur-sm animate-fade-in-up opacity-0" style={{ animationDelay: '750ms' }}>
-              <h3 className="font-bold text-slate-900 dark:text-white mb-1">Visual Pathways</h3>
-              <p className="text-sm text-slate-600 dark:text-slate-400">See your future with AI-generated day-in-the-life scenes.</p>
-           </div>
-           <div className="p-4 rounded-xl bg-white/50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 backdrop-blur-sm animate-fade-in-up opacity-0" style={{ animationDelay: '900ms' }}>
-              <h3 className="font-bold text-slate-900 dark:text-white mb-1">Smart Roadmaps</h3>
-              <p className="text-sm text-slate-600 dark:text-slate-400">Step-by-step education plans from where you are now.</p>
-           </div>
+        {/* Decorative oversized compass, bleeding off the right edge */}
+        <Compass
+          className="hidden lg:block absolute -right-24 top-24 w-[34rem] h-[34rem] text-ink/[0.06] dark:text-paper/[0.05] animate-spin-slow pointer-events-none"
+          strokeWidth={0.5}
+        />
+      </section>
+
+      {/* Ticker */}
+      <div className="border-y-2 border-ink dark:border-paper/70 bg-ink dark:bg-paper text-paper dark:text-ink overflow-hidden py-3">
+        <div className="flex whitespace-nowrap animate-marquee font-display text-lg tracking-wide">
+          <span>{MARQUEE.repeat(6)}</span>
+          <span aria-hidden="true">{MARQUEE.repeat(6)}</span>
         </div>
       </div>
+
+      {/* Three entries */}
+      <section className="max-w-6xl mx-auto w-full px-5 py-16 md:py-20">
+        <div className="grid grid-cols-1 md:grid-cols-3 border-2 border-ink dark:border-paper/70 divide-y-2 md:divide-y-0 md:divide-x-2 divide-ink dark:divide-paper/70">
+          {ENTRIES.map((entry, i) => {
+            const Icon = entry.icon;
+            return (
+              <div
+                key={entry.no}
+                className="p-7 md:p-8 bg-paper dark:bg-[#1c1a17] animate-fade-in-up opacity-0 relative"
+                style={{ animationDelay: `${500 + i * 120}ms` }}
+              >
+                <div className="flex items-start justify-between">
+                  <span className="font-display text-6xl md:text-7xl leading-none text-ink/15 dark:text-paper/15">
+                    {entry.no}
+                  </span>
+                  <Icon className={entry.ink} size={30} strokeWidth={2} />
+                </div>
+                <h3 className="mt-5 font-display text-2xl leading-tight">{entry.title}</h3>
+                <p className="mt-3 font-serif text-lg leading-relaxed text-ink/70 dark:text-paper/70">
+                  {entry.body}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      <footer className="border-t-2 border-ink dark:border-paper/70">
+        <div className="max-w-6xl mx-auto w-full px-5 py-5 flex flex-col sm:flex-row items-center justify-between gap-2">
+          <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink/55 dark:text-paper/55">
+            Printed with Gemini · Set in Archivo &amp; Newsreader
+          </span>
+          <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink/55 dark:text-paper/55">
+            CareerPath AI
+          </span>
+        </div>
+      </footer>
     </div>
   );
 };

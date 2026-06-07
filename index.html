@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>CareerPath AI</title>
-    
+
     <meta name="description" content="An AI-powered career guidance platform that analyzes your profile and quiz results to recommend personalized career paths with roadmaps and day-in-the-life visualizations." />
 
     <meta property="og:type" content="website" />
@@ -16,84 +16,147 @@
     <meta property="twitter:title" content="CareerPath AI" />
     <meta property="twitter:description" content="An AI-powered career guidance platform that analyzes your profile and quiz results to recommend personalized career paths with roadmaps and day-in-the-life visualizations." />
     <meta property="twitter:image" content="/og-image.jpg" />
-    
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22><defs><linearGradient id=%22g%22 x1=%220%22 y1=%220%22 x2=%2232%22 y2=%2232%22><stop offset=%220%22 stop-color=%22%232563eb%22/><stop offset=%221%22 stop-color=%22%239333ea%22/></linearGradient></defs><rect width=%2232%22 height=%2232%22 rx=%228%22 fill=%22url(%23g)%22/><path d=%22M16 5 C16 12 21 16 27 16 C21 16 16 20 16 27 C16 20 11 16 5 16 C11 16 16 12 16 5 Z%22 fill=%22white%22/></svg>">
+
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22><rect width=%2232%22 height=%2232%22 rx=%226%22 fill=%22%23e8552d%22/><circle cx=%2216%22 cy=%2216%22 r=%229%22 fill=%22none%22 stroke=%22%23faf4e6%22 stroke-width=%222.5%22/><path d=%22M16 7 L18 16 L16 25 L14 16 Z%22 fill=%22%23faf4e6%22/></svg>">
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Archivo+Black&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
     <script>
       tailwind.config = {
         darkMode: 'class',
         theme: {
           extend: {
             fontFamily: {
-              sans: ['Inter', 'sans-serif'],
+              sans: ['Archivo', 'sans-serif'],
+              display: ['"Archivo Black"', 'Archivo', 'sans-serif'],
+              serif: ['Newsreader', 'Georgia', 'serif'],
+              mono: ['"Space Mono"', 'ui-monospace', 'monospace'],
             },
             colors: {
+              // The Career Almanac palette: warm paper, deep ink, riso inks
+              paper:   '#faf4e6',
+              paper2:  '#f1e7d0',
+              ink:     '#1c1a17',
+              ink2:    '#322e28',
+              // riso inks
+              vermillion: { DEFAULT: '#e8552d', 600: '#d4431d', 700: '#b3370f' },
+              cobalt:     { DEFAULT: '#2b53d4', 600: '#1f40b8', 700: '#16329a' },
+              pine:       { DEFAULT: '#1f6b4f', 600: '#175840', 700: '#114633' },
+              marigold:   { DEFAULT: '#f0a830', 600: '#d98f1c', 700: '#b8760f' },
+              orchid:     { DEFAULT: '#b8438f', 600: '#9c357a', 700: '#7d2a62' },
+              // brand alias kept so nothing breaks if referenced
               brand: {
-                50: '#f0f9ff',
-                100: '#e0f2fe',
-                200: '#bae6fd',
-                300: '#7dd3fc',
-                400: '#38bdf8',
-                500: '#0ea5e9',
-                600: '#0284c7',
-                700: '#0369a1',
-                800: '#075985',
-                900: '#0c4a6e',
+                50:'#fdeee7',100:'#fbd9c9',200:'#f7b69b',300:'#f28e68',
+                400:'#ee6c40',500:'#e8552d',600:'#d4431d',700:'#b3370f',
+                800:'#8f2c0c',900:'#6f230a',
               }
             },
+            boxShadow: {
+              'stamp': '4px 4px 0 0 rgba(28,26,23,1)',
+              'stamp-sm': '3px 3px 0 0 rgba(28,26,23,1)',
+              'stamp-lg': '6px 6px 0 0 rgba(28,26,23,1)',
+              'stamp-light': '4px 4px 0 0 rgba(250,244,230,0.92)',
+            },
             animation: {
-              'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-              'marquee': 'marquee 15s linear infinite',
-              'fade-in-up': 'fadeInUp 0.6s ease-out forwards',
+              'marquee': 'marquee 26s linear infinite',
+              'fade-in-up': 'fadeInUp 0.6s cubic-bezier(0.22,1,0.36,1) forwards',
               'fade-in': 'fadeIn 0.5s ease-out forwards',
+              'stamp-in': 'stampIn 0.45s cubic-bezier(0.34,1.56,0.64,1) forwards',
+              'spin-slow': 'spin 9s linear infinite',
+              'ticker': 'ticker 0.8s steps(8) infinite',
             },
             keyframes: {
               marquee: {
-                '0%': { transform: 'translateX(100%)' },
-                '100%': { transform: 'translateX(-100%)' },
+                '0%': { transform: 'translateX(0)' },
+                '100%': { transform: 'translateX(-50%)' },
               },
               fadeInUp: {
-                '0%': { opacity: '0', transform: 'translateY(20px)' },
+                '0%': { opacity: '0', transform: 'translateY(22px)' },
                 '100%': { opacity: '1', transform: 'translateY(0)' },
               },
               fadeIn: {
                 '0%': { opacity: '0' },
                 '100%': { opacity: '1' },
-              }
+              },
+              stampIn: {
+                '0%': { opacity: '0', transform: 'scale(1.35) rotate(-6deg)' },
+                '60%': { opacity: '1' },
+                '100%': { opacity: '1', transform: 'scale(1) rotate(-2deg)' },
+              },
+              ticker: {
+                '0%, 100%': { opacity: '1' },
+                '50%': { opacity: '0.25' },
+              },
             }
           }
         }
       }
     </script>
     <style>
+      :root {
+        --paper: #faf4e6;
+        --ink: #1c1a17;
+      }
+      html { background-color: var(--paper); }
+      html.dark { background-color: #14130f; }
+
       body {
-        font-family: 'Inter', sans-serif;
-        transition: background-color 0.3s ease, color 0.3s ease;
+        font-family: 'Archivo', sans-serif;
+        color: var(--ink);
+        transition: background-color 0.35s ease, color 0.35s ease;
+        -webkit-font-smoothing: antialiased;
       }
-      ::-webkit-scrollbar {
-        width: 8px;
+
+      /* Riso grain / paper tooth, applied over the whole document */
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        pointer-events: none;
+        opacity: 0.5;
+        mix-blend-mode: multiply;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
       }
-      ::-webkit-scrollbar-track {
-        background: transparent; 
+      html.dark body::before {
+        mix-blend-mode: screen;
+        opacity: 0.07;
       }
+
+      /* Utility: faint map-grid texture for big surfaces */
+      .tex-grid {
+        background-image:
+          linear-gradient(rgba(28,26,23,0.05) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(28,26,23,0.05) 1px, transparent 1px);
+        background-size: 28px 28px;
+      }
+      .dark .tex-grid {
+        background-image:
+          linear-gradient(rgba(250,244,230,0.045) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(250,244,230,0.045) 1px, transparent 1px);
+      }
+
+      /* Dashed "route" rule */
+      .rule-dash {
+        background-image: repeating-linear-gradient(90deg, currentColor 0 8px, transparent 8px 16px);
+        height: 2px;
+      }
+
+      ::selection { background: #e8552d; color: #faf4e6; }
+
+      ::-webkit-scrollbar { width: 12px; height: 12px; }
+      ::-webkit-scrollbar-track { background: transparent; }
       ::-webkit-scrollbar-thumb {
-        background: #94a3b8; 
-        border-radius: 4px;
-      }
-      ::-webkit-scrollbar-thumb:hover {
-        background: #64748b; 
-      }
-      
-      .dark ::-webkit-scrollbar-track {
-        background: #1e293b;
+        background: #1c1a17;
+        border: 3px solid var(--paper);
       }
       .dark ::-webkit-scrollbar-thumb {
-        background: #475569;
+        background: #faf4e6;
+        border-color: #14130f;
       }
+      .custom-scrollbar::-webkit-scrollbar { width: 8px; }
     </style>
   <script type="importmap">
 {

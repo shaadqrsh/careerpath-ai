@@ -6,36 +6,50 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   fullWidth?: boolean;
 }
 
-export const Button: React.FC<ButtonProps> = ({ 
-  children, 
-  variant = 'primary', 
-  size = 'md', 
-  fullWidth = false, 
-  className = '', 
-  ...props 
+// "Stamp" buttons: flat ink-bordered blocks with a hard offset shadow that
+// presses down on click. The almanac signature interaction.
+export const Button: React.FC<ButtonProps> = ({
+  children,
+  variant = 'primary',
+  size = 'md',
+  fullWidth = false,
+  className = '',
+  ...props
 }) => {
-  const baseStyles = "inline-flex items-center justify-center rounded-xl font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-100 dark:focus:ring-offset-slate-900 disabled:opacity-50 disabled:cursor-not-allowed";
-  
+  const baseStyles =
+    "inline-flex items-center justify-center font-bold uppercase tracking-wide " +
+    "border-2 border-ink dark:border-paper transition-[transform,box-shadow,background-color] duration-150 " +
+    "focus:outline-none focus-visible:ring-2 focus-visible:ring-vermillion focus-visible:ring-offset-2 " +
+    "focus-visible:ring-offset-paper dark:focus-visible:ring-offset-[#14130f] " +
+    "active:translate-x-[3px] active:translate-y-[3px] active:shadow-none " +
+    "disabled:opacity-50 disabled:cursor-not-allowed disabled:active:translate-x-0 disabled:active:translate-y-0";
+
   const variants = {
-    primary: "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-lg shadow-blue-500/30 focus:ring-blue-500 border border-transparent",
-    
-    secondary: "bg-slate-200 hover:bg-slate-300 text-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-white focus:ring-slate-500 border border-transparent",
-    
-    outline: "border-2 border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:border-blue-500 dark:hover:border-blue-400 hover:text-blue-600 dark:hover:text-white bg-transparent focus:ring-slate-500",
-    
-    ghost: "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 focus:ring-slate-500 border border-transparent"
+    primary:
+      "bg-vermillion text-paper shadow-stamp dark:shadow-stamp-light hover:bg-vermillion-600 " +
+      "hover:-translate-x-[1px] hover:-translate-y-[1px]",
+    secondary:
+      "bg-ink text-paper dark:bg-paper dark:text-ink shadow-stamp dark:shadow-stamp-light " +
+      "hover:-translate-x-[1px] hover:-translate-y-[1px]",
+    outline:
+      "bg-paper text-ink dark:bg-transparent dark:text-paper shadow-stamp dark:shadow-stamp-light " +
+      "hover:bg-paper2 dark:hover:bg-paper/10 hover:-translate-x-[1px] hover:-translate-y-[1px]",
+    ghost:
+      "border-transparent dark:border-transparent shadow-none text-ink/70 dark:text-paper/70 " +
+      "hover:text-ink dark:hover:text-paper hover:bg-ink/5 dark:hover:bg-paper/5 " +
+      "active:translate-x-0 active:translate-y-0",
   };
 
   const sizes = {
-    sm: "px-4 py-2 text-sm",
-    md: "px-6 py-3 text-base",
-    lg: "px-8 py-4 text-lg"
+    sm: "px-4 py-2 text-xs gap-1.5",
+    md: "px-6 py-3 text-sm gap-2",
+    lg: "px-8 py-4 text-base gap-2",
   };
 
   const width = fullWidth ? "w-full" : "";
 
   return (
-    <button 
+    <button
       className={`${baseStyles} ${variants[variant]} ${sizes[size]} ${width} ${className}`}
       {...props}
     >

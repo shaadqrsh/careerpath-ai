@@ -3,8 +3,8 @@ import { useAppStore } from '../store';
 import { AppView } from '../types';
 import { generateCareerRecommendations } from '../services/geminiService';
 import { getUserProfile } from '../services/supabaseService';
-import { Loader2 } from 'lucide-react';
 import { GeminiBadge } from '../components/GeminiBadge';
+import { CompassMark } from '../components/FullScreenLoader';
 
 const generateUUID = () => {
     if (typeof crypto !== 'undefined' && crypto.randomUUID) {
@@ -87,10 +87,10 @@ export const Analysis: React.FC = () => {
 
   useEffect(() => {
     const texts = [
-      "Analyzing your responses...",
+      "Reading your responses...",
       "Mapping global market trends...",
-      "Identifying high-growth sectors...",
-      "Constructing personalized roadmaps..."
+      "Charting high-growth sectors...",
+      "Plotting personalized routes..."
     ];
     let i = 0;
     const interval = setInterval(() => {
@@ -130,7 +130,7 @@ export const Analysis: React.FC = () => {
                 showModal({
                     variant: 'danger',
                     title: "Daily Limit Reached",
-                    description: <>You've reached your daily limit of <strong>${limit}</strong> career assessments. Please return in 24 hours to explore more paths.</>,
+                    description: <>You have reached your daily limit of <strong>{limit}</strong> career assessments. Please return in 24 hours to explore more paths.</>,
                     buttonText: "Return to Dashboard",
                     onButtonClick: () => {
                         hideModal();
@@ -166,39 +166,41 @@ export const Analysis: React.FC = () => {
   }, [user, quizAnswers, setRecommendations, setView, savedCareers, showToast, setUser, showModal, hideModal]);
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col items-center justify-center p-4 transition-colors duration-300">
-      <div className="relative animate-fade-in-up opacity-0" style={{ animationDelay: '0ms' }}>
-        <div className="absolute inset-0 bg-blue-500 blur-xl opacity-20 animate-pulse-slow"></div>
-        <Loader2 className="w-16 h-16 text-blue-600 dark:text-blue-500 animate-spin relative z-10 mx-auto" />
+    <div className="min-h-screen bg-paper dark:bg-[#14130f] flex flex-col items-center justify-center p-4 transition-colors duration-300 tex-grid">
+      <div className="animate-fade-in-up opacity-0" style={{ animationDelay: '0ms' }}>
+        <CompassMark size={56} className="text-vermillion mx-auto" />
       </div>
-      
+
       <div className="animate-fade-in-up opacity-0 text-center" style={{ animationDelay: '150ms' }}>
-        <h2 className="mt-8 text-2xl md:text-3xl font-bold text-slate-900 dark:text-white text-center">
-            Generating a career path for you
+        <h2 className="mt-8 font-display text-3xl md:text-4xl text-ink dark:text-paper leading-tight">
+          Charting your course.
         </h2>
-        
-        <GeminiBadge className="mt-4 mx-auto" />
-        
-        <p className="mt-6 text-slate-600 dark:text-slate-400 text-lg animate-pulse min-h-[1.75rem] transition-opacity duration-500">
-            {loadingText}
+
+        <div className="mt-4 flex justify-center">
+          <GeminiBadge />
+        </div>
+
+        <p className="mt-6 font-mono text-xs uppercase tracking-[0.2em] text-ink/60 dark:text-paper/60 animate-ticker min-h-[1.5rem]">
+          {loadingText}
         </p>
       </div>
 
-      <div ref={scrollRef} className="mt-12 w-full max-w-lg bg-white dark:bg-slate-950 rounded-lg p-6 font-mono text-xs md:text-sm text-slate-800 dark:text-green-400 border border-slate-300 dark:border-slate-800 shadow-2xl overflow-y-auto max-h-[350px] min-h-[280px] relative transition-colors scroll-smooth animate-fade-in-up opacity-0" style={{ animationDelay: '300ms' }}>
-        <div className="flex items-center gap-2 mb-4 border-b border-slate-200 dark:border-slate-800 pb-2 sticky top-0 bg-white dark:bg-slate-950 z-10">
-            <div className="w-3 h-3 rounded-full bg-red-500"></div>
-            <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-            <div className="w-3 h-3 rounded-full bg-green-500"></div>
-            <span className="ml-2 text-slate-400 text-xs">console --active</span>
+      <div ref={scrollRef} className="mt-10 w-full max-w-lg bg-ink dark:bg-[#0d0c0a] p-5 font-mono text-xs md:text-sm text-marigold border-2 border-ink dark:border-paper/70 shadow-stamp dark:shadow-stamp-light overflow-y-auto max-h-[330px] min-h-[260px] relative scroll-smooth animate-fade-in-up opacity-0" style={{ animationDelay: '300ms' }}>
+        <div className="flex items-center justify-between mb-4 border-b-2 border-dashed border-paper/30 pb-2 sticky top-0 bg-ink dark:bg-[#0d0c0a] z-10">
+          <span className="text-paper/50 uppercase tracking-[0.2em] text-[10px]">Field log</span>
+          <span className="flex items-center gap-1.5 text-pine">
+            <span className="w-2 h-2 bg-pine animate-pulse"></span>
+            <span className="uppercase tracking-widest text-[10px]">live</span>
+          </span>
         </div>
-        
+
         <div className="space-y-1">
-            {displayLog.map((line, idx) => (
-                <p key={idx} className="break-words font-semibold">
-                    {line}
-                    {idx === currentLineIndex && <span className="inline-block w-2 h-4 bg-slate-800 dark:bg-green-400 ml-1 animate-pulse align-middle"></span>}
-                </p>
-            ))}
+          {displayLog.map((line, idx) => (
+            <p key={idx} className="break-words">
+              {line}
+              {idx === currentLineIndex && <span className="inline-block w-2 h-4 bg-marigold ml-1 animate-pulse align-middle"></span>}
+            </p>
+          ))}
         </div>
       </div>
     </div>

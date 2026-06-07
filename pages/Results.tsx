@@ -70,105 +70,89 @@ export const Results: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 py-8 px-4 sm:px-6 lg:px-8 pb-32 transition-colors">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-paper dark:bg-[#14130f] py-8 px-4 sm:px-6 lg:px-8 pb-32 transition-colors tex-grid">
+      <div className="max-w-6xl mx-auto">
         <div className="flex items-center justify-between mb-8 animate-fade-in-up opacity-0" style={{ animationDelay: '0ms' }}>
-            <button 
-                onClick={handleBackAttempt} 
-                className="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white flex items-center gap-2 transition-colors"
-            >
-                <ArrowLeft size={20} /> Back to Menu
-            </button>
+          <button
+            onClick={handleBackAttempt}
+            className="font-mono text-[11px] uppercase tracking-widest text-ink/55 dark:text-paper/55 hover:text-vermillion flex items-center gap-2 transition-colors"
+          >
+            <ArrowLeft size={14} /> Back to dashboard
+          </button>
+          <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-ink/45 dark:text-paper/45">
+            {recommendations.length} matches
+          </span>
         </div>
 
-        <div className="mb-12 text-center animate-fade-in-up opacity-0" style={{ animationDelay: '100ms' }}>
-            <h2 className="text-3xl font-bold text-slate-900 dark:text-white">Your Top Matches</h2>
-            <p className="text-slate-600 dark:text-slate-400 mt-2">Based on your unique profile, here are the paths where you'd thrive.</p>
+        <div className="mb-12 animate-fade-in-up opacity-0" style={{ animationDelay: '100ms' }}>
+          <h2 className="font-display text-5xl md:text-6xl text-ink dark:text-paper leading-[0.92]">Your top matches.</h2>
+          <p className="mt-4 font-serif text-lg text-ink/70 dark:text-paper/70 max-w-2xl">Based on your survey, here are the paths where you would genuinely thrive. Tap any entry to explore the full route.</p>
         </div>
 
-        <div className="space-y-6">
-            {recommendations.map((career, index) => {
-                const isBestMatch = index === 0;
+        <div className="space-y-5">
+          {recommendations.map((career, index) => {
+            const isBestMatch = index === 0;
+            const saved = isSaved(career.id);
 
-                return (
-                <div 
-                    key={career.id}
-                    className="animate-fade-in-up opacity-0"
-                    style={{ animationDelay: `${200 + (index * 150)}ms` }}
+            return (
+              <div key={career.id} className="animate-fade-in-up opacity-0" style={{ animationDelay: `${200 + index * 120}ms` }}>
+                <div
+                  onClick={() => handleSelect(career)}
+                  className={`group relative bg-paper dark:bg-[#1c1a17] border-2 p-6 md:p-7 cursor-pointer flex flex-col md:flex-row gap-6 md:items-center shadow-stamp dark:shadow-stamp-light transition-transform duration-150 hover:-translate-x-[2px] hover:-translate-y-[2px] active:translate-x-[3px] active:translate-y-[3px] active:shadow-none ${isBestMatch ? 'border-pine' : 'border-ink dark:border-paper'}`}
                 >
-                    <div 
-                        onClick={() => handleSelect(career)}
-                        className={`group relative bg-white dark:bg-slate-800/50 backdrop-blur-sm rounded-2xl p-6 md:p-8 border transition-all duration-300 flex flex-col md:flex-row gap-6 md:items-center shadow-sm cursor-pointer hover:shadow-xl hover:border-blue-500 dark:hover:border-slate-500 hover:scale-[1.02] dark:hover:bg-slate-800 overflow-hidden ${isBestMatch ? 'border-green-500/50 dark:border-green-500/50 ring-1 ring-green-500/20' : 'border-slate-200 dark:border-slate-700'}`}
-                    >
-                        <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-indigo-500 opacity-0 group-hover:opacity-5 transition-opacity duration-300" />
-                        
-                        {isSaved(career.id) && (
-                            <div className="absolute top-4 right-4 flex items-center gap-1.5 text-pink-500 z-10 animate-[fadeIn_0.3s_ease-out]">
-                                <Heart size={16} fill="currentColor" />
-                                <span className="text-xs font-bold uppercase tracking-wide">Career Saved</span>
-                            </div>
-                        )}
+                  {/* rank numeral */}
+                  <span className="absolute top-3 right-4 font-display text-5xl leading-none text-ink/10 dark:text-paper/10 select-none">
+                    {String(index + 1).padStart(2, '0')}
+                  </span>
 
-                        {isBestMatch && !isSaved(career.id) && (
-                             <div className="absolute top-4 right-4 md:right-auto md:left-4 flex items-center gap-1.5 text-green-600 dark:text-green-400 z-10 animate-[fadeIn_0.3s_ease-out] bg-green-50 dark:bg-green-900/30 px-2 py-1 rounded-full border border-green-200 dark:border-green-800">
-                                <Star size={14} fill="currentColor" />
-                                <span className="text-[10px] font-bold uppercase tracking-wide">Best Match</span>
-                            </div>
-                        )}
-
-                        <div className="flex-shrink-0 relative z-10 mt-6 md:mt-0">
-                            <div className="w-20 h-20 flex items-center justify-center relative bg-transparent">
-                                 <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 100 100">
-                                    <circle 
-                                        cx="50" 
-                                        cy="50" 
-                                        r="45" 
-                                        fill="none" 
-                                        stroke={isBestMatch ? '#22c55e' : '#3b82f6'} 
-                                        strokeWidth="8" 
-                                        strokeLinecap="round"
-                                        strokeDasharray={`${(2 * Math.PI * 45) * (career.matchScore / 100)} ${(2 * Math.PI * 45)}`}
-                                        className="transition-all duration-1000 ease-out opacity-90"
-                                    />
-                                 </svg>
-                                 <span className="text-xl font-bold text-slate-800 dark:text-white relative z-10">{career.matchScore}%</span>
-                            </div>
-                        </div>
-
-                        <div className="flex-grow relative z-10">
-                            <div className="flex flex-wrap gap-2 mb-2">
-                                {career.tags.map(t => (
-                                    <Badge key={t} variant={isBestMatch ? 'blue' : 'slate'} className="group-hover:bg-blue-100 dark:group-hover:bg-blue-900/30 group-hover:text-blue-700 dark:group-hover:text-blue-300 transition-colors">
-                                        {t}
-                                    </Badge>
-                                ))}
-                            </div>
-                            <div className="flex items-center gap-3">
-                                <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{career.title}</h3>
-                            </div>
-                            <p className="text-slate-600 dark:text-slate-400 text-sm md:text-base mb-4 max-w-2xl line-clamp-3">{career.summary}</p>
-                            
-                            <div className="flex items-center gap-6 text-sm font-medium text-slate-500 dark:text-slate-300">
-                                <div className="flex items-center gap-2">
-                                    <DollarSign size={16} className="text-green-500 dark:text-green-400" />
-                                    {career.salaryRange}
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <TrendingUp size={16} className="text-blue-500 dark:text-blue-400" />
-                                    {formatGrowth(career.growth)}
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="flex-shrink-0 self-end relative z-10 mt-4 md:mt-0">
-                            <span className="text-blue-600 dark:text-blue-400 font-medium group-hover:translate-x-2 transition-transform inline-flex items-center">
-                                Explore Path <ArrowRight className="ml-1 w-4 h-4" />
-                            </span>
-                        </div>
+                  {/* score stamp */}
+                  <div className="flex-shrink-0 relative z-10">
+                    <div className={`w-20 h-20 flex flex-col items-center justify-center border-2 border-ink dark:border-paper ${isBestMatch ? 'bg-pine text-paper' : 'bg-paper dark:bg-[#14130f] text-ink dark:text-paper'}`}>
+                      <span className="font-display text-2xl leading-none">{career.matchScore}</span>
+                      <span className="font-mono text-[9px] uppercase tracking-widest mt-0.5 opacity-70">match</span>
                     </div>
+                  </div>
+
+                  <div className="flex-grow relative z-10 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2 mb-2">
+                      {isBestMatch && (
+                        <span className="inline-flex items-center gap-1 bg-pine text-paper px-2 py-1 font-mono text-[9px] font-bold uppercase tracking-widest">
+                          <Star size={11} fill="currentColor" /> Best match
+                        </span>
+                      )}
+                      {saved && (
+                        <span className="inline-flex items-center gap-1 text-vermillion font-mono text-[9px] font-bold uppercase tracking-widest">
+                          <Heart size={11} fill="currentColor" /> Saved
+                        </span>
+                      )}
+                      {career.tags.map(t => (
+                        <Badge key={t} variant={isBestMatch ? 'green' : 'slate'}>{t}</Badge>
+                      ))}
+                    </div>
+                    <h3 className="font-display text-2xl text-ink dark:text-paper mb-2 group-hover:text-vermillion transition-colors">{career.title}</h3>
+                    <p className="font-serif text-ink/70 dark:text-paper/70 mb-4 max-w-2xl line-clamp-2 text-base md:text-lg">{career.summary}</p>
+
+                    <div className="flex flex-wrap items-center gap-x-6 gap-y-2 font-mono text-xs uppercase tracking-wide text-ink/60 dark:text-paper/60">
+                      <div className="flex items-center gap-2">
+                        <DollarSign size={14} className="text-pine" strokeWidth={2.25} />
+                        {career.salaryRange}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <TrendingUp size={14} className="text-cobalt" strokeWidth={2.25} />
+                        {formatGrowth(career.growth)}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex-shrink-0 self-end md:self-center relative z-10">
+                    <span className="font-bold uppercase tracking-wide text-sm text-vermillion inline-flex items-center gap-1.5 group-hover:translate-x-1 transition-transform">
+                      Explore <ArrowRight className="w-4 h-4" />
+                    </span>
+                  </div>
                 </div>
-                );
-            })}
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>

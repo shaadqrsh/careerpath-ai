@@ -117,35 +117,35 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
         type="button"
         onKeyDown={handleKeyDown}
         onClick={() => !disabled && setIsOpen(!isOpen)}
-        className={`w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-xl py-3 pl-4 pr-10 text-left text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} ${isOpen ? 'ring-2 ring-blue-500 border-transparent' : ''}`}
+        className={`w-full bg-paper dark:bg-[#1c1a17] border-2 border-ink dark:border-paper/70 py-3 pl-4 pr-10 text-left font-medium text-ink dark:text-paper focus:outline-none transition-all duration-150 ${disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'} ${isOpen ? 'border-vermillion shadow-stamp-sm dark:shadow-stamp-light -translate-x-[1px] -translate-y-[1px]' : ''}`}
       >
-        <span className={`block truncate ${!value && value !== 0 ? 'text-slate-500' : ''}`}>
+        <span className={`block truncate ${!value && value !== 0 ? 'text-ink/40 dark:text-paper/40 font-normal' : ''}`}>
           {value || value === 0 ? selectedLabel : placeholder}
         </span>
-        <span className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
-          <ChevronDown className={`w-5 h-5 text-slate-500 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+        <span className="absolute inset-y-0 right-0 flex items-center pr-3.5 pointer-events-none">
+          <ChevronDown className={`w-5 h-5 text-ink/50 dark:text-paper/50 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
         </span>
       </button>
 
       {isOpen && (
-        <div className="absolute z-[100] mt-2 w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl max-h-60 overflow-y-auto focus:outline-none animate-in fade-in zoom-in-95 duration-100 origin-top touch-pan-y overscroll-contain">
-          <ul className="py-1" ref={listRef}>
+        <div className="absolute z-[100] mt-2 w-full bg-paper dark:bg-[#1c1a17] border-2 border-ink dark:border-paper/70 shadow-stamp dark:shadow-stamp-light max-h-60 overflow-y-auto focus:outline-none animate-fade-in origin-top touch-pan-y overscroll-contain">
+          <ul className="py-0" ref={listRef}>
             {normalizedOptions.map((option, index) => (
               <li
                 key={option.value}
                 onClick={() => handleSelect(option.value)}
-                className={`group relative cursor-pointer select-none py-2.5 pl-4 pr-9 hover:bg-blue-50 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-100 transition-colors ${value === option.value ? 'bg-blue-50 dark:bg-slate-700 font-medium text-blue-600 dark:text-blue-400' : ''} ${highlightedIndex === index ? 'bg-blue-50 dark:bg-slate-700' : ''}`}
+                className={`group relative cursor-pointer select-none py-2.5 pl-4 pr-9 text-ink dark:text-paper transition-colors border-b border-ink/10 dark:border-paper/10 last:border-b-0 hover:bg-vermillion hover:text-paper ${value === option.value ? 'bg-ink/5 dark:bg-paper/10 font-bold text-vermillion-600 dark:text-vermillion' : ''} ${highlightedIndex === index ? 'bg-vermillion text-paper' : ''}`}
               >
                 <span className="block truncate">{option.label}</span>
                 {value === option.value && (
-                  <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-blue-600 dark:text-blue-400">
+                  <span className="absolute inset-y-0 right-0 flex items-center pr-3 group-hover:text-paper">
                     <Check className="h-4 w-4" />
                   </span>
                 )}
               </li>
             ))}
             {normalizedOptions.length === 0 && (
-                <li className="py-2.5 pl-4 pr-4 text-slate-500 text-sm">No options available</li>
+                <li className="py-2.5 pl-4 pr-4 text-ink/50 dark:text-paper/50 text-sm">No options available</li>
             )}
           </ul>
         </div>

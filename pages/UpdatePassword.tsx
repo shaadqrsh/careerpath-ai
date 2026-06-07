@@ -56,53 +56,58 @@ export const UpdatePassword: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 px-4 transition-colors duration-300 relative">
-      <div className="w-full max-w-md bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 p-8 rounded-2xl shadow-xl backdrop-blur-sm transition-all">
-        <div className="text-center mb-8">
-          <h2 className="text-3xl font-bold text-slate-900 dark:text-white">Reset Password</h2>
-          <p className="text-slate-600 dark:text-slate-400 mt-2">Enter your new password below.</p>
+    <div className="min-h-screen flex items-center justify-center bg-paper dark:bg-[#14130f] px-4 py-12 transition-colors duration-300 relative tex-grid">
+      <div className="w-full max-w-md bg-paper dark:bg-[#1c1a17] border-2 border-ink dark:border-paper shadow-stamp-lg dark:shadow-stamp-light animate-fade-in-up">
+        <div className="flex items-center justify-between border-b-2 border-ink dark:border-paper px-7 py-3 bg-ink dark:bg-paper text-paper dark:text-ink">
+          <span className="font-mono text-[10px] font-bold uppercase tracking-[0.2em]">Member card</span>
+          <span className="font-mono text-[10px] font-bold uppercase tracking-[0.2em]">New key</span>
         </div>
 
-        {success && (
-            <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 rounded-xl text-sm flex items-start gap-3 animate-[fadeIn_0.3s_ease-out]">
-                <CheckCircle size={18} className="mt-0.5 shrink-0" />
-                <span>Password updated! Redirecting...</span>
+        <div className="p-7 md:p-8">
+          <h2 className="font-display text-3xl text-ink dark:text-paper leading-tight">Set a new password</h2>
+          <p className="mt-2 font-serif text-lg text-ink/70 dark:text-paper/70">Choose something you will remember.</p>
+
+          {success && (
+            <div className="mt-6 p-4 border-2 border-pine bg-pine/10 text-pine text-sm flex items-start gap-3 animate-fade-in">
+              <CheckCircle size={18} className="mt-0.5 shrink-0" />
+              <span className="font-medium">Password updated. Redirecting...</span>
             </div>
-        )}
+          )}
 
-        {error && (
-            <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 rounded-lg text-sm text-center">
-                {error}
+          {error && (
+            <div className="mt-6 p-3 border-2 border-vermillion bg-vermillion/10 text-vermillion-600 dark:text-vermillion text-sm text-center font-medium animate-fade-in">
+              {error}
             </div>
-        )}
+          )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <Input 
-            label="New Password"
-            icon={<Lock />}
-            type="password"
-            required
-            minLength={6}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
-          />
+          <form onSubmit={handleSubmit} className="space-y-6 mt-7">
+            <Input
+              label="New Password"
+              icon={<Lock />}
+              type="password"
+              required
+              minLength={6}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="New password"
+            />
 
-          <Input 
-            label="Confirm Password"
-            icon={<Lock />}
-            type="password"
-            required
-            minLength={6}
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            placeholder="••••••••"
-          />
+            <Input
+              label="Confirm Password"
+              icon={<Lock />}
+              type="password"
+              required
+              minLength={6}
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="Repeat new password"
+            />
 
-          <Button type="submit" fullWidth disabled={loading || success}>
-            {loading ? 'Updating...' : 'Update Password'}
-          </Button>
-        </form>
+            <Button type="submit" fullWidth disabled={loading || success}>
+              {loading ? 'Updating...' : 'Update password'}
+            </Button>
+          </form>
+        </div>
       </div>
     </div>
   );

@@ -8,7 +8,7 @@ import { DomainIcon } from '../components/DomainIcon';
 
 export const Dashboard: React.FC = () => {
   const { setView, setDomain, savedCareers, hasViewedSavedPaths, user, logout, showModal, hideModal } = useAppStore();
-  
+
   const [careerQuota, setCareerQuota] = useState(0);
   const [imageQuota, setImageQuota] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -17,12 +17,12 @@ export const Dashboard: React.FC = () => {
     if (user) {
         const getRemaining = (count: number | undefined, lastDateStr: string | undefined, limit: number) => {
             if (!lastDateStr) return limit;
-            
+
             const lastDate = new Date(lastDateStr);
             const now = new Date();
-            
+
             const isSameDay = lastDate.toISOString().split('T')[0] === now.toISOString().split('T')[0];
-            
+
             if (!isSameDay) return limit;
             return Math.max(0, limit - (count || 0));
         };
@@ -64,7 +64,7 @@ export const Dashboard: React.FC = () => {
             showModal({
                 variant: 'danger',
                 title: "Daily Limit Reached",
-                description: <>You've reached your daily limit of <strong>{limit}</strong> career assessments. Please return in 24 hours to explore more paths.</>,
+                description: <>You have reached your daily limit of <strong>{limit}</strong> career assessments. Please return in 24 hours to explore more paths.</>,
                 buttonText: "Okay",
                 onButtonClick: hideModal
             });
@@ -81,232 +81,212 @@ export const Dashboard: React.FC = () => {
       setView(AppView.LANDING);
   };
 
-  const categories: {id: CareerDomain, title: string, desc: string}[] = [
-    { id: 'science', title: 'Science & Tech', desc: 'Engineering, Medicine, Research' },
-    { id: 'commerce', title: 'Commerce', desc: 'Business, Finance, Law' },
-    { id: 'arts', title: 'Arts & Creative', desc: 'Design, Media, Humanities' },
+  const categories: { id: CareerDomain, no: string, title: string, desc: string }[] = [
+    { id: 'science', no: 'I', title: 'Science & Tech', desc: 'Engineering · Medicine · Research' },
+    { id: 'commerce', no: 'II', title: 'Commerce', desc: 'Business · Finance · Law' },
+    { id: 'arts', no: 'III', title: 'Arts & Creative', desc: 'Design · Media · Humanities' },
   ];
 
-  const getQuotaStyles = (current: number) => {
-     if (current === 0) {
-         return "bg-red-50 dark:bg-red-900/20 border-red-100 dark:border-red-800 text-red-700 dark:text-red-400";
-     }
-     return "bg-blue-50 dark:bg-blue-900/20 border-blue-100 dark:border-blue-800 text-blue-700 dark:text-blue-300";
-  };
-  
-  const getImageQuotaStyles = (current: number) => {
-     if (current === 0) {
-         return "bg-red-50 dark:bg-red-900/20 border-red-100 dark:border-red-800 text-red-700 dark:text-red-400";
-     }
-     return "bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-700 text-yellow-700 dark:text-yellow-400";
-  };
+  // Quota chip color: pine when available, vermillion when spent.
+  const quotaTone = (current: number) =>
+    current === 0
+      ? "border-vermillion text-vermillion-600 dark:text-vermillion"
+      : "border-ink dark:border-paper/60 text-ink dark:text-paper";
 
   const displayCareerLimit = user?.limits?.dailyCareerLimit ?? 5;
   const displayImageLimit = user?.limits?.dailyImageLimit ?? 3;
+
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white transition-colors duration-300">
-      <nav className="border-b border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md sticky top-0 z-50 transition-colors">
+    <div className="min-h-screen bg-paper dark:bg-[#14130f] text-ink dark:text-paper transition-colors duration-300">
+      <nav className="border-b-2 border-ink dark:border-paper/70 bg-paper/95 dark:bg-[#14130f]/95 backdrop-blur-md sticky top-0 z-50 transition-colors">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-3">
-                <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400">
-                    {APP_NAME}
-                </h1>
-                <GeminiBadge className="hidden md:flex" />
+              <h1 className="font-display text-lg sm:text-xl text-ink dark:text-paper tracking-tight">
+                {APP_NAME}
+              </h1>
+              <span className="hidden md:inline-block font-mono text-[10px] uppercase tracking-[0.2em] text-ink/45 dark:text-paper/45 border-l-2 border-ink/20 dark:border-paper/20 pl-3">
+                Almanac No. 01
+              </span>
             </div>
 
-            <div className="hidden md:flex items-center gap-4">
-              <div className="flex items-center gap-2 mr-2">
-                 <div className={`flex items-center gap-1.5 px-2 py-1 rounded-md border text-xs font-medium ${getQuotaStyles(careerQuota)}`} title="Daily Career Assessments Remaining">
-                    <Zap size={14} />
-                    <span className="hidden sm:inline">Assessments:</span>
-                    <span>{careerQuota}/{displayCareerLimit}</span>
-                 </div>
-                 <div className={`flex items-center gap-1.5 px-2 py-1 rounded-md border text-xs font-medium ${getImageQuotaStyles(imageQuota)}`} title="Daily Career Visualization Remaining">
-                    <Image size={14} />
-                    <span className="hidden sm:inline">Visualizations:</span>
-                    <span>{imageQuota}/{displayImageLimit}</span>
-                 </div>
+            <div className="hidden md:flex items-center gap-3">
+              <div className={`flex items-center gap-1.5 px-2.5 py-1.5 border-2 font-mono text-[11px] font-bold uppercase tracking-wide ${quotaTone(careerQuota)}`} title="Daily Career Assessments Remaining">
+                <Zap size={13} strokeWidth={2.25} />
+                <span>{careerQuota}/{displayCareerLimit}</span>
+              </div>
+              <div className={`flex items-center gap-1.5 px-2.5 py-1.5 border-2 font-mono text-[11px] font-bold uppercase tracking-wide ${quotaTone(imageQuota)}`} title="Daily Career Visualization Remaining">
+                <Image size={13} strokeWidth={2.25} />
+                <span>{imageQuota}/{displayImageLimit}</span>
               </div>
 
-              <div className="h-6 w-px bg-slate-200 dark:bg-slate-700 mx-1"></div>
+              <div className="h-6 w-0.5 bg-ink/20 dark:bg-paper/20 mx-1" />
 
-              <button 
+              <button
                 onClick={() => setView(AppView.SAVED_PATHS)}
-                className="p-2 text-slate-500 dark:text-slate-400 hover:text-pink-600 dark:hover:text-pink-500 transition-colors relative rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"
+                className="p-2 text-ink/60 dark:text-paper/60 hover:text-vermillion transition-colors relative"
                 title="Saved Paths"
               >
-                <Heart size={20} />
+                <Heart size={20} strokeWidth={2.25} />
                 {savedCareers.length > 0 && !hasViewedSavedPaths && (
-                    <span className="absolute top-1 right-1 w-2 h-2 bg-pink-500 rounded-full animate-pulse"></span>
+                  <span className="absolute top-1 right-1 w-2 h-2 bg-vermillion border border-paper dark:border-[#14130f]"></span>
                 )}
               </button>
-              <button 
+              <button
                 onClick={() => setView(AppView.PROFILE)}
-                className="p-2 text-slate-500 dark:text-slate-400 hover:text-green-600 dark:hover:text-green-400 transition-colors rounded-full hover:bg-green-50 dark:hover:bg-green-900/20"
+                className="p-2 text-ink/60 dark:text-paper/60 hover:text-cobalt transition-colors"
                 title="Edit Profile"
               >
-                <User size={20} />
+                <User size={20} strokeWidth={2.25} />
               </button>
-              <button 
-                onClick={handleLogout} 
-                className="p-2 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"
+              <button
+                onClick={handleLogout}
+                className="p-2 text-ink/60 dark:text-paper/60 hover:text-ink dark:hover:text-paper transition-colors"
                 title="Logout"
               >
-                <LogOut size={20} />
+                <LogOut size={20} strokeWidth={2.25} />
               </button>
             </div>
 
             <div className="md:hidden flex items-center">
-                 <button 
-                    onClick={() => setIsMobileMenuOpen(true)}
-                    className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-slate-800 rounded-lg"
-                 >
-                    <Menu size={24} />
-                 </button>
+              <button
+                onClick={() => setIsMobileMenuOpen(true)}
+                className="p-2 border-2 border-ink dark:border-paper text-ink dark:text-paper"
+              >
+                <Menu size={22} strokeWidth={2.25} />
+              </button>
             </div>
           </div>
         </div>
       </nav>
 
       {isMobileMenuOpen && (
-        <div className="fixed inset-0 z-[100] bg-white dark:bg-slate-900 animate-fade-in flex flex-col h-[100dvh]">
-            <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center shrink-0">
-                 <h2 className="text-lg font-bold">Menu</h2>
-                 <button 
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="p-2 text-slate-500 hover:text-slate-900 dark:hover:text-white"
-                 >
-                    <X size={24} />
-                 </button>
-            </div>
-            <div className="p-6 flex flex-col gap-6 overflow-y-auto flex-1">
-                <div className="flex flex-col gap-4">
-                     <button 
-                        onClick={() => { setView(AppView.SAVED_PATHS); setIsMobileMenuOpen(false); }}
-                        className="flex items-center gap-4 text-lg font-medium text-pink-600 dark:text-pink-400 hover:bg-pink-50 dark:hover:bg-slate-800 p-2 rounded-xl transition-colors"
-                    >
-                        <div className="relative">
-                            <Heart size={24} />
-                            {savedCareers.length > 0 && !hasViewedSavedPaths && (
-                                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-pink-500 rounded-full animate-pulse"></span>
-                            )}
-                        </div>
-                        Saved Paths
-                    </button>
-                    <button 
-                        onClick={() => { setView(AppView.PROFILE); setIsMobileMenuOpen(false); }}
-                        className="flex items-center gap-4 text-lg font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-slate-800 p-2 rounded-xl transition-colors"
-                    >
-                        <User size={24} />
-                        Profile Settings
-                    </button>
-                    <button 
-                        onClick={() => { handleLogout(); setIsMobileMenuOpen(false); }}
-                        className="flex items-center gap-4 text-lg font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-slate-800 p-2 rounded-xl transition-colors"
-                    >
-                        <LogOut size={24} />
-                        Logout
-                    </button>
+        <div className="fixed inset-0 z-[100] bg-paper dark:bg-[#14130f] animate-fade-in flex flex-col h-[100dvh]">
+          <div className="p-4 border-b-2 border-ink dark:border-paper flex justify-between items-center shrink-0">
+            <h2 className="font-display text-lg">Menu</h2>
+            <button onClick={() => setIsMobileMenuOpen(false)} className="p-2 border-2 border-ink dark:border-paper">
+              <X size={22} strokeWidth={2.25} />
+            </button>
+          </div>
+          <div className="p-6 flex flex-col gap-6 overflow-y-auto flex-1">
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={() => { setView(AppView.SAVED_PATHS); setIsMobileMenuOpen(false); }}
+                className="flex items-center gap-4 font-display text-lg border-2 border-ink dark:border-paper p-3 hover:bg-vermillion hover:text-paper hover:border-vermillion transition-colors"
+              >
+                <div className="relative">
+                  <Heart size={22} strokeWidth={2.25} />
+                  {savedCareers.length > 0 && !hasViewedSavedPaths && (
+                    <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-vermillion"></span>
+                  )}
                 </div>
-
-                <div className="h-px bg-slate-200 dark:bg-slate-800"></div>
-
-                <div className="space-y-4">
-                    <div className={`flex items-center justify-between p-3 rounded-xl border ${getQuotaStyles(careerQuota)}`}>
-                        <div className="flex items-center gap-3">
-                            <Zap size={20} />
-                            <span className="font-medium">Assessments</span>
-                        </div>
-                        <span className="font-bold">{careerQuota}/{displayCareerLimit}</span>
-                    </div>
-                    <div className={`flex items-center justify-between p-3 rounded-xl border ${getImageQuotaStyles(imageQuota)}`}>
-                         <div className="flex items-center gap-3">
-                            <Image size={20} />
-                            <span className="font-medium">Visualizations</span>
-                        </div>
-                        <span className="font-bold">{imageQuota}/{displayImageLimit}</span>
-                    </div>
-                </div>
+                Saved Paths
+              </button>
+              <button
+                onClick={() => { setView(AppView.PROFILE); setIsMobileMenuOpen(false); }}
+                className="flex items-center gap-4 font-display text-lg border-2 border-ink dark:border-paper p-3 hover:bg-cobalt hover:text-paper hover:border-cobalt transition-colors"
+              >
+                <User size={22} strokeWidth={2.25} />
+                Profile Settings
+              </button>
+              <button
+                onClick={() => { handleLogout(); setIsMobileMenuOpen(false); }}
+                className="flex items-center gap-4 font-display text-lg border-2 border-ink dark:border-paper p-3 hover:bg-ink hover:text-paper transition-colors"
+              >
+                <LogOut size={22} strokeWidth={2.25} />
+                Logout
+              </button>
             </div>
+
+            <div className="rule-dash text-ink/40 dark:text-paper/40"></div>
+
+            <div className="space-y-3">
+              <div className={`flex items-center justify-between p-3 border-2 font-mono uppercase tracking-wide text-sm ${quotaTone(careerQuota)}`}>
+                <div className="flex items-center gap-3">
+                  <Zap size={18} strokeWidth={2.25} />
+                  <span>Assessments</span>
+                </div>
+                <span className="font-bold">{careerQuota}/{displayCareerLimit}</span>
+              </div>
+              <div className={`flex items-center justify-between p-3 border-2 font-mono uppercase tracking-wide text-sm ${quotaTone(imageQuota)}`}>
+                <div className="flex items-center gap-3">
+                  <Image size={18} strokeWidth={2.25} />
+                  <span>Visualizations</span>
+                </div>
+                <span className="font-bold">{imageQuota}/{displayImageLimit}</span>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="text-center mb-12 animate-fade-in-up opacity-0" style={{ animationDelay: '0ms' }}>
-          <h2 className="text-3xl md:text-4xl font-bold mb-4 text-slate-900 dark:text-white">Start Your Discovery</h2>
-          <p className="text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">Select a domain to begin a specialized career assessment, or use our General Assessment if you are unsure.</p>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
+        <div className="mb-12 animate-fade-in-up opacity-0" style={{ animationDelay: '0ms' }}>
+          <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-ink/55 dark:text-paper/55">
+            {user?.fullName ? `Welcome back, ${user.fullName.split(' ')[0]}` : 'The catalogue'}
+          </span>
+          <h2 className="mt-2 font-display text-5xl md:text-6xl leading-[0.92] max-w-3xl">
+            Pick a section to start your survey.
+          </h2>
+          <p className="mt-4 font-serif text-lg text-ink/70 dark:text-paper/70 max-w-2xl">
+            Choose a domain for a specialized assessment, or open the general survey if you are not yet sure which way to go.
+          </p>
         </div>
 
         {careerQuota === 0 && (
-            <div 
-                className="mb-8 p-4 rounded-xl border border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800 text-red-700 dark:text-red-400 flex flex-col sm:flex-row justify-between sm:items-center gap-2 sm:gap-0 animate-fade-in-up opacity-0 w-full"
-                style={{ animationDelay: '100ms' }}
-            >
-                <div className="flex items-center gap-3 mb-1 sm:mb-0">
-                    <Zap className="shrink-0" size={20} />
-                    <span className="font-medium text-left">Daily Career assessments reached</span>
-                </div>
-                <div className="text-left sm:text-right ml-8 sm:ml-0">
-                    <span className="text-sm opacity-80">Come back tomorrow for more</span>
-                </div>
+          <div className="mb-10 p-4 border-2 border-vermillion bg-vermillion/10 text-vermillion-600 dark:text-vermillion flex flex-col sm:flex-row justify-between sm:items-center gap-2 animate-fade-in-up opacity-0 w-full" style={{ animationDelay: '100ms' }}>
+            <div className="flex items-center gap-3">
+              <Zap className="shrink-0" size={20} strokeWidth={2.25} />
+              <span className="font-bold uppercase tracking-wide text-sm">Daily assessments spent</span>
             </div>
+            <span className="font-mono text-xs uppercase tracking-widest opacity-80">Come back tomorrow for more</span>
+          </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           {categories.map((cat, index) => (
-            <div 
-                key={cat.id}
-                style={{ animationDelay: `${200 + (index * 100)}ms` }}
-                className="animate-fade-in-up opacity-0 h-full"
-            >
-                <div 
-                  className="group relative bg-white dark:bg-slate-800/50 backdrop-blur-sm rounded-2xl p-6 md:p-8 hover:shadow-xl dark:hover:bg-slate-800 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] cursor-pointer border border-slate-200 dark:border-slate-700 hover:border-blue-500 dark:hover:border-slate-500 shadow-sm flex flex-col h-full"
-                  onClick={() => handleStartQuiz(cat.id)}
-                >
-                  <div className={`absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-5 rounded-2xl transition-opacity ${cat.id === 'science' ? 'from-cyan-500 to-blue-600' : cat.id === 'commerce' ? 'from-emerald-500 to-green-600' : 'from-pink-500 to-rose-600'}`} />
-                  
-                  <div className="flex flex-row md:flex-col md:items-start gap-4 flex-1">
-                      <DomainIcon domain={cat.id} className="mb-0 md:mb-6" />
-                      <div className="flex-1 text-left">
-                          <h3 className="text-xl md:text-2xl font-bold mb-1 md:mb-2 text-slate-900 dark:text-white">{cat.title}</h3>
-                          <p className="text-sm md:text-base text-slate-600 dark:text-slate-400 mb-0">{cat.desc}</p>
-                      </div>
-                  </div>
-
-                  <div className="mt-4 md:mt-6 md:self-end">
-                      <span className="text-blue-600 dark:text-blue-400 font-medium group-hover:translate-x-2 transition-transform inline-flex items-center text-sm md:text-base">
-                        Start {cat.title.split(' ')[0]} Quiz <ArrowRight className="ml-1 w-4 h-4" />
-                      </span>
-                  </div>
+            <div key={cat.id} style={{ animationDelay: `${200 + index * 100}ms` }} className="animate-fade-in-up opacity-0 h-full">
+              <div
+                className="group relative bg-paper dark:bg-[#1c1a17] border-2 border-ink dark:border-paper p-7 cursor-pointer h-full flex flex-col shadow-stamp dark:shadow-stamp-light transition-transform duration-150 hover:-translate-x-[2px] hover:-translate-y-[2px] active:translate-x-[3px] active:translate-y-[3px] active:shadow-none"
+                onClick={() => handleStartQuiz(cat.id)}
+              >
+                <div className="flex items-start justify-between mb-6">
+                  <DomainIcon domain={cat.id} />
+                  <span className="font-display text-5xl leading-none text-ink/15 dark:text-paper/15">{cat.no}</span>
                 </div>
+                <div className="flex-1">
+                  <h3 className="font-display text-2xl mb-2">{cat.title}</h3>
+                  <p className="font-mono text-[11px] uppercase tracking-wide text-ink/55 dark:text-paper/55">{cat.desc}</p>
+                </div>
+                <div className="mt-6 pt-4 border-t-2 border-dashed border-ink/30 dark:border-paper/30 flex items-center justify-between font-bold uppercase tracking-wide text-sm text-vermillion">
+                  <span>Start survey</span>
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </div>
+              </div>
             </div>
           ))}
         </div>
 
-        <div 
-            style={{ animationDelay: '500ms' }}
-            className="animate-fade-in-up opacity-0"
-        >
-            <div 
-                onClick={() => handleStartQuiz('general')}
-                className="group relative w-full bg-white dark:bg-slate-800/50 backdrop-blur-sm rounded-2xl p-6 md:p-8 border border-slate-200 dark:border-slate-700 hover:shadow-xl dark:hover:bg-slate-800 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] cursor-pointer hover:border-blue-500 dark:hover:border-slate-500 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6"
-            >
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-indigo-500 opacity-0 group-hover:opacity-5 rounded-2xl transition-opacity" />
-                <div className="flex items-center gap-4 md:gap-6 relative z-10 w-full md:w-auto">
-                    <DomainIcon domain="general" />
-                    <div className="text-left">
-                        <h3 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white mb-1 md:mb-2">Can't decide?</h3>
-                        <p className="text-sm md:text-base text-slate-600 dark:text-slate-400">Take our General Personality Quiz to find your direction.</p>
-                    </div>
-                </div>
-                
-                <div className="flex flex-col items-start md:items-center mt-2 md:mt-0 w-full md:w-auto">
-                    <span className="text-blue-600 dark:text-blue-400 font-medium group-hover:translate-x-2 transition-transform inline-flex items-center relative z-10 whitespace-nowrap text-sm md:text-base">
-                        Start General Quiz <ArrowRight className="ml-1 w-4 h-4" />
-                    </span>
-                </div>
+        <div style={{ animationDelay: '500ms' }} className="animate-fade-in-up opacity-0">
+          <div
+            onClick={() => handleStartQuiz('general')}
+            className="group relative w-full bg-ink dark:bg-paper text-paper dark:text-ink border-2 border-ink dark:border-paper p-7 md:p-8 cursor-pointer flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-stamp dark:shadow-stamp-light transition-transform duration-150 hover:-translate-x-[2px] hover:-translate-y-[2px] active:translate-x-[3px] active:translate-y-[3px] active:shadow-none"
+          >
+            <div className="flex items-center gap-5">
+              <DomainIcon domain="general" />
+              <div>
+                <span className="font-mono text-[11px] uppercase tracking-[0.2em] opacity-60">Not sure where to begin?</span>
+                <h3 className="font-display text-2xl md:text-3xl mt-1">Take the general survey.</h3>
+              </div>
             </div>
+            <span className="font-bold uppercase tracking-wide text-sm inline-flex items-center gap-2 whitespace-nowrap text-marigold dark:text-vermillion">
+              Start general survey <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </span>
+          </div>
+        </div>
+
+        <div className="mt-12 flex justify-center">
+          <GeminiBadge />
         </div>
       </main>
     </div>

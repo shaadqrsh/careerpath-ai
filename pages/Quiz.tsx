@@ -122,22 +122,28 @@ export const Quiz: React.FC = () => {
 
   if (showGeneralResult && suggestedDomain) {
       return (
-        <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center px-4 transition-colors duration-300">
-            <div className="max-w-lg w-full bg-white dark:bg-slate-800 rounded-2xl p-8 border border-slate-200 dark:border-slate-700 text-center animate-fade-in-up shadow-xl">
-                <div className="w-16 h-16 rounded-full bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center mx-auto mb-6">
-                    <CheckCircle2 size={32} />
+        <div className="min-h-screen bg-paper dark:bg-[#14130f] flex items-center justify-center px-4 transition-colors duration-300 tex-grid">
+            <div className="max-w-lg w-full bg-paper dark:bg-[#1c1a17] border-2 border-ink dark:border-paper shadow-stamp-lg dark:shadow-stamp-light animate-fade-in-up">
+                <div className="border-b-2 border-ink dark:border-paper px-7 py-3 bg-ink dark:bg-paper text-paper dark:text-ink flex items-center justify-between">
+                    <span className="font-mono text-[10px] font-bold uppercase tracking-[0.2em]">Survey result</span>
+                    <span className="font-mono text-[10px] font-bold uppercase tracking-[0.2em]">Recommendation</span>
                 </div>
-                <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-4">Initial Analysis Complete</h2>
-                <p className="text-slate-600 dark:text-slate-300 mb-8 text-lg">
-                    Based on your general preferences, AI suggests you explore <span className="text-blue-600 dark:text-blue-400 font-bold capitalize">{suggestedDomain}</span>.
-                </p>
-                <div className="space-y-4">
-                    <Button fullWidth size="lg" onClick={handleContinueToDomain}>
-                        Continue to {suggestedDomain.charAt(0).toUpperCase() + suggestedDomain.slice(1)} Quiz
-                    </Button>
-                    <Button fullWidth variant="outline" onClick={handleExit}>
-                        Back to Main Menu
-                    </Button>
+                <div className="p-8 text-center">
+                    <div className="w-14 h-14 bg-pine text-paper border-2 border-ink dark:border-paper shadow-stamp-sm dark:shadow-stamp-light flex items-center justify-center mx-auto mb-6">
+                        <CheckCircle2 size={28} strokeWidth={2.25} />
+                    </div>
+                    <h2 className="font-display text-3xl text-ink dark:text-paper mb-3 leading-tight">Bearings found.</h2>
+                    <p className="font-serif text-lg text-ink/70 dark:text-paper/70 mb-8">
+                        Your answers point toward <span className="text-vermillion font-bold capitalize">{suggestedDomain}</span>. Let us run the full survey for that section.
+                    </p>
+                    <div className="space-y-3">
+                        <Button fullWidth size="lg" onClick={handleContinueToDomain}>
+                            Continue to {suggestedDomain} survey
+                        </Button>
+                        <Button fullWidth variant="outline" onClick={handleExit}>
+                            Back to dashboard
+                        </Button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -146,69 +152,62 @@ export const Quiz: React.FC = () => {
 
   if (!currentQuestion) return null;
 
+  const letters = ['A', 'B', 'C', 'D', 'E', 'F'];
+
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col items-center pt-20 px-4 transition-colors duration-300">
-      <div className="w-full max-w-3xl fixed top-0 left-0 right-0 mx-auto pt-8 px-4 z-10 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-sm pb-4 transition-colors">
-        <div className="flex justify-between text-xs font-medium text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-wide">
-          <span>{selectedDomain} Assessment</span>
-          <span>{currentIndex + 1} / {domainQuestions.length}</span>
-        </div>
-        <div className="h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
-          <div 
-            className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 transition-all duration-500 ease-out" 
-            style={{ width: `${progress}%` }}
-          />
+    <div className="min-h-screen bg-paper dark:bg-[#14130f] flex flex-col items-center pt-24 px-4 transition-colors duration-300 tex-grid">
+      <div className="w-full max-w-3xl fixed top-0 left-0 right-0 mx-auto px-4 z-10 bg-paper/95 dark:bg-[#14130f]/95 backdrop-blur-sm border-b-2 border-ink dark:border-paper/70 transition-colors">
+        <div className="max-w-3xl mx-auto pt-4 pb-3">
+          <div className="flex justify-between font-mono text-[11px] font-bold text-ink/60 dark:text-paper/60 mb-2 uppercase tracking-[0.18em]">
+            <span className="capitalize">{selectedDomain} survey</span>
+            <span>Q {currentIndex + 1} / {domainQuestions.length}</span>
+          </div>
+          <div className="h-2 border-2 border-ink dark:border-paper/70 overflow-hidden">
+            <div className="h-full bg-vermillion transition-all duration-500 ease-out" style={{ width: `${progress}%` }} />
+          </div>
         </div>
       </div>
 
-      <div 
-        key={currentQuestion.id} 
-        className="w-full max-w-3xl mt-8 pb-10"
-      >
-        <span className="text-blue-600 dark:text-indigo-400 text-sm font-semibold tracking-wider uppercase mb-2 block animate-fade-in-up opacity-0" style={{ animationDelay: '0ms' }}>
+      <div key={currentQuestion.id} className="w-full max-w-3xl mt-8 pb-12">
+        <span className="inline-block border-2 border-ink dark:border-paper/70 px-2.5 py-1 font-mono text-[10px] font-bold uppercase tracking-widest text-ink/70 dark:text-paper/70 mb-4 animate-fade-in-up opacity-0" style={{ animationDelay: '0ms' }}>
           {currentQuestion.category}
         </span>
-        <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-10 leading-tight transition-colors animate-fade-in-up opacity-0" style={{ animationDelay: '100ms' }}>
+        <h2 className="font-display text-3xl md:text-4xl text-ink dark:text-paper mb-9 leading-[1.05] animate-fade-in-up opacity-0" style={{ animationDelay: '100ms' }}>
           {currentQuestion.text}
         </h2>
 
-        <div className="space-y-4">
-          {currentQuestion.options.map((option, idx) => (
-            <button
-              key={idx}
-              onClick={() => setSelectedOption(option)}
-              style={{ animationDelay: `${200 + (idx * 100)}ms` }}
-              className={`w-full text-left p-6 rounded-xl border-2 transition-all duration-200 flex items-center justify-between group animate-fade-in-up opacity-0 ${
-                selectedOption === option 
-                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-white shadow-md' 
-                  : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800'
-              }`}
-            >
-              <span className="text-lg font-medium">{option}</span>
-              {selectedOption === option && (
-                <CheckCircle2 className="text-blue-500 w-6 h-6 animate-[scaleIn_0.2s_ease-out]" />
-              )}
-            </button>
-          ))}
+        <div className="space-y-3">
+          {currentQuestion.options.map((option, idx) => {
+            const active = selectedOption === option;
+            return (
+              <button
+                key={idx}
+                onClick={() => setSelectedOption(option)}
+                style={{ animationDelay: `${200 + idx * 90}ms` }}
+                className={`w-full text-left p-5 border-2 transition-all duration-150 flex items-center gap-4 group animate-fade-in-up opacity-0 ${
+                  active
+                    ? 'border-ink dark:border-paper bg-vermillion text-paper shadow-stamp-sm dark:shadow-stamp-light -translate-x-[1px] -translate-y-[1px]'
+                    : 'border-ink dark:border-paper/70 bg-paper dark:bg-[#1c1a17] text-ink dark:text-paper hover:-translate-x-[1px] hover:-translate-y-[1px] hover:shadow-stamp-sm dark:hover:shadow-stamp-light'
+                }`}
+              >
+                <span className={`shrink-0 w-8 h-8 flex items-center justify-center border-2 font-display text-sm ${active ? 'border-paper bg-paper/10 text-paper' : 'border-ink dark:border-paper/70 text-ink dark:text-paper'}`}>
+                  {letters[idx] || idx + 1}
+                </span>
+                <span className="text-lg font-medium flex-1">{option}</span>
+                {active && <CheckCircle2 className="w-5 h-5 shrink-0" strokeWidth={2.5} />}
+              </button>
+            );
+          })}
         </div>
 
-        <div className="mt-10 flex flex-col-reverse sm:flex-row gap-4 justify-between animate-fade-in-up opacity-0" style={{ animationDelay: '600ms' }}>
-            <Button 
-                variant="ghost" 
-                onClick={handleExit}
-                className="text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 w-full sm:w-auto"
-            >
-                Exit Quiz
-            </Button>
-            <Button 
-                size="lg" 
-                onClick={handleNext} 
-                disabled={!selectedOption}
-                className="w-full sm:w-auto"
-            >
-                {currentIndex === domainQuestions.length - 1 ? (selectedDomain === 'general' ? 'See Recommendation' : 'Finish Analysis') : 'Next Question'}
-                <ChevronRight className="ml-2 w-5 h-5" />
-            </Button>
+        <div className="mt-9 flex flex-col-reverse sm:flex-row gap-4 justify-between items-stretch sm:items-center animate-fade-in-up opacity-0" style={{ animationDelay: '600ms' }}>
+          <Button variant="ghost" onClick={handleExit} className="w-full sm:w-auto">
+            Exit survey
+          </Button>
+          <Button size="lg" onClick={handleNext} disabled={!selectedOption} className="w-full sm:w-auto group">
+            {currentIndex === domainQuestions.length - 1 ? (selectedDomain === 'general' ? 'See recommendation' : 'Finish survey') : 'Next question'}
+            <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+          </Button>
         </div>
       </div>
     </div>

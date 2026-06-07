@@ -1,5 +1,5 @@
 import React from 'react';
-import { Beaker, Briefcase, Palette, HelpCircle } from 'lucide-react';
+import { Beaker, Briefcase, Palette, Compass } from 'lucide-react';
 import { CareerDomain } from '../types';
 
 interface DomainIconProps {
@@ -8,41 +8,33 @@ interface DomainIconProps {
   size?: 'md' | 'lg';
 }
 
-export const DomainIcon: React.FC<DomainIconProps> = ({ 
-  domain, 
+// Flat riso-ink plates with a hard ink border and offset shadow.
+export const DomainIcon: React.FC<DomainIconProps> = ({
+  domain,
   className = '',
-  size = 'lg'
+  size = 'lg',
 }) => {
   const config = {
-    science: {
-      icon: Beaker,
-      bg: "bg-gradient-to-br from-cyan-500 to-blue-600"
-    },
-    commerce: {
-      icon: Briefcase,
-      bg: "bg-gradient-to-br from-emerald-500 to-green-600"
-    },
-    arts: {
-      icon: Palette,
-      bg: "bg-gradient-to-br from-pink-500 to-rose-600"
-    },
-    general: {
-      icon: HelpCircle,
-      bg: "bg-gradient-to-br from-indigo-500 to-purple-600"
-    }
+    science: { icon: Beaker, bg: 'bg-cobalt text-paper' },
+    commerce: { icon: Briefcase, bg: 'bg-pine text-paper' },
+    arts: { icon: Palette, bg: 'bg-orchid text-paper' },
+    general: { icon: Compass, bg: 'bg-marigold text-ink' },
   };
 
   const { icon: Icon, bg } = config[domain];
 
-  const sizeClasses = size === 'lg' 
-    ? "w-14 h-14 md:w-16 md:h-16 rounded-2xl" 
-    : "w-10 h-10 rounded-xl";
+  const sizeClasses =
+    size === 'lg'
+      ? 'w-14 h-14 md:w-16 md:h-16'
+      : 'w-10 h-10';
 
-  const iconSize = size === 'lg' ? 32 : 20;
+  const iconSize = size === 'lg' ? 30 : 20;
 
   return (
-    <div className={`${sizeClasses} ${bg} flex items-center justify-center text-white shadow-lg shrink-0 ${className}`}>
-      <Icon size={iconSize} />
+    <div
+      className={`${sizeClasses} ${bg} flex items-center justify-center border-2 border-ink dark:border-paper shadow-stamp-sm dark:shadow-stamp-light shrink-0 ${className}`}
+    >
+      <Icon size={iconSize} strokeWidth={2.25} />
     </div>
   );
 };

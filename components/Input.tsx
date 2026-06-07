@@ -18,36 +18,38 @@ export const Input: React.FC<InputProps> = ({
 }) => {
   const [showPassword, setShowPassword] = useState(false);
   const isPassword = type === 'password';
-  
+
   const inputType = isPassword ? (showPassword ? 'text' : 'password') : type;
 
   return (
     <div className={fullWidth ? 'w-full' : ''}>
       {label && (
-        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+        <label className="block text-[11px] font-bold uppercase tracking-[0.18em] text-ink/60 dark:text-paper/60 mb-2">
           {label}
         </label>
       )}
       <div className="relative">
         {icon && (
-          <div className="absolute left-3 top-3.5 text-slate-400 dark:text-slate-500 w-5 h-5 pointer-events-none">
+          <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink/40 dark:text-paper/40 w-5 h-5 pointer-events-none [&>svg]:w-5 [&>svg]:h-5">
             {icon}
           </div>
         )}
-        
+
         <input
           type={inputType}
           disabled={disabled}
           className={`
-            w-full bg-slate-50 dark:bg-slate-900/50 
-            border border-slate-300 dark:border-slate-600 
-            rounded-xl py-3 
-            ${icon ? 'pl-10' : 'px-4'} 
-            ${isPassword ? 'pr-12' : 'pr-4'} 
-            text-slate-900 dark:text-white 
-            focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none 
-            transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500
-            disabled:opacity-75 disabled:cursor-not-allowed
+            w-full bg-paper dark:bg-[#1c1a17]
+            border-2 border-ink dark:border-paper/70
+            py-3
+            ${icon ? 'pl-11' : 'px-4'}
+            ${isPassword ? 'pr-12' : 'pr-4'}
+            text-ink dark:text-paper font-medium
+            placeholder:text-ink/35 dark:placeholder:text-paper/35 placeholder:font-normal
+            focus:outline-none focus:ring-0 focus:border-vermillion focus:shadow-stamp-sm dark:focus:shadow-stamp-light
+            focus:-translate-x-[1px] focus:-translate-y-[1px]
+            transition-all
+            disabled:opacity-60 disabled:cursor-not-allowed
             ${className}
           `}
           {...props}
@@ -57,7 +59,7 @@ export const Input: React.FC<InputProps> = ({
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3 top-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors p-0.5"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-ink/40 hover:text-vermillion dark:text-paper/40 dark:hover:text-vermillion transition-colors p-0.5"
             tabIndex={-1}
           >
             {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}

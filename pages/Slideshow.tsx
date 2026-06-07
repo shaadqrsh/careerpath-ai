@@ -3,8 +3,9 @@ import { useAppStore } from '../store';
 import { AppView, Slide } from '../types';
 import { generateStorySlides } from '../services/geminiService';
 import { uploadCareerImages, saveCareerToDb, getUserProfile } from '../services/supabaseService';
-import { X, ChevronLeft, ChevronRight, Loader2, ImageOff, ArrowLeft, ArrowRight, Image as ImageIcon } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, ImageOff, ArrowLeft, ArrowRight, Image as ImageIcon } from 'lucide-react';
 import { GeminiBadge } from '../components/GeminiBadge';
+import { CompassMark } from '../components/FullScreenLoader';
 
 export const Slideshow: React.FC = () => {
   const { selectedCareer, setView, user, setUser, updateCareerImages, savedCareers, showModal, hideModal, showToast } = useAppStore();
@@ -294,27 +295,21 @@ export const Slideshow: React.FC = () => {
 
   if (showLoadingScreen) {
     return (
-      <div className="fixed inset-0 bg-black/95 z-[60] flex flex-col items-center justify-center animate-fade-in">
-        <div className="relative animate-fade-in-up opacity-0" style={{ animationDelay: '0ms' }}>
-            {isGenerating ? (
-               <div className="absolute inset-0 bg-blue-500 blur-xl opacity-20 animate-pulse"></div>
-            ) : null}
-            
-            {isGenerating ? (
-               <Loader2 className="w-12 h-12 text-blue-500 animate-spin relative z-10" />
-            ) : (
-               <ImageIcon className="w-12 h-12 text-slate-500 animate-pulse relative z-10" />
-            )}
+      <div className="fixed inset-0 bg-ink z-[60] flex flex-col items-center justify-center animate-fade-in tex-grid">
+        <div className="relative animate-fade-in-up opacity-0 text-marigold" style={{ animationDelay: '0ms' }}>
+          {isGenerating ? (
+            <CompassMark size={52} className="text-marigold" />
+          ) : (
+            <ImageIcon className="w-12 h-12 text-paper/50 animate-pulse" strokeWidth={2} />
+          )}
         </div>
-        
+
         <div className="mt-8 flex flex-col items-center animate-fade-in-up opacity-0" style={{ animationDelay: '100ms' }}>
-            <p className="text-white text-lg font-medium animate-pulse min-h-[1.75rem] transition-opacity duration-500 mb-4">
-                {loadingText}
-            </p>
-            
-            {isGenerating && (
-                <GeminiBadge variant="banana" />
-            )}
+          <p className="font-mono text-xs uppercase tracking-[0.25em] text-paper/70 animate-ticker min-h-[1.5rem] mb-5">
+            {loadingText}
+          </p>
+
+          {isGenerating && <GeminiBadge variant="banana" />}
         </div>
       </div>
     );
@@ -337,28 +332,28 @@ export const Slideshow: React.FC = () => {
          style={{ backgroundImage: `url(${slide.imageUrl || ''})` }}
       />
       
-      <button 
+      <button
         onClick={(e) => { e.stopPropagation(); setView(AppView.CAREER_DETAIL); }}
-        className="absolute top-6 right-6 z-[70] text-white/70 hover:text-white bg-black/40 hover:bg-black/60 p-2 rounded-full backdrop-blur-md transition-all border border-white/10"
+        className="absolute top-6 right-6 z-[70] text-paper hover:bg-vermillion p-2 border-2 border-paper/60 transition-colors"
       >
-        <X size={24} />
+        <X size={22} strokeWidth={2.25} />
       </button>
 
       <div className="md:hidden absolute inset-x-0 bottom-[45%] flex justify-between px-4 pointer-events-none z-50">
          {currentSlide > 0 && (
-             <div className="bg-black/40 p-3 rounded-full backdrop-blur-sm animate-pulse">
-                 <ArrowLeft className="w-8 h-8 text-white" />
+             <div className="bg-ink/60 p-2.5 border-2 border-paper/50 animate-pulse">
+                 <ArrowLeft className="w-7 h-7 text-paper" strokeWidth={2.25} />
              </div>
          )}
          <div className="flex-1"></div>
          {currentSlide < slides.length - 1 && (
-             <div className="bg-black/40 p-3 rounded-full backdrop-blur-sm animate-pulse">
-                 <ArrowRight className="w-8 h-8 text-white" />
+             <div className="bg-ink/60 p-2.5 border-2 border-paper/50 animate-pulse">
+                 <ArrowRight className="w-7 h-7 text-paper" strokeWidth={2.25} />
              </div>
          )}
       </div>
 
-      <div className="relative z-10 w-full h-full max-w-md md:max-w-6xl flex flex-col md:flex-row bg-slate-900/80 backdrop-blur-md rounded-2xl md:rounded-3xl overflow-hidden border border-white/10 shadow-2xl m-4 md:m-8 max-h-[90vh] md:h-[85vh] group" onClick={(e) => e.stopPropagation()}>
+      <div className="relative z-10 w-full h-full max-w-md md:max-w-6xl flex flex-col md:flex-row bg-ink overflow-hidden border-2 border-paper shadow-stamp-light m-4 md:m-8 max-h-[90vh] md:h-[85vh] group" onClick={(e) => e.stopPropagation()}>
         
         <div className="h-[50%] md:h-full md:w-[70%] relative bg-black flex items-center justify-center overflow-hidden" onClick={handleContainerClick}>
              {slides.map((s, idx) => {
@@ -374,9 +369,9 @@ export const Slideshow: React.FC = () => {
                                  className="w-full h-full object-cover"
                              />
                          ) : (
-                            <div className="flex flex-col items-center justify-center text-slate-500 p-8 text-center bg-slate-900/50 w-full h-full">
-                                <ImageOff size={64} className="mb-4 opacity-40" />
-                                <p className="text-lg font-medium text-slate-400">Image not available</p>
+                            <div className="flex flex-col items-center justify-center text-paper/50 p-8 text-center bg-[#0d0c0a] w-full h-full">
+                                <ImageOff size={56} className="mb-4 opacity-50" strokeWidth={1.75} />
+                                <p className="font-mono text-xs uppercase tracking-widest text-paper/50">Image not available</p>
                             </div>
                          )}
                     </div>
@@ -385,54 +380,54 @@ export const Slideshow: React.FC = () => {
 
              <div className="absolute top-0 left-0 right-0 p-4 flex gap-1.5 md:hidden z-20 bg-gradient-to-b from-black/60 to-transparent">
                 {slides.map((_, idx) => (
-                    <div 
-                        key={idx} 
-                        className={`h-1 flex-1 rounded-full transition-colors shadow-sm ${idx === currentSlide ? 'bg-white' : 'bg-white/30'}`} 
+                    <div
+                        key={idx}
+                        className={`h-1 flex-1 transition-colors ${idx === currentSlide ? 'bg-marigold' : 'bg-paper/30'}`}
                     />
                 ))}
             </div>
         </div>
 
-        <div className="h-[50%] md:h-full md:w-[30%] p-6 md:p-10 flex flex-col bg-slate-950 border-t md:border-t-0 md:border-l border-white/10 relative animate-fade-in" onClick={handleContainerClick}>
-            
-            <div className="mb-4 pt-2 shrink-0">
+        <div className="h-[50%] md:h-full md:w-[34%] p-6 md:p-9 flex flex-col bg-[#0d0c0a] border-t-2 md:border-t-0 md:border-l-2 border-paper relative animate-fade-in" onClick={handleContainerClick}>
+
+            <div className="mb-4 pt-1 shrink-0">
                 <div className="flex items-center gap-2 mb-4">
-                    <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
-                    <h3 className="text-blue-400 font-bold tracking-widest text-xs uppercase">
-                        Day in the Life
+                    <span className="w-2 h-2 bg-marigold animate-pulse"></span>
+                    <h3 className="text-marigold font-mono font-bold tracking-[0.25em] text-[10px] uppercase">
+                        Day in the life
                     </h3>
                 </div>
-                <h2 className="text-white text-xl md:text-2xl font-bold leading-tight mb-1 whitespace-normal">
+                <h2 className="text-paper font-display text-xl md:text-2xl leading-tight whitespace-normal">
                     {selectedCareer?.title}
                 </h2>
-                <div className="w-10 h-1 bg-blue-600 rounded-full mt-4 mb-2 opacity-80"></div>
+                <div className="rule-dash text-paper/30 mt-4"></div>
             </div>
 
             <div className="overflow-y-auto pr-2 custom-scrollbar flex-grow">
-                 <p className="text-slate-300 text-lg md:text-xl leading-relaxed font-light italic relative z-10 whitespace-normal break-words">
+                 <p className="text-paper/85 font-serif text-lg md:text-xl leading-relaxed italic relative z-10 whitespace-normal break-words">
                     "{slide.text}"
                 </p>
             </div>
 
-            <div className="mt-4 pt-4 hidden md:flex justify-between items-center shrink-0 border-t border-slate-800">
-                <button 
+            <div className="mt-4 pt-4 hidden md:flex justify-between items-center shrink-0 border-t-2 border-dashed border-paper/30">
+                <button
                     onClick={(e) => { e.stopPropagation(); handlePrev(); }}
                     disabled={currentSlide === 0}
-                    className="p-4 rounded-full border border-slate-700 text-white disabled:opacity-30 hover:bg-white/10 hover:border-white/50 transition-all active:scale-95"
+                    className="p-3 border-2 border-paper/50 text-paper disabled:opacity-30 hover:bg-paper/10 transition-colors active:scale-95"
                 >
-                    <ChevronLeft size={24} />
+                    <ChevronLeft size={22} strokeWidth={2.25} />
                 </button>
-                
-                <span className="text-sm font-mono text-slate-500 tracking-widest">
-                    {currentSlide + 1} / {slides.length}
+
+                <span className="font-mono text-sm text-paper/50 tracking-widest">
+                    {String(currentSlide + 1).padStart(2, '0')} / {String(slides.length).padStart(2, '0')}
                 </span>
 
-                <button 
+                <button
                     onClick={(e) => { e.stopPropagation(); handleNext(); }}
                     disabled={currentSlide === slides.length - 1}
-                    className="p-4 rounded-full border border-slate-700 text-white disabled:opacity-30 hover:bg-white/10 hover:border-white/50 transition-all active:scale-95"
+                    className="p-3 border-2 border-paper/50 text-paper disabled:opacity-30 hover:bg-paper/10 transition-colors active:scale-95"
                 >
-                    <ChevronRight size={24} />
+                    <ChevronRight size={22} strokeWidth={2.25} />
                 </button>
             </div>
         </div>

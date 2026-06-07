@@ -27,37 +27,37 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
 }) => {
   if (!isOpen) return null;
 
+  const accent = variant === 'danger' ? 'text-vermillion' : 'text-cobalt';
+
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center px-4 animate-fade-in">
-      <div 
-        className="absolute inset-0 bg-black/95 transition-opacity" 
+      <div
+        className="absolute inset-0 bg-ink/80 backdrop-blur-[2px] transition-opacity"
         onClick={!isLoading ? onClose : undefined}
       />
-      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-md w-full p-6 relative z-10 animate-fade-in-up border border-slate-200 dark:border-slate-700">
-        
-        <div className={`flex items-center gap-3 mb-4 ${variant === 'danger' ? 'text-amber-600 dark:text-amber-500' : 'text-blue-600 dark:text-blue-500'}`}>
-          {variant === 'danger' ? <AlertTriangle size={28} /> : <HelpCircle size={28} />}
-          <h3 className="text-xl font-bold text-slate-900 dark:text-white">{title}</h3>
+      <div className="bg-paper dark:bg-[#1c1a17] border-2 border-ink dark:border-paper shadow-stamp-lg dark:shadow-stamp-light max-w-md w-full p-7 relative z-10 animate-fade-in-up">
+
+        <div className="flex items-center justify-between mb-4">
+          <span className="font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-ink/50 dark:text-paper/50">
+            {variant === 'danger' ? 'Notice / Caution' : 'Notice / Confirm'}
+          </span>
+          <span className={accent}>
+            {variant === 'danger' ? <AlertTriangle size={22} strokeWidth={2.25} /> : <HelpCircle size={22} strokeWidth={2.25} />}
+          </span>
         </div>
-        
-        <div className="text-slate-600 dark:text-slate-300 mb-6 leading-relaxed">
+
+        <h3 className="font-display text-2xl text-ink dark:text-paper mb-3 leading-tight">{title}</h3>
+
+        <div className="text-ink/70 dark:text-paper/70 mb-7 leading-relaxed font-serif text-[1.05rem]">
           {description}
         </div>
-        
+
         <div className="flex gap-3 justify-end">
-          <Button 
-            variant="ghost" 
-            onClick={onClose} 
-            disabled={isLoading}
-          >
+          <Button variant="ghost" onClick={onClose} disabled={isLoading}>
             {cancelText}
           </Button>
-          <Button 
-            className={`${
-              variant === 'danger' 
-                ? 'bg-red-600 hover:bg-red-700 text-white border-red-600' 
-                : 'bg-blue-600 hover:bg-blue-700 text-white border-blue-600'
-            } disabled:opacity-50`}
+          <Button
+            variant={variant === 'danger' ? 'primary' : 'secondary'}
             onClick={onConfirm}
             disabled={isLoading}
           >
