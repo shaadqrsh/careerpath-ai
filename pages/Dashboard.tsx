@@ -124,24 +124,24 @@ export const Dashboard: React.FC = () => {
 
               <button
                 onClick={() => setView(AppView.SAVED_PATHS)}
-                className="p-2 text-ink/60 dark:text-paper/60 hover:text-vermillion transition-colors relative"
+                className="p-2 border-2 border-transparent text-ink/70 dark:text-paper/70 hover:text-paper hover:bg-vermillion hover:border-vermillion transition-all relative"
                 title="Saved Paths"
               >
                 <Heart size={20} strokeWidth={2.25} />
                 {savedCareers.length > 0 && !hasViewedSavedPaths && (
-                  <span className="absolute top-1 right-1 w-2 h-2 bg-vermillion border border-paper dark:border-[#14130f]"></span>
+                  <span className="absolute top-1 right-1 w-2 h-2 bg-vermillion group-hover:bg-paper border border-paper dark:border-[#14130f]"></span>
                 )}
               </button>
               <button
                 onClick={() => setView(AppView.PROFILE)}
-                className="p-2 text-ink/60 dark:text-paper/60 hover:text-cobalt transition-colors"
+                className="p-2 border-2 border-transparent text-ink/70 dark:text-paper/70 hover:text-paper hover:bg-cobalt hover:border-cobalt transition-all"
                 title="Edit Profile"
               >
                 <User size={20} strokeWidth={2.25} />
               </button>
               <button
                 onClick={handleLogout}
-                className="p-2 text-ink/60 dark:text-paper/60 hover:text-ink dark:hover:text-paper transition-colors"
+                className="p-2 border-2 border-transparent text-ink/70 dark:text-paper/70 hover:text-paper dark:hover:text-ink hover:bg-ink dark:hover:bg-paper hover:border-ink dark:hover:border-paper transition-all"
                 title="Logout"
               >
                 <LogOut size={20} strokeWidth={2.25} />
@@ -151,7 +151,7 @@ export const Dashboard: React.FC = () => {
             <div className="md:hidden flex items-center">
               <button
                 onClick={() => setIsMobileMenuOpen(true)}
-                className="p-2 border-2 border-ink dark:border-paper text-ink dark:text-paper"
+                className="p-2 border-2 border-ink dark:border-paper text-ink dark:text-paper transition-all hover:bg-vermillion hover:text-paper hover:border-vermillion active:translate-x-[2px] active:translate-y-[2px]"
               >
                 <Menu size={22} strokeWidth={2.25} />
               </button>

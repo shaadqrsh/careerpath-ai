@@ -413,7 +413,7 @@ export const Slideshow: React.FC = () => {
                 <button
                     onClick={(e) => { e.stopPropagation(); handlePrev(); }}
                     disabled={currentSlide === 0}
-                    className="p-3 border-2 border-paper/50 text-paper disabled:opacity-30 hover:bg-paper/10 transition-colors active:scale-95"
+                    className="p-3 border-2 border-paper text-paper disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-paper hover:bg-marigold hover:text-ink hover:border-marigold transition-colors active:scale-95"
                 >
                     <ChevronLeft size={22} strokeWidth={2.25} />
                 </button>
@@ -425,7 +425,7 @@ export const Slideshow: React.FC = () => {
                 <button
                     onClick={(e) => { e.stopPropagation(); handleNext(); }}
                     disabled={currentSlide === slides.length - 1}
-                    className="p-3 border-2 border-paper/50 text-paper disabled:opacity-30 hover:bg-paper/10 transition-colors active:scale-95"
+                    className="p-3 border-2 border-paper text-paper disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-paper hover:bg-marigold hover:text-ink hover:border-marigold transition-colors active:scale-95"
                 >
                     <ChevronRight size={22} strokeWidth={2.25} />
                 </button>

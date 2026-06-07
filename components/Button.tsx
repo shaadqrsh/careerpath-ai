@@ -35,8 +35,8 @@ export const Button: React.FC<ButtonProps> = ({
       "bg-paper text-ink dark:bg-transparent dark:text-paper shadow-stamp dark:shadow-stamp-light " +
       "hover:bg-paper2 dark:hover:bg-paper/10 hover:-translate-x-[1px] hover:-translate-y-[1px]",
     ghost:
-      "border-transparent dark:border-transparent shadow-none text-ink/70 dark:text-paper/70 " +
-      "hover:text-ink dark:hover:text-paper hover:bg-ink/5 dark:hover:bg-paper/5 " +
+      "border-ink/30 dark:border-paper/30 shadow-none text-ink/70 dark:text-paper/70 " +
+      "hover:text-ink dark:hover:text-paper hover:border-ink dark:hover:border-paper hover:bg-ink/10 dark:hover:bg-paper/10 " +
       "active:translate-x-0 active:translate-y-0",
   };
 

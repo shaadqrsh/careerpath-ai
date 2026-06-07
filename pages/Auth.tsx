@@ -114,9 +114,9 @@ export const Auth: React.FC = () => {
       <div className="w-full max-w-md animate-fade-in-up">
         <button
           onClick={() => setView(AppView.LANDING)}
-          className="mb-5 inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-widest text-ink/55 dark:text-paper/55 hover:text-vermillion transition-colors"
+          className="group mb-5 inline-flex items-center gap-2 font-mono text-[11px] font-bold uppercase tracking-widest text-ink/60 dark:text-paper/60 hover:text-vermillion underline decoration-2 decoration-transparent hover:decoration-vermillion underline-offset-4 transition-all"
         >
-          <ArrowLeft size={14} /> The Career Almanac
+          <ArrowLeft size={14} className="group-hover:-translate-x-0.5 transition-transform" /> The Career Almanac
         </button>
 
         <div className="bg-paper dark:bg-[#1c1a17] border-2 border-ink dark:border-paper shadow-stamp-lg dark:shadow-stamp-light">
@@ -162,7 +162,7 @@ export const Auth: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => { setIsForgotPassword(false); setError(null); setSuccessMessage(null); }}
-                    className="font-mono text-[11px] uppercase tracking-widest text-ink/55 dark:text-paper/55 hover:text-vermillion flex items-center justify-center gap-2 mx-auto transition-colors"
+                    className="group font-mono text-[11px] font-bold uppercase tracking-widest text-ink/60 dark:text-paper/60 hover:text-vermillion underline decoration-2 decoration-transparent hover:decoration-vermillion underline-offset-4 flex items-center justify-center gap-2 mx-auto transition-all"
                   >
                     <ArrowLeft size={14} /> Back to sign in
                   </button>
@@ -187,7 +187,7 @@ export const Auth: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => setIsForgotPassword(true)}
-                        className="font-mono text-[10px] uppercase tracking-widest text-vermillion hover:underline"
+                        className="font-mono text-[10px] font-bold uppercase tracking-widest text-vermillion underline decoration-2 decoration-transparent hover:decoration-vermillion underline-offset-2 transition-all"
                       >
                         Forgot?
                       </button>
@@ -216,7 +216,7 @@ export const Auth: React.FC = () => {
               <button
                 type="button"
                 onClick={toggleMode}
-                className="font-mono text-[11px] uppercase tracking-widest text-ink/65 dark:text-paper/65 hover:text-vermillion transition-colors"
+                className="font-mono text-[11px] font-bold uppercase tracking-widest text-ink/70 dark:text-paper/70 hover:text-vermillion underline decoration-2 decoration-transparent hover:decoration-vermillion underline-offset-4 transition-all"
               >
                 {isLogin ? "No account? Enroll now" : "Already a member? Sign in"}
               </button>

@@ -52,9 +52,9 @@ export const SavedPaths: React.FC = () => {
         <div className="flex items-center justify-between mb-8 animate-fade-in-up opacity-0" style={{ animationDelay: '0ms' }}>
           <button
             onClick={() => setView(AppView.DASHBOARD)}
-            className="font-mono text-[11px] uppercase tracking-widest text-ink/55 dark:text-paper/55 hover:text-vermillion flex items-center gap-2 transition-colors"
+            className="group font-mono text-[11px] font-bold uppercase tracking-widest border-2 border-ink dark:border-paper text-ink dark:text-paper bg-paper dark:bg-[#1c1a17] px-3 py-1.5 flex items-center gap-2 transition-all duration-150 hover:bg-vermillion hover:text-paper hover:border-vermillion hover:-translate-x-[1px] hover:-translate-y-[1px] hover:shadow-stamp-sm dark:hover:shadow-stamp-light"
           >
-            <ArrowLeft size={14} /> Back to dashboard
+            <ArrowLeft size={14} className="group-hover:-translate-x-0.5 transition-transform" /> Back to dashboard
           </button>
         </div>
 
@@ -105,9 +105,9 @@ export const SavedPaths: React.FC = () => {
               <button
                 onClick={(e) => { e.stopPropagation(); toggleSavedCareer(career); }}
                 title="Remove from collection"
-                className="hidden md:flex flex-shrink-0 w-14 border-2 border-ink dark:border-paper bg-paper dark:bg-[#1c1a17] text-ink/50 dark:text-paper/50 hover:bg-vermillion hover:text-paper hover:border-vermillion items-center justify-center transition-colors z-20"
+                className="group hidden md:flex flex-shrink-0 w-14 border-2 border-ink dark:border-paper bg-paper dark:bg-[#1c1a17] text-ink dark:text-paper hover:bg-vermillion hover:text-paper hover:border-vermillion items-center justify-center transition-all duration-150 hover:-translate-x-[1px] hover:-translate-y-[1px] hover:shadow-stamp dark:hover:shadow-stamp-light active:translate-x-[2px] active:translate-y-[2px] active:shadow-none z-20"
               >
-                <Trash2 size={20} strokeWidth={2.25} />
+                <Trash2 size={20} strokeWidth={2.25} className="transition-transform group-hover:scale-110" />
               </button>
             </div>
           ))}

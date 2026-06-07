@@ -130,7 +130,7 @@ export const Onboarding: React.FC = () => {
           </span>
           <button
             onClick={handleLogout}
-            className="font-mono text-[11px] uppercase tracking-widest text-ink/55 dark:text-paper/55 hover:text-vermillion flex items-center gap-2 transition-colors"
+            className="font-mono text-[11px] font-bold uppercase tracking-widest text-ink/60 dark:text-paper/60 hover:text-vermillion underline decoration-2 decoration-transparent hover:decoration-vermillion underline-offset-4 flex items-center gap-2 transition-all"
           >
             <LogOut size={14} /> Wrong account
           </button>

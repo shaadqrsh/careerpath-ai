@@ -87,9 +87,9 @@ export const CareerDetail: React.FC = () => {
             <button
               onClick={() => setView(backTarget)}
               disabled={isSavingCareer || loadingDetails}
-              className="font-mono text-[11px] uppercase tracking-widest text-paper/70 hover:text-paper flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed border-2 border-paper/40 px-3 py-1.5"
+              className="group font-mono text-[11px] font-bold uppercase tracking-widest text-paper flex items-center gap-2 transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed border-2 border-paper px-3 py-1.5 hover:bg-vermillion hover:border-vermillion hover:-translate-x-[1px] hover:-translate-y-[1px] hover:shadow-stamp-light disabled:hover:translate-x-0 disabled:hover:translate-y-0 disabled:hover:bg-transparent disabled:hover:shadow-none"
             >
-              <ChevronLeft size={14} /> {backLabel}
+              <ChevronLeft size={14} className="group-hover:-translate-x-0.5 transition-transform" /> {backLabel}
             </button>
             <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-paper/40 hidden sm:block">Entry / Detail</span>
           </div>
@@ -122,17 +122,17 @@ export const CareerDetail: React.FC = () => {
               <button
                 onClick={handleSave}
                 disabled={isSavingCareer || loadingDetails}
-                className={`p-3 border-2 transition-colors group ${
+                className={`group p-3 border-2 transition-all duration-150 hover:-translate-x-[1px] hover:-translate-y-[1px] hover:shadow-stamp-light active:translate-x-[2px] active:translate-y-[2px] active:shadow-none ${
                   isSaved
-                    ? 'bg-vermillion border-paper text-paper'
-                    : 'border-paper/40 text-paper hover:bg-paper/10'
-                } disabled:opacity-50 disabled:cursor-not-allowed`}
+                    ? 'bg-vermillion border-paper text-paper hover:bg-paper hover:text-vermillion hover:border-paper'
+                    : 'border-paper text-paper hover:bg-vermillion hover:border-vermillion'
+                } disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-x-0 disabled:hover:translate-y-0 disabled:hover:shadow-none`}
                 title={isSaved ? "Remove from collection" : "Save to collection"}
               >
                 {isSavingCareer ? (
                   <Loader2 className="w-6 h-6 animate-spin" />
                 ) : (
-                  <Heart className={`w-6 h-6 ${isSaved ? 'fill-current' : 'fill-none'}`} strokeWidth={2.25} />
+                  <Heart className={`w-6 h-6 transition-transform group-hover:scale-110 ${isSaved ? 'fill-current group-hover:fill-none' : 'fill-none group-hover:fill-current'}`} strokeWidth={2.25} />
                 )}
               </button>
               <Button

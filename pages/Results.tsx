@@ -75,9 +75,9 @@ export const Results: React.FC = () => {
         <div className="flex items-center justify-between mb-8 animate-fade-in-up opacity-0" style={{ animationDelay: '0ms' }}>
           <button
             onClick={handleBackAttempt}
-            className="font-mono text-[11px] uppercase tracking-widest text-ink/55 dark:text-paper/55 hover:text-vermillion flex items-center gap-2 transition-colors"
+            className="group font-mono text-[11px] font-bold uppercase tracking-widest border-2 border-ink dark:border-paper text-ink dark:text-paper bg-paper dark:bg-[#1c1a17] px-3 py-1.5 flex items-center gap-2 transition-all duration-150 hover:bg-vermillion hover:text-paper hover:border-vermillion hover:-translate-x-[1px] hover:-translate-y-[1px] hover:shadow-stamp-sm dark:hover:shadow-stamp-light"
           >
-            <ArrowLeft size={14} /> Back to dashboard
+            <ArrowLeft size={14} className="group-hover:-translate-x-0.5 transition-transform" /> Back to dashboard
           </button>
           <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-ink/45 dark:text-paper/45">
             {recommendations.length} matches
