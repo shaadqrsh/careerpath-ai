@@ -63,7 +63,10 @@ FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:3000")
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-app = FastAPI()
+# On Vercel, requests to /api/* are routed to this function with the /api prefix
+# stripped, so routes below are registered WITHOUT the /api prefix. root_path keeps
+# the OpenAPI/docs URLs correct (served under /api externally).
+app = FastAPI(root_path="/api")
 
 origins = [
     "http://localhost:3000",
@@ -261,7 +264,7 @@ def increment_and_verify_quota(client: Client, user_id: str, count_col: str, dat
         logger.error(f"Quota error: {e}")
         raise HTTPException(status_code=500, detail="Quota verification failed")
 
-@app.post("/api/auth/signup")
+@app.post("/auth/signup")
 async def signup(creds: UserLogin):
     try:
         res = supabase.auth.sign_up({"email": creds.email, "password": creds.password})
@@ -272,7 +275,7 @@ async def signup(creds: UserLogin):
         if "User already registered" in msg: raise HTTPException(status_code=400, detail="User already registered")
         raise HTTPException(status_code=400, detail=msg)
 
-@app.post("/api/auth/login")
+@app.post("/auth/login")
 async def login(creds: UserLogin):
     try:
         res = supabase.auth.sign_in_with_password({"email": creds.email, "password": creds.password})
@@ -285,13 +288,13 @@ async def login(creds: UserLogin):
             raise HTTPException(status_code=400, detail="Invalid login credentials")
         raise HTTPException(status_code=400, detail=error_msg)
 
-@app.post("/api/auth/reset-password")
+@app.post("/auth/reset-password")
 async def reset_password(req: PasswordResetRequest):
     try: supabase.auth.reset_password_email(req.email)
     except Exception: pass
     return {"status": "success"}
 
-@app.post("/api/auth/update-password")
+@app.post("/auth/update-password")
 async def update_password(req: UpdatePasswordRequest, authorization: str = Header(None), user = Depends(verify_token)):
     token = authorization.split(" ")[1]
     url = f"{SUPABASE_URL}/auth/v1/user"
@@ -317,10 +320,10 @@ async def update_password(req: UpdatePasswordRequest, authorization: str = Heade
 
     return {"status": "success"}
 
-@app.get("/api/auth/me")
+@app.get("/auth/me")
 async def get_current_user(user = Depends(verify_token)): return {"id": user.id, "email": user.email}
 
-@app.get("/api/profile")
+@app.get("/profile")
 async def get_profile(authorization: str = Header(None), user = Depends(verify_token)):
     token = authorization.split(" ")[1]
     client = get_user_client(token)
@@ -340,7 +343,7 @@ async def get_profile(authorization: str = Header(None), user = Depends(verify_t
         return profile
     except Exception: raise HTTPException(status_code=500, detail="Database error")
 
-@app.post("/api/profile")
+@app.post("/profile")
 async def upsert_profile(profile: UserProfile, authorization: str = Header(None), user = Depends(verify_token)):
     # Note: We use verify_token here because this is the ONBOARDING endpoint.
     if profile.id != user.id: raise HTTPException(status_code=403)
@@ -359,7 +362,7 @@ async def upsert_profile(profile: UserProfile, authorization: str = Header(None)
         logger.error(f"Error in upsert_profile: {e}")
         raise HTTPException(status_code=500)
 
-@app.post("/api/generate-domain")
+@app.post("/generate-domain")
 async def generate_domain(req: GenerateDomainRequest, authorization: str = Header(None), user = Depends(verify_registered_user)):
     token = authorization.split(" ")[1]
     client = get_user_client(token)
@@ -403,7 +406,7 @@ async def generate_domain(req: GenerateDomainRequest, authorization: str = Heade
         logger.error(f"Error in generate_domain: {e}", exc_info=True)
         return {"suggested_domain": "general"}
 
-@app.post("/api/generate-career", response_model=GenerateCareerResponse)
+@app.post("/generate-career", response_model=GenerateCareerResponse)
 async def generate_career(req: GenerateCareerRequest, authorization: str = Header(None), user = Depends(verify_registered_user)):
     token = authorization.split(" ")[1]
     client = get_user_client(token)
@@ -486,7 +489,7 @@ IMPORTANT: Do NOT include 'roadmap' or 'dayInLifePrompts' in this response. They
         logger.error(f"Career Gen Error: {e}")
         raise HTTPException(status_code=500, detail="AI generation failed")
 
-@app.post("/api/generate-career-details")
+@app.post("/generate-career-details")
 async def generate_career_details(req: GenerateCareerDetailsRequest, authorization: str = Header(None), user = Depends(verify_registered_user)):
     token = authorization.split(" ")[1]
     client = get_user_client(token)
@@ -570,7 +573,7 @@ OUTPUT FORMAT: Strict JSON
         logger.error(f"Career Details Gen Error: {e}")
         raise HTTPException(status_code=500, detail="AI details generation failed")
 
-@app.post("/api/generate-images")
+@app.post("/generate-images")
 async def generate_images(req: GenerateImagesRequest, authorization: str = Header(None), user = Depends(verify_registered_user)):
     token = authorization.split(" ")[1]
     client = get_user_client(token)
@@ -645,14 +648,14 @@ Negative: text, words, watermarks, logos, unrealistic lighting, overly dramatic 
         logger.error(f"Global Image Gen Error: {e}")
         return {"images": [None]*len(req.prompts)}
 
-@app.get("/api/saved-careers")
+@app.get("/saved-careers")
 async def get_saved_careers(authorization: str = Header(None), user = Depends(verify_registered_user)):
     token = authorization.split(" ")[1]
     client = get_user_client(token)
     try: return client.table("saved_careers").select("*").eq("user_id", user.id).execute().data
     except Exception: return []
 
-@app.post("/api/saved-careers")
+@app.post("/saved-careers")
 async def save_career(career: CareerRecommendation, authorization: str = Header(None), user = Depends(verify_registered_user)):
     token = authorization.split(" ")[1]
     client = get_user_client(token)
@@ -665,7 +668,7 @@ async def save_career(career: CareerRecommendation, authorization: str = Header(
         return {"status": "success"}
     except Exception as e: raise HTTPException(status_code=500, detail=str(e))
 
-@app.delete("/api/saved-careers/{career_uid}")
+@app.delete("/saved-careers/{career_uid}")
 async def delete_career(career_uid: str, authorization: str = Header(None), user = Depends(verify_registered_user)):
     token = authorization.split(" ")[1]
     client = get_user_client(token)
@@ -680,7 +683,7 @@ async def delete_career(career_uid: str, authorization: str = Header(None), user
         return {"status": "success"}
     except Exception as e: raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/api/career-images")
+@app.post("/career-images")
 async def upload_career_images(req: SaveCareerImageRequest, authorization: str = Header(None), user = Depends(verify_registered_user)):
     if req.user_id != user.id: raise HTTPException(status_code=403)
     uploaded = []
