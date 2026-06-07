@@ -63,10 +63,25 @@ FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:3000")
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# On Vercel, requests to /api/* are routed to this function with the /api prefix
-# stripped, so routes below are registered WITHOUT the /api prefix. root_path keeps
-# the OpenAPI/docs URLs correct (served under /api externally).
-app = FastAPI(root_path="/api")
+app = FastAPI()
+
+# Vercel routes /api/* into this single function, but the exact path the function
+# receives can include or omit the /api prefix depending on the rewrite config.
+# Normalize by stripping a leading /api so the unprefixed routes below always match.
+@app.middleware("http")
+async def strip_api_prefix(request: Request, call_next):
+    path = request.scope.get("path", "")
+    # Strip a leading /api ( /api/auth/login -> /auth/login, /api -> "" )
+    if path == "/api":
+        path = ""
+    elif path.startswith("/api/"):
+        path = path[4:]
+    # The rewrite destination "/api/index" can also surface as /index; treat the
+    # function's own entrypoint paths as the health-check root.
+    if path in ("", "/index"):
+        path = "/"
+    request.scope["path"] = path
+    return await call_next(request)
 
 origins = [
     "http://localhost:3000",
