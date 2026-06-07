@@ -187,10 +187,10 @@ export const Quiz: React.FC = () => {
                 className={`w-full text-left p-5 border-2 transition-all duration-150 flex items-center gap-4 group animate-fade-in-up opacity-0 ${
                   active
                     ? 'border-ink dark:border-paper bg-vermillion text-paper shadow-stamp-sm dark:shadow-stamp-light -translate-x-[1px] -translate-y-[1px]'
-                    : 'border-ink dark:border-paper/70 bg-paper dark:bg-[#1c1a17] text-ink dark:text-paper hover:-translate-x-[1px] hover:-translate-y-[1px] hover:shadow-stamp-sm dark:hover:shadow-stamp-light'
+                    : 'border-ink dark:border-paper/70 bg-paper dark:bg-[#1c1a17] text-ink dark:text-paper hover:border-vermillion hover:bg-vermillion/[0.07] dark:hover:bg-vermillion/10 hover:-translate-x-[1px] hover:-translate-y-[1px] hover:shadow-stamp-sm dark:hover:shadow-stamp-light'
                 }`}
               >
-                <span className={`shrink-0 w-8 h-8 flex items-center justify-center border-2 font-display text-sm ${active ? 'border-paper bg-paper/10 text-paper' : 'border-ink dark:border-paper/70 text-ink dark:text-paper'}`}>
+                <span className={`shrink-0 w-8 h-8 flex items-center justify-center border-2 font-display text-sm transition-colors ${active ? 'border-paper bg-paper/10 text-paper' : 'border-ink dark:border-paper/70 text-ink dark:text-paper group-hover:border-vermillion group-hover:text-vermillion'}`}>
                   {letters[idx] || idx + 1}
                 </span>
                 <span className="text-lg font-medium flex-1">{option}</span>

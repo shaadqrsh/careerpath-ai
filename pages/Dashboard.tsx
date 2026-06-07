@@ -124,7 +124,7 @@ export const Dashboard: React.FC = () => {
 
               <button
                 onClick={() => setView(AppView.SAVED_PATHS)}
-                className="p-2 border-2 border-transparent text-ink/70 dark:text-paper/70 hover:text-paper hover:bg-vermillion hover:border-vermillion transition-all relative"
+                className="p-2 border-2 border-transparent text-ink/70 dark:text-paper/70 hover:text-paper hover:bg-vermillion hover:border-vermillion hover:-translate-y-[2px] hover:shadow-stamp-sm dark:hover:shadow-stamp-light transition-all relative"
                 title="Saved Paths"
               >
                 <Heart size={20} strokeWidth={2.25} />
@@ -134,14 +134,14 @@ export const Dashboard: React.FC = () => {
               </button>
               <button
                 onClick={() => setView(AppView.PROFILE)}
-                className="p-2 border-2 border-transparent text-ink/70 dark:text-paper/70 hover:text-paper hover:bg-cobalt hover:border-cobalt transition-all"
+                className="p-2 border-2 border-transparent text-ink/70 dark:text-paper/70 hover:text-paper hover:bg-cobalt hover:border-cobalt hover:-translate-y-[2px] hover:shadow-stamp-sm dark:hover:shadow-stamp-light transition-all"
                 title="Edit Profile"
               >
                 <User size={20} strokeWidth={2.25} />
               </button>
               <button
                 onClick={handleLogout}
-                className="p-2 border-2 border-transparent text-ink/70 dark:text-paper/70 hover:text-paper dark:hover:text-ink hover:bg-ink dark:hover:bg-paper hover:border-ink dark:hover:border-paper transition-all"
+                className="p-2 border-2 border-transparent text-ink/70 dark:text-paper/70 hover:text-paper dark:hover:text-ink hover:bg-ink dark:hover:bg-paper hover:border-ink dark:hover:border-paper hover:-translate-y-[2px] hover:shadow-stamp-sm dark:hover:shadow-stamp-light transition-all"
                 title="Logout"
               >
                 <LogOut size={20} strokeWidth={2.25} />
@@ -164,7 +164,7 @@ export const Dashboard: React.FC = () => {
         <div className="fixed inset-0 z-[100] bg-paper dark:bg-[#14130f] animate-fade-in flex flex-col h-[100dvh]">
           <div className="p-4 border-b-2 border-ink dark:border-paper flex justify-between items-center shrink-0">
             <h2 className="font-display text-lg">Menu</h2>
-            <button onClick={() => setIsMobileMenuOpen(false)} className="p-2 border-2 border-ink dark:border-paper">
+            <button onClick={() => setIsMobileMenuOpen(false)} className="p-2 border-2 border-ink dark:border-paper transition-all hover:bg-vermillion hover:text-paper hover:border-vermillion active:translate-x-[2px] active:translate-y-[2px]">
               <X size={22} strokeWidth={2.25} />
             </button>
           </div>
@@ -172,7 +172,7 @@ export const Dashboard: React.FC = () => {
             <div className="flex flex-col gap-3">
               <button
                 onClick={() => { setView(AppView.SAVED_PATHS); setIsMobileMenuOpen(false); }}
-                className="flex items-center gap-4 font-display text-lg border-2 border-ink dark:border-paper p-3 hover:bg-vermillion hover:text-paper hover:border-vermillion transition-colors"
+                className="flex items-center gap-4 font-display text-lg border-2 border-ink dark:border-paper p-3 hover:bg-vermillion hover:text-paper hover:border-vermillion transition-all hover:-translate-x-[1px] hover:-translate-y-[1px] hover:shadow-stamp dark:hover:shadow-stamp-light active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
               >
                 <div className="relative">
                   <Heart size={22} strokeWidth={2.25} />
@@ -184,14 +184,14 @@ export const Dashboard: React.FC = () => {
               </button>
               <button
                 onClick={() => { setView(AppView.PROFILE); setIsMobileMenuOpen(false); }}
-                className="flex items-center gap-4 font-display text-lg border-2 border-ink dark:border-paper p-3 hover:bg-cobalt hover:text-paper hover:border-cobalt transition-colors"
+                className="flex items-center gap-4 font-display text-lg border-2 border-ink dark:border-paper p-3 hover:bg-cobalt hover:text-paper hover:border-cobalt transition-all hover:-translate-x-[1px] hover:-translate-y-[1px] hover:shadow-stamp dark:hover:shadow-stamp-light active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
               >
                 <User size={22} strokeWidth={2.25} />
                 Profile Settings
               </button>
               <button
                 onClick={() => { handleLogout(); setIsMobileMenuOpen(false); }}
-                className="flex items-center gap-4 font-display text-lg border-2 border-ink dark:border-paper p-3 hover:bg-ink hover:text-paper transition-colors"
+                className="flex items-center gap-4 font-display text-lg border-2 border-ink dark:border-paper p-3 hover:bg-ink hover:text-paper dark:hover:bg-paper dark:hover:text-ink transition-all hover:-translate-x-[1px] hover:-translate-y-[1px] hover:shadow-stamp dark:hover:shadow-stamp-light active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
               >
                 <LogOut size={22} strokeWidth={2.25} />
                 Logout
@@ -247,7 +247,7 @@ export const Dashboard: React.FC = () => {
           {categories.map((cat, index) => (
             <div key={cat.id} style={{ animationDelay: `${200 + index * 100}ms` }} className="animate-fade-in-up opacity-0 h-full">
               <div
-                className="group relative bg-paper dark:bg-[#1c1a17] border-2 border-ink dark:border-paper p-7 cursor-pointer h-full flex flex-col shadow-stamp dark:shadow-stamp-light transition-transform duration-150 hover:-translate-x-[2px] hover:-translate-y-[2px] active:translate-x-[3px] active:translate-y-[3px] active:shadow-none"
+                className="group relative bg-paper dark:bg-[#1c1a17] border-2 border-ink dark:border-paper p-7 cursor-pointer h-full flex flex-col shadow-stamp dark:shadow-stamp-light transition-all duration-150 hover:border-vermillion hover:bg-vermillion/[0.07] dark:hover:bg-vermillion/10 hover:-translate-x-[2px] hover:-translate-y-[2px] active:translate-x-[3px] active:translate-y-[3px] active:shadow-none"
                 onClick={() => handleStartQuiz(cat.id)}
               >
                 <div className="flex items-start justify-between mb-6">
@@ -270,7 +270,7 @@ export const Dashboard: React.FC = () => {
         <div style={{ animationDelay: '500ms' }} className="animate-fade-in-up opacity-0">
           <div
             onClick={() => handleStartQuiz('general')}
-            className="group relative w-full bg-ink dark:bg-paper text-paper dark:text-ink border-2 border-ink dark:border-paper p-7 md:p-8 cursor-pointer flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-stamp dark:shadow-stamp-light transition-transform duration-150 hover:-translate-x-[2px] hover:-translate-y-[2px] active:translate-x-[3px] active:translate-y-[3px] active:shadow-none"
+            className="group relative w-full bg-ink dark:bg-paper text-paper dark:text-ink border-2 border-ink dark:border-paper p-7 md:p-8 cursor-pointer flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-stamp dark:shadow-stamp-light transition-all duration-150 hover:bg-vermillion hover:text-paper hover:border-vermillion dark:hover:border-vermillion hover:-translate-x-[2px] hover:-translate-y-[2px] active:translate-x-[3px] active:translate-y-[3px] active:shadow-none"
           >
             <div className="flex items-center gap-5">
               <DomainIcon domain="general" />
@@ -279,7 +279,7 @@ export const Dashboard: React.FC = () => {
                 <h3 className="font-display text-2xl md:text-3xl mt-1">Take the general survey.</h3>
               </div>
             </div>
-            <span className="font-bold uppercase tracking-wide text-sm inline-flex items-center gap-2 whitespace-nowrap text-marigold dark:text-vermillion">
+            <span className="font-bold uppercase tracking-wide text-sm inline-flex items-center gap-2 whitespace-nowrap text-marigold dark:text-vermillion group-hover:text-paper transition-colors">
               Start general survey <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </span>
           </div>

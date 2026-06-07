@@ -72,7 +72,7 @@ export const SavedPaths: React.FC = () => {
             <div key={career.id} style={{ animationDelay: `${200 + index * 100}ms` }} className="flex items-stretch gap-4 relative animate-fade-in-up opacity-0">
               <div
                 onClick={() => handleSelect(career)}
-                className="group flex-1 relative bg-paper dark:bg-[#1c1a17] border-2 border-ink dark:border-paper p-6 md:p-7 flex flex-col md:flex-row gap-6 md:items-center shadow-stamp dark:shadow-stamp-light cursor-pointer transition-transform duration-150 hover:-translate-x-[2px] hover:-translate-y-[2px] active:translate-x-[3px] active:translate-y-[3px] active:shadow-none"
+                className="group flex-1 relative bg-paper dark:bg-[#1c1a17] border-2 border-ink dark:border-paper p-6 md:p-7 flex flex-col md:flex-row gap-6 md:items-center shadow-stamp dark:shadow-stamp-light cursor-pointer transition-all duration-150 hover:border-vermillion hover:bg-vermillion/[0.07] dark:hover:bg-vermillion/10 hover:-translate-x-[2px] hover:-translate-y-[2px] active:translate-x-[3px] active:translate-y-[3px] active:shadow-none"
               >
                 <div className="flex-grow relative z-10 min-w-0">
                   <div className="flex flex-wrap gap-2 mb-2">

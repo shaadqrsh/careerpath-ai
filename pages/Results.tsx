@@ -98,7 +98,7 @@ export const Results: React.FC = () => {
               <div key={career.id} className="animate-fade-in-up opacity-0" style={{ animationDelay: `${200 + index * 120}ms` }}>
                 <div
                   onClick={() => handleSelect(career)}
-                  className={`group relative bg-paper dark:bg-[#1c1a17] border-2 p-6 md:p-7 cursor-pointer flex flex-col md:flex-row gap-6 md:items-center shadow-stamp dark:shadow-stamp-light transition-transform duration-150 hover:-translate-x-[2px] hover:-translate-y-[2px] active:translate-x-[3px] active:translate-y-[3px] active:shadow-none ${isBestMatch ? 'border-pine' : 'border-ink dark:border-paper'}`}
+                  className={`group relative bg-paper dark:bg-[#1c1a17] border-2 p-6 md:p-7 cursor-pointer flex flex-col md:flex-row gap-6 md:items-center shadow-stamp dark:shadow-stamp-light transition-all duration-150 hover:border-vermillion hover:bg-vermillion/[0.07] dark:hover:bg-vermillion/10 hover:-translate-x-[2px] hover:-translate-y-[2px] active:translate-x-[3px] active:translate-y-[3px] active:shadow-none ${isBestMatch ? 'border-pine' : 'border-ink dark:border-paper'}`}
                 >
                   {/* rank numeral */}
                   <span className="absolute top-3 right-4 font-display text-5xl leading-none text-ink/10 dark:text-paper/10 select-none">

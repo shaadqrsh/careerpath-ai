@@ -30,14 +30,16 @@ export const Button: React.FC<ButtonProps> = ({
       "hover:-translate-x-[1px] hover:-translate-y-[1px]",
     secondary:
       "bg-ink text-paper dark:bg-paper dark:text-ink shadow-stamp dark:shadow-stamp-light " +
+      "hover:bg-vermillion hover:text-paper hover:border-vermillion dark:hover:border-vermillion " +
       "hover:-translate-x-[1px] hover:-translate-y-[1px]",
     outline:
       "bg-paper text-ink dark:bg-transparent dark:text-paper shadow-stamp dark:shadow-stamp-light " +
-      "hover:bg-paper2 dark:hover:bg-paper/10 hover:-translate-x-[1px] hover:-translate-y-[1px]",
+      "hover:bg-vermillion hover:text-paper hover:border-vermillion dark:hover:border-vermillion " +
+      "hover:-translate-x-[1px] hover:-translate-y-[1px]",
     ghost:
-      "border-ink/30 dark:border-paper/30 shadow-none text-ink/70 dark:text-paper/70 " +
-      "hover:text-ink dark:hover:text-paper hover:border-ink dark:hover:border-paper hover:bg-ink/10 dark:hover:bg-paper/10 " +
-      "active:translate-x-0 active:translate-y-0",
+      "border-ink/30 dark:border-paper/30 text-ink/70 dark:text-paper/70 " +
+      "hover:text-paper hover:bg-vermillion hover:border-vermillion " +
+      "hover:shadow-stamp dark:hover:shadow-stamp-light hover:-translate-x-[1px] hover:-translate-y-[1px]",
   };
 
   const sizes = {

@@ -334,7 +334,7 @@ export const Slideshow: React.FC = () => {
       
       <button
         onClick={(e) => { e.stopPropagation(); setView(AppView.CAREER_DETAIL); }}
-        className="absolute top-6 right-6 z-[70] text-paper hover:bg-vermillion p-2 border-2 border-paper/60 transition-colors"
+        className="absolute top-6 right-6 z-[70] text-paper hover:bg-vermillion hover:border-vermillion p-2 border-2 border-paper transition-all hover:-translate-y-[2px] hover:shadow-stamp-light active:translate-y-[1px] active:shadow-none"
       >
         <X size={22} strokeWidth={2.25} />
       </button>
@@ -413,7 +413,7 @@ export const Slideshow: React.FC = () => {
                 <button
                     onClick={(e) => { e.stopPropagation(); handlePrev(); }}
                     disabled={currentSlide === 0}
-                    className="p-3 border-2 border-paper text-paper disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-paper hover:bg-marigold hover:text-ink hover:border-marigold transition-colors active:scale-95"
+                    className="p-3 border-2 border-paper text-paper disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-paper disabled:hover:translate-y-0 disabled:hover:shadow-none hover:bg-marigold hover:text-ink hover:border-marigold hover:-translate-y-[2px] hover:shadow-stamp-light transition-all active:translate-y-[1px] active:shadow-none"
                 >
                     <ChevronLeft size={22} strokeWidth={2.25} />
                 </button>
@@ -425,7 +425,7 @@ export const Slideshow: React.FC = () => {
                 <button
                     onClick={(e) => { e.stopPropagation(); handleNext(); }}
                     disabled={currentSlide === slides.length - 1}
-                    className="p-3 border-2 border-paper text-paper disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-paper hover:bg-marigold hover:text-ink hover:border-marigold transition-colors active:scale-95"
+                    className="p-3 border-2 border-paper text-paper disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-paper disabled:hover:translate-y-0 disabled:hover:shadow-none hover:bg-marigold hover:text-ink hover:border-marigold hover:-translate-y-[2px] hover:shadow-stamp-light transition-all active:translate-y-[1px] active:shadow-none"
                 >
                     <ChevronRight size={22} strokeWidth={2.25} />
                 </button>

@@ -117,7 +117,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
         type="button"
         onKeyDown={handleKeyDown}
         onClick={() => !disabled && setIsOpen(!isOpen)}
-        className={`w-full bg-paper dark:bg-[#1c1a17] border-2 border-ink dark:border-paper/70 py-3 pl-4 pr-10 text-left font-medium text-ink dark:text-paper focus:outline-none transition-all duration-150 ${disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'} ${isOpen ? 'border-vermillion shadow-stamp-sm dark:shadow-stamp-light -translate-x-[1px] -translate-y-[1px]' : ''}`}
+        className={`w-full bg-paper dark:bg-[#1c1a17] border-2 border-ink dark:border-paper/70 py-3 pl-4 pr-10 text-left font-medium text-ink dark:text-paper focus:outline-none transition-all duration-150 ${disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer hover:border-vermillion hover:-translate-y-[1px] hover:shadow-stamp-sm dark:hover:shadow-stamp-light'} ${isOpen ? 'border-vermillion shadow-stamp-sm dark:shadow-stamp-light -translate-x-[1px] -translate-y-[1px]' : ''}`}
       >
         <span className={`block truncate ${!value && value !== 0 ? 'text-ink/40 dark:text-paper/40 font-normal' : ''}`}>
           {value || value === 0 ? selectedLabel : placeholder}
