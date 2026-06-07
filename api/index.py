@@ -7,6 +7,7 @@ import urllib.parse
 import re
 import asyncio
 import random
+import time
 from datetime import datetime, timezone, timedelta
 from typing import List, Optional, Dict, Any
 
@@ -25,8 +26,8 @@ DAILY_IMAGE_LIMIT = 3
 DAILY_CAREER_LIMIT = 5
 
 # Hidden Rate Limits
-DAILY_GENERAL_QUIZ_LIMIT = 10 
-DAILY_DETAILS_VIEW_LIMIT = 30 
+DAILY_GENERAL_QUIZ_LIMIT = 10
+DAILY_DETAILS_VIEW_LIMIT = 30
 # Dummy
 # Configuration Constants
 SLIDESHOW_IMAGE_COUNT = 3
@@ -34,7 +35,11 @@ CAREERS_PER_GENERATION = 5
 
 # Model names
 TEXT_MODEL_NAME = "gemini-2.5-flash"
-IMAGE_MODEL_NAME = "gemini-2.5-flash-image" 
+IMAGE_MODEL_NAME = "gemini-2.5-flash-image"
+
+# Serverless time budget (Vercel Hobby kills functions at 60s).
+# Image generation must return partial results before that hard limit.
+IMAGE_GEN_TIME_BUDGET = 50.0
 
 # Realism contexts for grounded image generation
 REALISM_CONTEXTS = [
@@ -157,7 +162,7 @@ class UserProfile(BaseSchema):
     last_career_generation_date: Optional[datetime] = None
     last_general_quiz_date: Optional[datetime] = None
     last_details_view_date: Optional[datetime] = None
-    limits: Optional[Limits] = None 
+    limits: Optional[Limits] = None
 
 class CareerRoadmapStep(BaseSchema):
     title: str
@@ -212,7 +217,7 @@ class GenerateDomainRequest(BaseSchema):
 async def verify_token(authorization: str = Header(None)):
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Missing or invalid token")
-    
+
     token = authorization.split(" ")[1]
     try:
         user = supabase.auth.get_user(token)
@@ -246,11 +251,11 @@ def increment_and_verify_quota(client: Client, user_id: str, count_col: str, dat
             'p_date_field': date_col,
             'p_limit': limit
         }).execute()
-        
+
         if not response.data:
              msg = error_msg or f"Daily limit of {limit} reached."
              raise HTTPException(status_code=429, detail=msg)
-             
+
     except HTTPException as he: raise he
     except Exception as e:
         logger.error(f"Quota error: {e}")
@@ -295,7 +300,7 @@ async def update_password(req: UpdatePasswordRequest, authorization: str = Heade
         "apikey": SUPABASE_KEY,
         "Content-Type": "application/json"
     }
-    
+
     async with httpx.AsyncClient() as client:
         response = await client.put(url, json={"password": req.password}, headers=headers)
         if response.status_code != 200:
@@ -309,7 +314,7 @@ async def update_password(req: UpdatePasswordRequest, authorization: str = Heade
                 raise he
             except Exception:
                 raise HTTPException(status_code=500, detail="Failed to update password")
-            
+
     return {"status": "success"}
 
 @app.get("/api/auth/me")
@@ -344,7 +349,7 @@ async def upsert_profile(profile: UserProfile, authorization: str = Header(None)
     try:
         data = profile.model_dump(by_alias=False)
         updatable_fields = [
-            'id', 'full_name', 'gender', 'age', 'education_level', 
+            'id', 'full_name', 'gender', 'age', 'education_level',
             'specialization', 'residence_country', 'preferred_work_country'
         ]
         final_payload = {k: v for k, v in data.items() if k in updatable_fields}
@@ -361,13 +366,13 @@ async def generate_domain(req: GenerateDomainRequest, authorization: str = Heade
     increment_and_verify_quota(client, user.id, "daily_general_quiz_count", "last_general_quiz_date", DAILY_GENERAL_QUIZ_LIMIT, "You have taken the general quiz too many times today.")
     try:
         if not ai_client: raise Exception("AI client not initialized")
-        clean_answers = sanitize_quiz_answers(req.quiz_answers) 
+        clean_answers = sanitize_quiz_answers(req.quiz_answers)
         prompt = f"Analyze quiz answers: {clean_answers}. Suggest domain: 'science', 'commerce', or 'arts'. Output JSON: {{ \"suggested_domain\": \"name\" }}"
         response = await ai_client.aio.models.generate_content(
             model=TEXT_MODEL_NAME,
             contents=prompt,
             config=types.GenerateContentConfig(
-                response_mime_type="application/json", 
+                response_mime_type="application/json",
                 max_output_tokens=5000,
                 safety_settings=[
                     types.SafetySetting(category="HARM_CATEGORY_HARASSMENT", threshold="BLOCK_NONE"),
@@ -407,8 +412,8 @@ async def generate_career(req: GenerateCareerRequest, authorization: str = Heade
         user_p = req.user_profile
         safe_specialization = sanitize_input(user_p.specialization)
         safe_full_name = sanitize_input(user_p.full_name)
-        clean_answers = sanitize_quiz_answers(req.quiz_answers) 
-        
+        clean_answers = sanitize_quiz_answers(req.quiz_answers)
+
         prompt = f"""
 Act as an experienced Career Counselor with expertise in global job markets.
 
@@ -579,8 +584,17 @@ async def generate_images(req: GenerateImagesRequest, authorization: str = Heade
 
         safe_prompts = req.prompts[:SLIDESHOW_IMAGE_COUNT]
 
+        # Wall-clock budget guard: on Vercel Hobby the function is hard-killed at
+        # 60s. We track elapsed time and bail out with None so the function always
+        # returns valid JSON (partial results) instead of being killed mid-flight.
+        start = time.monotonic()
+
+        def time_left() -> float:
+            return IMAGE_GEN_TIME_BUDGET - (time.monotonic() - start)
+
         async def gen_one_image(prompt_text, idx):
-            await asyncio.sleep(idx * 1.5)
+            # Light stagger to spread out the initial burst without eating the budget.
+            await asyncio.sleep(idx * 0.5)
             safe_prompt = sanitize_input(prompt_text)
             context = random.choice(REALISM_CONTEXTS)
             prompt = f"""
@@ -592,7 +606,11 @@ NOT glamorized or cinematic - capture the real, everyday nature of this work.
 Mood: Focused, professional, relatable.
 Negative: text, words, watermarks, logos, unrealistic lighting, overly dramatic poses.
 """
-            for attempt in range(3):
+            for attempt in range(2):
+                # Stop before the budget runs out rather than risk a hard kill.
+                if time_left() <= 0:
+                    logger.warning(f"Image {idx} skipped: time budget exhausted.")
+                    return None
                 try:
                     generate_content_config = types.GenerateContentConfig(
                         response_modalities=["IMAGE"],
@@ -611,9 +629,13 @@ Negative: text, words, watermarks, logos, unrealistic lighting, overly dramatic 
                     logger.error(f"Image gen attempt {attempt} failed: {e}")
                     err_str = str(e)
                     if "429" in err_str or "ResourceExhausted" in err_str or "Quota" in err_str:
-                        await asyncio.sleep((attempt + 1) * 3)
+                        backoff = min((attempt + 1) * 2, 8)
                     else:
-                        await asyncio.sleep(1.0)
+                        backoff = 1.0
+                    # Don't sleep past the budget.
+                    if backoff >= time_left():
+                        return None
+                    await asyncio.sleep(backoff)
             return None
 
         tasks = [gen_one_image(p, i) for i, p in enumerate(safe_prompts)]
@@ -664,18 +686,21 @@ async def upload_career_images(req: SaveCareerImageRequest, authorization: str =
     uploaded = []
     async with httpx.AsyncClient(timeout=30.0) as client:
         for i, img in enumerate(req.images):
-            if not img or img.startswith("http"): 
+            if not img or img.startswith("http"):
                 uploaded.append(img)
                 continue
             try:
                 header = img.split(",")[0]
                 if "image/png" in header: ext = "png"
                 elif "image/jpeg" in header: ext = "jpg"
-                else: 
+                else:
                      uploaded.append(None)
                      continue
 
-                if len(img) > 5 * 1024 * 1024 * 1.33:
+                # Vercel serverless caps request/response bodies at 4.5MB, and several
+                # base64 images travel together in one request. Cap each base64 string
+                # at ~2.5MB so the combined inbound request stays under the limit.
+                if len(img) > int(2.5 * 1024 * 1024):
                      uploaded.append(None)
                      continue
 
